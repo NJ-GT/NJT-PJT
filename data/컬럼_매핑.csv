@@ -1,0 +1,94 @@
+통합숙박업_컬럼,한글명,민박업_대응컬럼,비고
+구,구,-,통합숙박업 자체 추가 컬럼
+업종,업종,-,통합숙박업 자체 추가 컬럼
+OPNSFTEAMCODE,개방자치단체코드,개방자치단체코드,동일
+MGTNO,관리번호,관리번호,동일
+APVPERMYMD,인허가일자,인허가일자,동일
+APVCANCELYMD,인허가취소일자,인허가취소일자,동일
+TRDSTATEGBN,영업상태코드,영업상태구분코드,동일
+TRDSTATENM,영업상태명,영업상태명,동일
+DTLSTATEGBN,상세영업상태코드,상세영업상태코드,동일
+DTLSTATENM,상세영업상태명,상세영업상태명,동일
+DCBYMD,폐업일자,폐업일자,동일
+CLGSTDT,휴업시작일자,휴업시작일자,동일
+CLGENDDT,휴업종료일자,휴업종료일자,동일
+ROPNYMD,재개업일자,재개업일자,동일
+SITETEL,전화번호,전화번호,동일
+SITEAREA,소재지면적,소재지면적,동일
+SITEPOSTNO,소재지우편번호,소재지우편번호,동일
+SITEWHLADDR,지번주소,소재지전체주소,명칭 다름
+RDNWHLADDR,도로명주소,도로명전체주소,명칭 다름
+RDNPOSTNO,도로명우편번호,도로명우편번호,동일
+BPLCNM,사업장명,사업장명,동일
+LASTMODTS,최종수정일자,최종수정시각,동일
+UPDATEGBN,데이터갱신구분,데이터갱신구분,동일
+UPDATEDT,데이터갱신일자,데이터갱신일자,동일
+UPTAENM,업태명,업태구분명,명칭 다름
+X,좌표X,좌표정보X(EPSG5174),동일 (좌표계 동일)
+Y,좌표Y,좌표정보Y(EPSG5174),동일 (좌표계 동일)
+CULPHYEDCOBNM,문화체육업종명,문화체육업종명,동일
+CULWRKRSENM,문화사업자구분명,문화사업자구분명,동일
+REGNSENM,지역구분명,지역구분명,동일
+TOTNUMLAY,총층수,총층수,동일
+NEARENVNM,주변환경명,주변환경명,동일
+MNFACTREARTCLCN,제작종료품목내용,제작종료품목내용,동일
+INSURORGNM,보험기관명,보험기관명,동일
+BDNGSRVNM,건물용도명,건물용도명,동일
+JISGNUMLAY,지상층수,지상층수,동일
+UNDERNUMLAY,지하층수,지하층수,동일
+STROOMCNT,객실수,객실수,동일
+CNSTYAREA,공사연면적,공사연면적,동일
+ENGSTNTRNMNM,영문사업장명,영문사업장명,동일
+ENGSTNTRNMADDR,영문사업장주소,영문사업장주소,동일
+SHPTOTTONS,선박총톤수,선박총톤수,동일
+SHPCNT,선박수,선박수,동일
+SHPINFO,선박정보,선박정보,동일
+STAGEAR,무대면적,무대면적,동일
+CHAIRCNT,의자수,의자수,동일
+SVNSR,소음진동유무,소음진동,명칭 다름
+MEETSAMTIMESYGSTF,동시수용가능객수,회의실부대시설수용인원,동일
+FACILAR,시설면적,시설면적,동일
+PLAYUTSCNTDTL,유희시설수량상세,유희시설수량상세,동일
+PLAYFACILCNT,유희시설수,유희시설수,동일
+BCFACILEN,방송시설여부,방송시설여부,동일
+GEICPFACILEN,게임제공시설여부,게임제공시설여부,동일
+DISPENEN,전시시설여부,전시시설여부,동일
+INFOBEN,안내시설여부,안내시설여부,동일
+PLNINSURSTDT,보험가입예정시작일,보험가입예정시작일,동일
+PLNINSURENDDT,보험가입예정종료일,보험가입예정종료일,동일
+CAPT,수용인원,수용인원,동일
+INSURSTDT,보험가입시작일,보험가입시작일,동일
+INSURENDDT,보험가입종료일,보험가입종료일,동일
+AFC,AFC,AFC,동일
+FACILSCP,시설규모,시설규모,동일
+TRSTLODGCLNM,관광숙박업종명,-,관광숙박업 전용
+SNTUPTAENM,세분류업태명,-,일반숙박업 전용
+BDNGJISGFLRCNT,건물지상층수,-,일반숙박업 전용
+BDNGUNDERFLRCNT,건물지하층수,-,일반숙박업 전용
+USEJISGSTFLR,사용지상시작층,-,일반숙박업 전용
+USEJISGENDFLR,사용지상종료층,-,일반숙박업 전용
+USEUNDERSTFLR,사용지하시작층,-,일반숙박업 전용
+USEUNDERENDFLR,사용지하종료층,-,일반숙박업 전용
+HANSHILCNT,한실수,-,일반숙박업 전용
+YANGSILCNT,양실수,-,일반숙박업 전용
+YOKSILCNT,욕실수,-,일반숙박업 전용
+BALHANSILYN,발한실여부,-,일반숙박업 전용
+CNDPERMNTWHY,조건부영업허가사유,-,일반숙박업 전용
+CNDPERMSTYMD,조건부영업허가시작일,-,일반숙박업 전용
+CNDPERMENDYMD,조건부영업허가종료일,-,일반숙박업 전용
+BDNGOWNSENM,건물소유구분명,-,일반숙박업 전용
+WASHMCCNT,세탁기수,-,일반숙박업 전용
+WMEIPCNT,여성종사자수,-,일반숙박업 전용
+MANEIPCNT,남성종사자수,-,일반숙박업 전용
+RCVDRYNCNT,객실건조대수,-,일반숙박업 전용
+ABEDCNT,보조침대수,-,일반숙박업 전용
+MULTUSNUPSOYN,다중이용업소여부,-,일반숙박업 전용
+-,번호,번호,민박업 전용
+-,개방서비스명,개방서비스명,민박업 전용
+-,개방서비스아이디,개방서비스아이디,민박업 전용
+-,건물용도명,건물용도명,민박업 전용 (BDNGSRVNM과 매핑 가능)
+-,대지면적,대지면적,민박업 전용
+-,보험기관명,보험기관명,민박업 전용
+-,수용인원,수용인원,민박업 전용 (CAPT와 매핑 가능)
+-,시설면적,시설면적,민박업 전용 (FACILAR와 매핑 가능)
+-,시설규모,시설규모,민박업 전용 (FACILSCP와 매핑 가능)
