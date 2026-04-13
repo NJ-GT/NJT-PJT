@@ -1,3 +1,24 @@
+# -*- coding: utf-8 -*-
+"""
+=============================================================
+[목적] 숙박업 건물 종합 시각화 지도 생성 (3개 레이어 통합)
+
+[입력]  data/등기부등본_숙박업_핵심피처.csv   (숙박업 건물 + EPSG:5174 좌표)
+        data/화재출동/화재출동_사상자발생.csv  (filter_casualties.py 출력)
+        (관광특구 좌표는 스크립트 내 하드코딩)
+
+[출력]  data/숙박업_종합지도.html
+
+[레이어]
+  - 숙박업 건물: 사용승인일 기준 색상 그라데이션 (오래될수록 붉음)
+  - 관광특구: 중심점 기준 1km 반투명 원
+  - 사상자 화재: 사망(빨강) / 부상(주황) 마커
+
+[좌표 변환]  EPSG:5174 → WGS84 (pyproj)
+
+[사용 라이브러리]  pandas, folium, folium.plugins.HeatMap, numpy, pyproj
+=============================================================
+"""
 import pandas as pd, os, folium, numpy as np
 from folium.plugins import HeatMap
 from pyproj import Transformer

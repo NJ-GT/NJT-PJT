@@ -1,3 +1,20 @@
+# -*- coding: utf-8 -*-
+"""
+=============================================================
+[목적] 화재출동 데이터에서 사상자(사망 or 부상 1명 이상) 발생 건만 필터링
+
+[입력]  data/화재출동/화재출동_2021_2024.csv  (merge_fire.py 출력)
+
+[출력]  data/화재출동/화재출동_사상자발생.csv  (1,747행)
+        → visualize_casualties.py, visualize_combined.py 에서 사용
+
+[필터 조건]  사망자수 >= 1  OR  부상자수 >= 1
+
+[사용 라이브러리]  pandas
+
+[실행 순서]  merge_fire.py → filter_casualties.py → visualize_casualties.py
+=============================================================
+"""
 import pandas as pd, os
 
 BASE = r'C:\Users\USER\Documents\GitHub\기말공모전\NJT-PJT'

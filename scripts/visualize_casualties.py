@@ -1,3 +1,23 @@
+# -*- coding: utf-8 -*-
+"""
+=============================================================
+[목적] 사상자 발생 화재 시각화 지도 생성
+       사망/부상 규모별 마커 + 히트맵 + 소방시설 레이어
+
+[입력]  data/화재출동/화재출동_사상자발생.csv  (filter_casualties.py 출력)
+
+[출력]  data/화재출동/화재출동_사상자발생_지도.html
+
+[레이어]
+  - 히트맵: 사망자 가중치 3, 부상자 가중치 1
+  - 빨간 원: 사망자 발생 (크기 = 사망자수)
+  - 주황 원: 부상자만 발생
+  - 소방시설: 소방서/안전센터/구조대 (Kakao API 조회)
+
+[사용 라이브러리]  pandas, folium, folium.plugins.HeatMap, requests
+[외부 API]  Kakao Local API (소방시설 검색)
+=============================================================
+"""
 import pandas as pd, os, folium, requests, time
 from folium.plugins import HeatMap
 from collections import Counter
