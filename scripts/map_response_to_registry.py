@@ -21,31 +21,9 @@
 import pandas as pd
 import re
 import os
+from registry_title_loader import load_registry as load_registry_title
 
 BASE = os.path.join(os.path.dirname(__file__), '..')
-
-# ── 등기부등본 7개구 공통 로드 함수 ──────────────────────────────────
-def load_registry():
-    reg_files = [
-        '등기부등본_표제부_강남.csv', '등기부등본_표제부_마포구.csv',
-        '등기부등본_표제부_서초구.csv', '등기부등본_표제부_송파구.csv',
-        '등기부등본_표제부_용산구.csv', '등기부등본_표제부_종로구.csv',
-        '등기부등본_표제부_중구.csv',
-    ]
-    dfs = []
-    for fname in reg_files:
-        fpath = os.path.join(BASE, fname)
-        for enc in ['utf-8-sig', 'cp949', 'euc-kr']:
-            try:
-                df = pd.read_csv(fpath, encoding=enc, low_memory=False, dtype=str)
-                dfs.append(df)
-                print(f'  로드: {fname} ({len(df)}행)')
-                break
-            except Exception:
-                continue
-    reg = pd.concat(dfs, ignore_index=True)
-    print(f'등기부등본 합계: {len(reg)}행')
-    return reg
 
 def norm_name(name):
     """건물명 정규화: 공백·괄호·특수문자 제거, 소문자"""
@@ -75,7 +53,8 @@ resp1 = pd.read_csv(os.path.join(BASE, 'response_1775722530131.csv'),
                     encoding='utf-8-sig', dtype=str)
 print(f'response #1: {len(resp1)}행')
 
-reg = load_registry()
+reg = load_registry_title(prefer_merged=True, low_memory=False, dtype=str)
+print(f'등기부등본 합계: {len(reg)}행')
 
 resp1['_key'] = resp1['objNm'].apply(norm_name)
 reg['_key']   = reg['건물명'].apply(norm_name)

@@ -18,29 +18,12 @@
 import pandas as pd
 import re
 import os
+from registry_title_loader import load_registry as load_registry_title
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'data')
 
 # ─── 1. 등기부등본 전체 로드 ───────────────────────────────────────────
-reg_files = [
-    '등기부등본_표제부_강남.csv',
-    '등기부등본_표제부_마포구.csv',
-    '등기부등본_표제부_서초구.csv',
-    '등기부등본_표제부_송파구.csv',
-    '등기부등본_표제부_용산구.csv',
-    '등기부등본_표제부_종로구.csv',
-    '등기부등본_표제부_중구.csv',
-]
-
-dfs = []
-for fname in reg_files:
-    fpath = os.path.join(DATA_DIR, fname)
-    if os.path.exists(fpath):
-        df = pd.read_csv(fpath, encoding='utf-8-sig', low_memory=False)
-        dfs.append(df)
-        print(f'  로드: {fname} ({len(df)}행)')
-
-reg = pd.concat(dfs, ignore_index=True)
+reg = load_registry_title(prefer_merged=True, low_memory=False)
 print(f'등기부등본 합계: {len(reg)}행')
 
 # ─── 2. 등기부등본 주소 정규화 ────────────────────────────────────────

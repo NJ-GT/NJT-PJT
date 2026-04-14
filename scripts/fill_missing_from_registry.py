@@ -24,6 +24,7 @@
 import pandas as pd
 import re
 import os
+from registry_title_loader import load_registry as load_registry_title
 
 BASE = os.path.join(os.path.dirname(__file__), '..')
 
@@ -41,28 +42,9 @@ print('채우기 전 0값:')
 for col in TARGET_COLS:
     print(f'  {col}: {(feat[col]==0).sum()}개')
 
-# ── 등기부등본 원본 7개구 로드 ────────────────────────────────────────
-REG_FILES = [
-    '등기부등본_표제부_강남.csv',
-    '등기부등본_표제부_마포구.csv',
-    '등기부등본_표제부_서초구.csv',
-    '등기부등본_표제부_송파구.csv',
-    '등기부등본_표제부_용산구.csv',
-    '등기부등본_표제부_종로구.csv',
-    '등기부등본_표제부_중구.csv',
-]
-dfs = []
-for fname in REG_FILES:
-    fpath = os.path.join(BASE, fname)
-    for enc in ['utf-8-sig', 'cp949']:
-        try:
-            df = pd.read_csv(fpath, encoding=enc, low_memory=False)
-            df.columns = df.columns.str.strip()
-            dfs.append(df)
-            break
-        except Exception:
-            continue
-reg = pd.concat(dfs, ignore_index=True)
+# ── 등기부등본 원본 전체 로드 ─────────────────────────────────────────
+reg = load_registry_title(prefer_merged=True, low_memory=False)
+reg.columns = reg.columns.str.strip()
 print(f'등기부등본 원본: {len(reg)}행')
 
 for col in TARGET_COLS:
