@@ -1,0 +1,32 @@
+﻿{
+  "before": {
+    "rows": 4383,
+    "blank_useAprDay": 149,
+    "blank_x": 13,
+    "blank_y": 13,
+    "blank_road": 14
+  },
+  "use_approval_fill": {
+    "query_key_count": 144,
+    "strategy_counts": {
+      "unresolved": 137,
+      "single_unique_date": 12
+    },
+    "api_failures": []
+  },
+  "deleted_rows_after_use_approval_fill": 137,
+  "xy_road_fill": {
+    "xy_kakao_address": 12,
+    "road_name_local": 9,
+    "xy_pk_local": 1,
+    "road_fire_match": 2,
+    "road_kakao_jibun": 3
+  },
+  "after": {
+    "rows": 4246,
+    "blank_useAprDay": 0,
+    "blank_x": 0,
+    "blank_y": 0,
+    "blank_road": 0
+  }
+}
