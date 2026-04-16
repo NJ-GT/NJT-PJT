@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>10개구 입체적 화재 하중 밀집도 분석</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a14;color:#ddd;font-family:'Segoe UI',sans-serif;padding:24px}
+h1{color:#ffb432;font-size:18px;font-weight:700;margin-bottom:4px}
+.sub{color:#666;font-size:12px;margin-bottom:6px}
+.formula{background:#111128;border:1px solid rgba(255,255,255,.1);border-radius:10px;
+  padding:14px 20px;margin-bottom:20px;display:inline-block}
+.formula-title{color:#ffb432;font-size:12px;font-weight:700;margin-bottom:8px}
+.formula-body{color:#ddd;font-size:13px;line-height:1.8}
+.formula-math{text-align:center;padding:8px 0;color:#fff;font-size:14px}
+.frac{display:inline-block;text-align:center;vertical-align:middle}
+.frac .num{border-bottom:1px solid #aaa;padding:2px 8px;display:block}
+.frac .den{padding:2px 8px;display:block}
+#chart{width:100%;height:420px;margin-bottom:20px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+thead th{background:#111128;color:#ffb432;padding:9px 12px;text-align:left;
+  border-bottom:1px solid rgba(255,180,50,.3);white-space:nowrap}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.05)}
+tbody tr:hover{background:rgba(255,180,50,.06)}
+td{padding:8px 12px}
+.rank{font-weight:700;color:#ffb432}
+.vr-bar{display:flex;align-items:center;gap:8px}
+.vr-bg{flex:1;height:10px;background:rgba(255,255,255,.07);border-radius:5px;min-width:80px}
+.vr-fill{height:100%;border-radius:5px}
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700}
+.note{font-size:11px;color:#555;margin-top:12px}
+</style>
+</head>
+<body>
+<h1>🔥 10개구 입체적 화재 하중 밀집도 (VolumeRatio)</h1>
+<div class="sub">숙박시설 연면적 기준 · 데이터: 통합숙박시설최종안0415.csv</div>
+
+<div class="formula">
+  <div class="formula-title">② 입체적 화재 하중 밀집도 (연면적 기반)</div>
+  <div class="formula-body">단층 건물이냐, 고층 건물이냐에 따라 잠재적인 화재 규모가 달라지는 것을 반영합니다.</div>
+  <div class="formula-math">
+    <i>VolumeRatio</i> &nbsp;=&nbsp;
+    <span class="frac">
+      <span class="num">Σ 개별 건물들의 연면적 (바닥면적 × 층수)</span>
+      <span class="den">자치구의 전체 면적</span>
+    </span>
+  </div>
+</div>
+
+<div id="chart"></div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>순위</th><th>자치구</th><th>VolumeRatio</th>
+      <th>Σ연면적 (만㎡)</th><th>구 면적 (km²)</th>
+      <th>숙박시설 수</th><th>평균 층수</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+<div class="note">※ 서초구·영등포구·마포구는 공간결합 데이터 부족으로 연면적 0 처리됨 (CSV 좌표 범위 이슈)</div>
+
+<script>
+var DATA   = [{"gu": "강남구", "cnt": 118, "sum_fa": 104.72, "avg_fa": 8874.7, "avg_fl": 7.7, "area_km2": 46.89, "vr": 0.022336}, {"gu": "송파구", "cnt": 320, "sum_fa": 183.64, "avg_fa": 5738.7, "avg_fl": 7.5, "area_km2": 39.46, "vr": 0.046541}, {"gu": "서초구", "cnt": 0, "sum_fa": 0, "avg_fa": 0, "avg_fl": 0, "area_km2": 29.56, "vr": 0.0}, {"gu": "영등포구", "cnt": 0, "sum_fa": 0, "avg_fa": 0, "avg_fl": 0, "area_km2": 13.01, "vr": 0.0}, {"gu": "강서구", "cnt": 52, "sum_fa": 8.69, "avg_fa": 1671.0, "avg_fl": 6.6, "area_km2": 17.45, "vr": 0.004979}, {"gu": "성동구", "cnt": 200, "sum_fa": 12.19, "avg_fa": 609.7, "avg_fl": 3.6, "area_km2": 16.8, "vr": 0.007257}, {"gu": "용산구", "cnt": 536, "sum_fa": 103.27, "avg_fa": 1926.7, "avg_fl": 3.6, "area_km2": 21.88, "vr": 0.047207}, {"gu": "마포구", "cnt": 11, "sum_fa": 0.49, "avg_fa": 445.8, "avg_fl": 2.7, "area_km2": 17.67, "vr": 0.000277}, {"gu": "중구", "cnt": 713, "sum_fa": 305.15, "avg_fa": 4279.8, "avg_fl": 6.8, "area_km2": 9.98, "vr": 0.305688}, {"gu": "종로구", "cnt": 426, "sum_fa": 67.8, "avg_fa": 1591.5, "avg_fl": 4.4, "area_km2": 23.97, "vr": 0.02828}];
+var LABELS = ["중구", "용산구", "송파구", "종로구", "강남구", "성동구", "강서구", "마포구", "서초구", "영등포구"];
+var VR     = [0.305688, 0.047207, 0.046541, 0.02828, 0.022336, 0.007257, 0.004979, 0.000277, 0.0, 0.0];
+var CNT    = [713, 536, 320, 426, 118, 200, 52, 11, 0, 0];
+var FA     = [305.15, 103.27, 183.64, 67.8, 104.72, 12.19, 8.69, 0.49, 0, 0];
+var AREA   = [9.98, 21.88, 39.46, 23.97, 46.89, 16.8, 17.45, 17.67, 29.56, 13.01];
+var COLORS = ["#ff3030", "#4e9af1", "#4e9af1", "#4e9af1", "#4e9af1", "#4e9af1", "#4e9af1", "#4e9af1", "#4e9af1", "#4e9af1"];
+
+var GU_COLOR = {
+  '강남구':'#4e9af1','서초구':'#a78bfa','송파구':'#34d399','영등포구':'#fb923c',
+  '강서구':'#60a5fa','성동구':'#f472b6','용산구':'#f87171','마포구':'#4ade80',
+  '중구':'#fbbf24','종로구':'#e879f9'
+};
+
+// 바플롯
+var chart = echarts.init(document.getElementById('chart'));
+chart.setOption({
+  backgroundColor: 'transparent',
+  title:{text:'자치구별 입체적 화재 하중 밀집도 (높을수록 건물 연면적 집중)',
+    textStyle:{color:'#ffb432',fontSize:13},left:0,top:4},
+  tooltip:{
+    trigger:'axis',
+    formatter:function(p){
+      var i=p[0].dataIndex;
+      return '<b>'+LABELS[i]+'</b><br/>'
+        +'VolumeRatio: <b>'+VR[i].toFixed(4)+'</b><br/>'
+        +'Σ연면적: '+FA[i].toFixed(2)+'만㎡<br/>'
+        +'구 면적: '+AREA[i]+'km²<br/>'
+        +'숙박시설: '+CNT[i]+'개';
+    }
+  },
+  grid:{left:50,right:20,top:50,bottom:70},
+  xAxis:{
+    type:'category',data:LABELS,
+    axisLabel:{color:'#bbb',fontSize:12},
+    axisLine:{lineStyle:{color:'#333'}}
+  },
+  yAxis:{
+    type:'value',name:'VolumeRatio',
+    nameTextStyle:{color:'#888',fontSize:11},
+    axisLabel:{color:'#aaa',formatter:function(v){return v.toFixed(3);}},
+    splitLine:{lineStyle:{color:'rgba(255,255,255,.06)'}}
+  },
+  series:[{
+    type:'bar',
+    data:VR.map(function(v,i){return {value:v,itemStyle:{color:COLORS[i]}};}) ,
+    barMaxWidth:60,
+    label:{show:true,position:'top',formatter:function(p){return p.value.toFixed(4);},
+      color:'#ccc',fontSize:11}
+  }]
+});
+window.addEventListener('resize',function(){chart.resize();});
+
+// 테이블
+var maxVR = Math.max.apply(null, VR);
+var tbody = document.getElementById('tbody');
+tbody.innerHTML = DATA.map(function(r,i){
+  var rank = i+1;
+  var pct  = maxVR>0 ? (r.vr/maxVR*100).toFixed(1) : 0;
+  var col  = r.vr>=maxVR*0.8?'#ff3030':r.vr>=maxVR*0.5?'#ff8c00':r.vr>=maxVR*0.3?'#fcc419':'#4e9af1';
+  var gc   = GU_COLOR[r.gu]||'#aaa';
+  return '<tr>'
+    +'<td class="rank">#'+rank+'</td>'
+    +'<td><span style="color:'+gc+';font-weight:700">'+r.gu+'</span></td>'
+    +'<td><div class="vr-bar">'
+    +  '<div class="vr-bg"><div class="vr-fill" style="width:'+pct+'%;background:'+col+'"></div></div>'
+    +  '<span style="color:'+col+';font-weight:700;min-width:50px">'+r.vr.toFixed(4)+'</span>'
+    +'</div></td>'
+    +'<td style="color:#fff;font-weight:600">'+r.sum_fa.toFixed(2)+'</td>'
+    +'<td style="color:#aaa">'+r.area_km2+'</td>'
+    +'<td style="color:#aaa">'+r.cnt+'</td>'
+    +'<td style="color:#aaa">'+(r.avg_fl||'-')+'</td>'
+    +'</tr>';
+}).join('');
+</script>
+</body>
+</html>
