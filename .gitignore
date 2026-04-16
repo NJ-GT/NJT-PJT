@@ -212,3 +212,14 @@ __marimo__/
 
 # GIS Data (Large binary files)
 /gis/
+
+# Local GIS/raw-data artifacts
+data/AL_D010_11_20260409/chrome-headless-profile*/
+data/AL_D010_11_20260409/AL_D010_11_20260409_filtered.*
+data/AL_D010_11_20260409/건물데이터_전체.csv
+data/bnd_oa_11_2025_2Q/
+
+# Local map render/intermediate outputs
+data/AL_D010_11_20260409/*rendered.png
+data/AL_D010_11_20260409/density_by_grid.html
+data/AL_D010_11_20260409/*500sqm*
