@@ -9,9 +9,10 @@ import requests
 
 
 BASE_DIR = os.path.join(os.path.dirname(__file__), "..")
-TARGET_PATH = os.path.join(BASE_DIR, "소방청_특정소방대상물소방시설정보서비스.csv")
-MERGED_PATH = os.path.join(BASE_DIR, "등기부등본_소방청병합_결과.csv")
-OTHER_FIRE_PATH = os.path.join(BASE_DIR, "소방청_특정소방대상물정보서비스.csv")
+DATA_DIR = os.path.join(BASE_DIR, "data")
+TARGET_PATH = os.path.join(DATA_DIR, "소방청_특정소방대상물소방시설정보서비스.csv")
+MERGED_PATH = os.path.join(DATA_DIR, "등기부등본_소방청병합_결과.csv")
+OTHER_FIRE_PATH = os.path.join(DATA_DIR, "소방청_특정소방대상물정보서비스.csv")
 KAKAO_KEY = "96172db4c3b086f76853ed89242acefa"
 
 

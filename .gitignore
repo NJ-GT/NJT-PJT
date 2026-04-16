@@ -209,3 +209,6 @@ __marimo__/
 
 # Large merged data files
 표제부_통합*.csv
+
+# GIS Data (Large binary files)
+/gis/

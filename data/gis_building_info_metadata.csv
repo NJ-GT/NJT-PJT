@@ -1,0 +1,30 @@
+﻿ID,한글 필드명,English Name,샘플 데이터 (0번 레코드)
+A0,GIS유엔아이번호,GIS Unique Identifier,32
+A1,고유번호,Building ID / Unique PNU,1991201839054527769900000000
+A2,건물고유번호,Building Unique ID,1111017500107040000
+A3,법정동코드,Legal Dong Code,1111017500
+A4,법정동명,Legal Dong Name,서울특별시 종로구 숭인동
+A5,지번,Main Lot Number (Jibon),704
+A6,부번,Sub Lot Number (Bubeon),1
+A7,특수지구분명,Special Area Classification,일반
+A8,주용도코드,Primary Building Use Code,01000
+A9,주용도명,Primary Building Use Name,단독주택
+A10,건물구조코드,Building Structure Code,39
+A11,기타구조명,Other Structure Name,기타강구조
+A12,건축면적(㎡),Building Area,57.6
+A13,사용승인일자,Date of Approval for Use,1991-09-02
+A14,연면적(㎡),Total Floor Area,203.13
+A15,대지면면적(㎡),Site Area,100.6
+A16,높이(m),Building Height,9.1
+A17,건폐율(%),Building Coverage Ratio,57.26
+A18,용적률(%),Floor Area Ratio,144.66202
+A19,도로명대지위치,Road Name Address (Base),29692
+A20,도로명주소본번,Road Name Main Number,N
+A21,도로명주소부번,Road Name Sub Number,B00100000000T30Z9
+A22,데이터기준일자,Data Reference Date,2026-04-06
+A23,시군구코드,SGG Code,11110
+A24,건물명,Building Name,
+A25,특수지코드,Special District Code,
+A26,지상층수,Above-ground Floor Count,3
+A27,지하층수,Below-ground Floor Count,0
+A28,작업일자,Last Modified Date,2017-05-30
