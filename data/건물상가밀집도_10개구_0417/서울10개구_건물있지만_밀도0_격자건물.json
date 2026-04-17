@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "description": "전체건물수는 1개 이상이지만 면적 분자가 0이라 전체건물 보정입체화재하중밀도가 0인 격자와 원천 건물 목록",
+    "selection_condition": "전체건물수 > 0 AND 전체건물입체화재하중_분자 <= 0",
+    "density_formula": "전체건물_입체화재하중밀도 = Σ(보정분자) / 50,000㎡",
+    "corrected_numerator_formula": "연면적>0 이고 건축면적<=0 또는 건축면적>연면적 또는 건축면적×총층수>연면적이면 연면적, 그 외 건축면적×총층수",
+    "source_grid_csv": "C:\\Users\\USER\\Documents\\GitHub\\기말공모전\\NJT-PJT\\data\\건물상가밀집도_10개구_0417\\서울10개구_건물상가_격자별_시각화.csv",
+    "source_building_shp": "C:\\Users\\USER\\Documents\\GitHub\\기말공모전\\NJT-PJT\\data\\AL_D010_11_20260409\\AL_D010_11_20260409_filtered.shp",
+    "grid_area_m2": 50000.0,
+    "zero_density_grid_count": 0,
+    "zero_density_building_count_from_grid_csv": 0,
+    "matched_building_count_from_shp": 0,
+    "area_calculable_building_count_from_shp": 0
+  },
+  "grids": []
+}

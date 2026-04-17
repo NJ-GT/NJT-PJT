@@ -26,6 +26,30 @@
                     top: 0.0%;
                 }
                 .leaflet-container { font-size: 1rem; }
+                .density-label-icon {
+                    background: transparent;
+                    border: 0;
+                }
+                .density-label {
+                    display: block;
+                    min-width: 38px;
+                    padding: 2px 5px;
+                    border: 1px solid rgba(15, 23, 42, .28);
+                    border-radius: 4px;
+                    background: rgba(255, 255, 255, .9);
+                    color: #0f172a;
+                    font-family: "Malgun Gothic", Arial, sans-serif;
+                    font-size: 11px;
+                    font-weight: 800;
+                    line-height: 1.15;
+                    text-align: center;
+                    box-shadow: 0 1px 4px rgba(15, 23, 42, .22);
+                    pointer-events: none;
+                }
+                .density-label.zero {
+                    opacity: .62;
+                    font-weight: 700;
+                }
             </style>
 
             <style>html, body {
@@ -93,12 +117,12 @@
   <div><span style="display:inline-block;width:14px;height:10px;background:#ef3b2c;border:1px solid #7f0000;margin-right:6px;"></span>건물데이터 0개</div>
   <div><span style="display:inline-block;width:14px;height:10px;background:#deebf7;border:1px solid #94a3b8;margin-right:6px;"></span>낮은 밀도</div>
   <div><span style="display:inline-block;width:14px;height:10px;background:#08519c;border:1px solid #08306b;margin-right:6px;"></span>높은 밀도</div>
-  <div style="margin-top: 6px; color:#475569;">격자를 클릭하면 값이 뜨다.</div>
+  <div style="margin-top: 6px; color:#475569;">격자 안 숫자는 밀도값입니다.</div>
 </div>
     
 <div style="position: fixed; top: 12px; left: 56px; right: 360px; z-index: 9999; background: rgba(255,255,255,.94); border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 14px; box-shadow: 0 6px 18px rgba(15,23,42,.14); font-family: 'Malgun Gothic', Arial, sans-serif;">
   <div style="font-weight: 700; font-size: 16px; margin-bottom: 3px;">연남동 50,000㎡ 그리드 입체화재하중밀도</div>
-  <div style="font-size: 12px; color: #475569;">서울 지도 위에 격자별 밀도값을 표시했습니다. 격자를 클릭하면 값을 확인할 수 있습니다.</div>
+  <div style="font-size: 12px; color: #475569;">서울 지도 위에 격자별 밀도값을 표시했습니다. 격자 안 숫자와 클릭 팝업에서 값을 확인할 수 있습니다.</div>
 </div>
     
             <div class="folium-map" id="map_d7136efab636b9368cbcdb8cd411a8e2" ></div>
@@ -322,6 +346,41 @@
                      
     
             geo_json_ecbc93cfcd6a9031448a3d0e144def43.addTo(map_d7136efab636b9368cbcdb8cd411a8e2);
+
+            var density_label_group = L.featureGroup().addTo(map_d7136efab636b9368cbcdb8cd411a8e2);
+
+            function formatDensityLabel(value) {
+                var numberValue = Number(value || 0);
+                if (!Number.isFinite(numberValue) || numberValue === 0) {
+                    return "0";
+                }
+                if (numberValue < 0.01) {
+                    return numberValue.toFixed(3);
+                }
+                return numberValue.toFixed(2);
+            }
+
+            geo_json_ecbc93cfcd6a9031448a3d0e144def43.eachLayer(function(layer) {
+                var props = layer.feature.properties;
+                var density = Number(props["입체화재하중밀도"] || 0);
+                var lat = Number(props["중심위도"]);
+                var lng = Number(props["중심경도"]);
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                    var center = layer.getBounds().getCenter();
+                    lat = center.lat;
+                    lng = center.lng;
+                }
+                var labelHtml = "<span class=\"density-label " + (density === 0 ? "zero" : "") + "\">" + formatDensityLabel(density) + "</span>";
+                L.marker([lat, lng], {
+                    interactive: false,
+                    icon: L.divIcon({
+                        className: "density-label-icon",
+                        html: labelHtml,
+                        iconSize: [46, 18],
+                        iconAnchor: [23, 9]
+                    })
+                }).addTo(density_label_group);
+            });
         
     
     var color_map_8393631751c4b13744e9e106faa1c3e7 = {};
@@ -32757,6 +32816,7 @@
                 },
                 overlays :  {
                     "50,000\u33a1 \uadf8\ub9ac\ub4dc\ubcc4 \ubc00\ub3c4" : geo_json_ecbc93cfcd6a9031448a3d0e144def43,
+                    "\ubc00\ub3c4\uac12 \ub77c\ubca8" : density_label_group,
                     "\uac74\ubb3c \uc911\uc2ec\uc810" : feature_group_fb88d1bd77e8754be7f8537cf1b42a0f,
                 },
             };
@@ -32776,15 +32836,6 @@
                 [[37.552155758789084, 126.91286247833422], [37.56828647165328, 126.9331254055289]],
                 {}
             );
-        
-    
-            tile_layer_9f7097590528233cdab7803ceca07f2e.addTo(map_d7136efab636b9368cbcdb8cd411a8e2);
-        
-    
-            tile_layer_fc4436af002a250fe912187cc288d144.addTo(map_d7136efab636b9368cbcdb8cd411a8e2);
-        
-    
-            geo_json_ecbc93cfcd6a9031448a3d0e144def43.addTo(map_d7136efab636b9368cbcdb8cd411a8e2);
         
 </script>
 </html>
