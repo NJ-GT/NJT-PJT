@@ -216,6 +216,7 @@ __marimo__/
 # Local GIS/raw-data artifacts
 data/AL_D010_11_20260409/chrome-headless-profile*/
 data/AL_D010_11_20260409/AL_D010_11_20260409_filtered.*
+data/최종_상가숙박_개수밀도_구현자료_0417/01_입력테이블/건물원본_shp/AL_D010_11_20260409_filtered.*
 data/AL_D010_11_20260409/건물데이터_전체.csv
 data/bnd_oa_11_2025_2Q/
 

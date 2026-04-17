@@ -71,6 +71,7 @@ BUILDING_COLUMNS = [
     "지상층수",
     "지하층수",
     "생성일자",
+    "총층수",
 ]
 
 
@@ -155,6 +156,7 @@ def load_buildings() -> gpd.GeoDataFrame:
 
     for col in ["연면적", "건축면적", "지상층수", "지하층수"]:
         gdf[col] = pd.to_numeric(gdf[col], errors="coerce").fillna(0.0)
+    gdf.loc[gdf["지상층수"] == 0, "지상층수"] = 1.0
     gdf["총층수"] = (gdf["지상층수"] + gdf["지하층수"]).clip(lower=1)
     floor_area_proxy = gdf["건축면적"] * gdf["총층수"]
     gdf["입체화재하중_분자"] = floor_area_proxy.where(floor_area_proxy > 0, gdf["연면적"])
@@ -187,6 +189,7 @@ def load_lodgings() -> pd.DataFrame:
 
     for col in ["위도", "경도", "연면적(㎡)", "지상층수", "지하층수"]:
         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
+    df.loc[df["지상층수"] == 0, "지상층수"] = 1.0
     df["총층수"] = (df["지상층수"] + df["지하층수"]).clip(lower=1)
     df["숙박_입체화재하중_분자"] = df["연면적(㎡)"]
 
