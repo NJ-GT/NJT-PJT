@@ -1,6 +1,24 @@
-import sys, os
-sys.stdout.reconfigure(encoding='utf-8')
+"""
+[파일 설명]
+서울 10개 자치구의 집계구별 숙박시설 밀집도를 3D로 시각화하는 HTML을 생성하는 스크립트.
 
+주요 역할:
+  MapLibre-GL 라이브러리를 사용하여 집계구를 3D 건물처럼 표현한다.
+  - 높이: 평균 층수 / 숙박시설 수 / 화재위험도 중 선택 가능
+  - 색상: 노후도 / 화재위험도 / 숙박밀집도 중 선택 가능
+  - 소방서 및 안전센터 위치를 원형 마커로 표시
+  - 마우스 호버 시 집계구 상세 정보 팝업 표시
+
+입력: data/oa_3d.json            (경량화된 집계구 3D 데이터)
+      data/firestation_data.json (소방서·안전센터 위치)
+출력: 숙박시설_3D.html            (MapLibre-GL 기반 3D 인터랙티브 맵)
+"""
+
+import sys, os
+sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
+
+# ─── HTML 문자열 정의 ────────────────────────────────────────────
+# 아래는 완성된 HTML/JavaScript 코드 전체. Python 실행 시 이 문자열을 파일로 저장한다.
 NEW = """<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -269,6 +287,7 @@ rLeg();
 </body>
 </html>"""
 
+# ─── HTML 파일 저장 ──────────────────────────────────────────────
 with open('숙박시설_3D.html','w',encoding='utf-8') as f:
     f.write(NEW)
 print('Done:', os.path.getsize('숙박시설_3D.html')//1024, 'KB')

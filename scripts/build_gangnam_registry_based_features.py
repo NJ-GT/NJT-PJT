@@ -1,25 +1,48 @@
 # -*- coding: utf-8 -*-
+"""
+[파일 설명]
+강남구 등기부등본 표제부와 통합숙박시설 데이터를 관리건축물대장PK로 매칭하여
+강남구 기준 숙박시설 피처를 생성하는 스크립트.
+
+주요 역할:
+  1. 등기부등본 표제부(강남)와 통합숙박시설 데이터를 PK로 조인한다.
+  2. 같은 PK에 여러 사업장이 있는 경우 이름, 주소 등을 '|' 구분자로 합쳐 하나의 행으로 정리한다.
+  3. 매칭 여부(has_hospitality_match)를 True/False 플래그로 추가한다.
+
+입력: 등기부등본_표제부_강남.csv      (강남구 건물 등기 정보)
+      통합숙박시설표제부0414.csv       (숙박시설 매칭 데이터)
+출력: data/강남표제부기준_통합숙박시설피처0414.csv
+"""
+
 from pathlib import Path
 
 import pandas as pd
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-REGISTRY_PATH = BASE_DIR / "등기부등본_표제부_강남.csv"
-HOSPITALITY_PATH = BASE_DIR / "통합숙박시설표제부0414.csv"
-OUTPUT_PATH = BASE_DIR / "data" / "강남표제부기준_통합숙박시설피처0414.csv"
+BASE_DIR = Path(__file__).resolve().parent.parent  # 프로젝트 루트 경로
+REGISTRY_PATH = BASE_DIR / "등기부등본_표제부_강남.csv"       # 강남구 건물 등기부등본
+HOSPITALITY_PATH = BASE_DIR / "통합숙박시설표제부0414.csv"    # 숙박시설 표제부
+OUTPUT_PATH = BASE_DIR / "data" / "강남표제부기준_통합숙박시설피처0414.csv"  # 출력 파일
 
 
 def normalize_pk(series):
+    """
+    PK 컬럼을 정규화한다. pandas가 float으로 읽어 '1234.0' 형태가 되는 것을 방지.
+    예: '1234.0' → '1234'
+    """
     return (
         series.fillna("")
         .astype(str)
-        .str.replace(r"\.0$", "", regex=True)
+        .str.replace(r"\.0$", "", regex=True)  # 소수점 .0 제거
         .str.strip()
     )
 
 
 def collapse_unique(values):
+    """
+    그룹 내 여러 값을 중복 없이 '|' 구분자로 합쳐 하나의 문자열로 반환한다.
+    예: ['호텔A', '호텔A', '게스트하우스B'] → '호텔A | 게스트하우스B'
+    """
     items = []
     seen = set()
     for value in values:

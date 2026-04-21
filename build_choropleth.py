@@ -1,12 +1,33 @@
+"""
+[파일 설명]
+서울 법정동별 숙박시설 밀집도를 단계구분도(choropleth)로 시각화하는 HTML을 생성하는 스크립트.
+
+주요 역할:
+  Leaflet 라이브러리로 법정동 경계를 색상으로 채워 밀집도를 표현한다.
+  사용자가 드롭다운으로 4가지 지표를 전환할 수 있다:
+    - 시설수/ha (공간 밀집)
+    - 숙박시설 수 (절대량)
+    - 연면적/ha (규모 밀집)
+    - 숙박 건물 비율(%)
+  법정동 클릭 시 상세 정보 패널이 표시된다.
+
+입력: data/dong_density.json  (법정동별 숙박 밀집도 GeoJSON)
+      data/map_data.json       (개별 숙박시설 위치)
+출력: 법정동_숙박밀집도.html    (Leaflet 단계구분도 인터랙티브 맵)
+"""
+
 import sys, json, os
-sys.stdout.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
 
+# ─── 1. 법정동 GeoJSON 로드 ─────────────────────────────────────
+# dong_density.json : 법정동 경계 + 밀집도 속성(count, per_ha, fa_ha, ratio)
 with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/dong_density.json', encoding='utf-8') as f:
-    geojson_str = f.read()
+    geojson_str = f.read()  # 문자열 그대로 저장 (JavaScript에 직접 삽입)
 
+# ─── 2. 개별 숙박시설 위치 로드 ─────────────────────────────────
 with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/map_data.json', encoding='utf-8') as f:
     map_data = json.load(f)
-places_json = json.dumps(map_data['places'], ensure_ascii=False)
+places_json = json.dumps(map_data['places'], ensure_ascii=False)  # JavaScript에 삽입할 JSON 문자열
 
 parts = []
 parts.append("""<!DOCTYPE html>
@@ -275,6 +296,7 @@ map.on('overlayadd', function() {
 </html>
 """)
 
+# ─── 3. HTML 파일 저장 ───────────────────────────────────────────
 out = 'c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/법정동_숙박밀집도.html'
 with open(out, 'w', encoding='utf-8') as f:
     f.write(''.join(parts))

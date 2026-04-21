@@ -1,3 +1,20 @@
+"""
+[파일 설명]
+서울 법정동 경계 GeoJSON과 건축연도 구간별 통계 CSV를 조인하여
+법정동별 건물 노후화 현황을 담은 GeoJSON을 생성하는 스크립트.
+
+주요 역할:
+  1. 서울 법정동 경계 GeoJSON을 읽는다.
+  2. 법정동별 사용승인구간 CSV(10년 미만, 10~30년, 30~50년, 50년 이상 건물 수)를 읽는다.
+  3. 법정동코드 앞 8자리로 두 데이터를 조인한다.
+  4. 전체 조인 결과와 필터링된 결과(유효 데이터만) 두 GeoJSON을 각각 저장한다.
+
+입력: data/seoul_neighborhoods_geo_simple.json    (법정동 경계)
+      data/법정동별_사용승인구간_0415.csv            (건물 노후화 통계)
+출력: data/법정동별_사용승인구간_공간정보0415.geojson    (전체)
+      data/[오피셜]법정동승인일자_공간정보0415.geojson   (필터링 버전)
+"""
+
 from __future__ import annotations
 
 import csv
@@ -5,13 +22,13 @@ import json
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]  # 프로젝트 루트
 DATA_DIR = ROOT / "data"
 
-GEOJSON_PATH = DATA_DIR / "seoul_neighborhoods_geo_simple.json"
-STATS_PATH = DATA_DIR / "법정동별_사용승인구간_0415.csv"
-OUT_ALL_PATH = DATA_DIR / "법정동별_사용승인구간_공간정보0415.geojson"
-OUT_FILTERED_PATH = DATA_DIR / "[오피셜]법정동승인일자_공간정보0415.geojson"
+GEOJSON_PATH = DATA_DIR / "seoul_neighborhoods_geo_simple.json"         # 법정동 경계
+STATS_PATH = DATA_DIR / "법정동별_사용승인구간_0415.csv"                  # 건물 노후화 통계
+OUT_ALL_PATH = DATA_DIR / "법정동별_사용승인구간_공간정보0415.geojson"     # 전체 출력
+OUT_FILTERED_PATH = DATA_DIR / "[오피셜]법정동승인일자_공간정보0415.geojson"  # 필터링 출력
 
 
 INT_FIELDS = [

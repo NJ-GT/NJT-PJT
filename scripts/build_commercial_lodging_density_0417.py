@@ -1,4 +1,20 @@
 # -*- coding: utf-8 -*-
+"""
+[파일 설명]
+서울시 10개구 건물 shapefile과 숙박시설 CSV를 격자(50,000m²) 단위로 집계하여
+상업·숙박 밀집도 GeoJSON과 레이어드 HTML 지도를 생성하는 스크립트.
+
+주요 역할:
+  1. 건물 shapefile을 읽어 용도코드·구간별 건물 집계
+  2. 50,000m² 정방형 격자 생성 후 각 격자에 건물 수·면적 집계
+  3. 격자별 상업시설 밀도, 숙박시설 밀도 계산
+  4. GeoJSON으로 저장 및 Folium 지도 HTML 생성
+
+입력: data/AL_D010_11_20260409/AL_D010_11_20260409_filtered.shp (건물 shapefile)
+      data/통합숙박시설최종안0415.csv
+      data/[오피셜]법정동승인일자_공간정보0415.geojson
+출력: data/상가숙소밀집도_10개구_0417/ 폴더 내 GeoJSON·HTML 파일들
+"""
 from __future__ import annotations
 
 import json

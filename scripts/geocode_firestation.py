@@ -14,9 +14,10 @@ from pyproj import Transformer
 
 BASE = os.path.join(os.path.dirname(__file__), '..')
 KAKAO_KEY = '96172db4c3b086f76853ed89242acefa'
+# WGS84(위경도) → EPSG:5174(한국 TM 서부) 좌표계 변환기
 transformer = Transformer.from_crs('EPSG:4326', 'EPSG:5174', always_xy=True)
 
-coord_cache = {}  # address -> (x5174, y5174)
+coord_cache = {}  # 동일 주소를 두 번 API 조회하지 않도록 결과 캐시
 
 def kakao_address(addr):
     """도로명/지번 주소로 좌표 검색"""
@@ -49,28 +50,29 @@ def kakao_keyword(query):
     return None, None
 
 def get_coords(addr, name, gu):
-    """주소 → 좌표. 캐시 우선, 주소검색 → 키워드검색 순으로 시도"""
+    """주소·이름·구명 조합으로 좌표를 반환한다. 캐시 우선, 주소검색 → 키워드검색 순으로 시도."""
     addr = str(addr).strip() if pd.notna(addr) else ''
     name = str(name).strip() if pd.notna(name) else ''
     gu   = str(gu).strip()   if pd.notna(gu)   else ''
 
+    # 캐시 키: 주소가 있으면 주소, 없으면 이름|구명 조합
     cache_key = addr or f'{name}|{gu}'
     if cache_key in coord_cache:
         return coord_cache[cache_key]
 
     x, y = None, None
 
-    # 1차: 주소 검색
+    # 1차: 정확한 주소로 검색 (가장 신뢰도 높음)
     if addr:
         x, y = kakao_address(addr)
 
-    # 2차: 대상물명 + 구명 키워드 검색
+    # 2차: 대상물명 + 구명 키워드로 검색 (주소 검색 실패 시 폴백)
     if (not x) and name:
         query = f'{name} {gu}' if gu else name
         x, y = kakao_keyword(query)
 
     coord_cache[cache_key] = (x, y)
-    time.sleep(0.06)
+    time.sleep(0.06)  # API 과호출 방지를 위한 딜레이
     return x, y
 
 

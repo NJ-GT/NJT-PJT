@@ -1,8 +1,19 @@
+"""
+[파일 설명]
+국가공간정보(NSID) 건물 shapefile(AL_D010_11_20260409.shp)의 필드 메타데이터를 CSV로 출력하는 스크립트.
+
+shapefile의 각 필드(A0~A28)에 대해 한글명, 영어명, 샘플 데이터를 정리하여
+data/gis_building_info_metadata.csv로 저장한다. 다른 스크립트에서 참고용으로 사용.
+
+입력: gis/AL_D010_11_20260409.shp  (서울시 건물 shapefile)
+출력: data/gis_building_info_metadata.csv
+"""
+
 import pandas as pd
 import shapefile
 
-# NSID (National Spatial Data Infrastructure) Building Info standard mapping
-# Note: Field aliases A0-A28 vary slightly by export, but these are standard for NSID AL_D010
+# 국가공간정보 건물 shapefile의 필드 코드(A0~A28)와 한글/영어 이름 매핑표
+# 이 매핑을 참고하여 다른 스크립트에서 어떤 인덱스에 어떤 정보가 있는지 확인한다.
 FIELD_MAP = {
     'A0': ('GIS유엔아이번호', 'GIS Unique Identifier'),
     'A1': ('고유번호', 'Building ID / Unique PNU'),
@@ -36,22 +47,23 @@ FIELD_MAP = {
 }
 
 def create_meta_csv():
+    """shapefile 필드 구조를 읽어 메타데이터 CSV를 생성한다."""
     sf = shapefile.Reader('gis/AL_D010_11_20260409.shp', encoding='cp949')
-    rec = sf.record(0)
-    
+    rec = sf.record(0)  # 0번 레코드의 샘플 데이터를 가져옴
+
     rows = []
-    for i, field in enumerate(sf.fields[1:]):
-        alias = field[0]
+    for i, field in enumerate(sf.fields[1:]):  # sf.fields[0]은 삭제마커(DeletionFlag)이므로 건너뜀
+        alias = field[0]  # 필드 코드 (예: 'A8')
         name_kr, name_en = FIELD_MAP.get(alias, ('알수없음', 'Unknown'))
-        sample_val = rec[i]
-        
+        sample_val = rec[i]  # 해당 필드의 첫 번째 레코드 값 (참고용)
+
         rows.append({
             'ID': alias,
             '한글 필드명': name_kr,
             'English Name': name_en,
             '샘플 데이터 (0번 레코드)': sample_val
         })
-        
+
     df = pd.DataFrame(rows)
     df.to_csv('data/gis_building_info_metadata.csv', index=False, encoding='utf-8-sig')
     print("Metadata CSV created at data/gis_building_info_metadata.csv")

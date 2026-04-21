@@ -37,7 +37,8 @@ from registry_title_loader import load_registry as load_registry_title
 
 BASE = os.path.join(os.path.dirname(__file__), '..')
 
-# ── 서울시 용도지역별 법정 상한값 ─────────────────────────────────────
+# ── 서울시 용도지역별 법정 상한값 (국토계획법 기준) ───────────────────
+# 용도지역명 → 건폐율/용적률 상한(%) 딕셔너리
 ZONE_LIMITS = {
     '제1종전용주거지역': {'건폐율': 50,  '용적률': 100},
     '제2종전용주거지역': {'건폐율': 40,  '용적률': 120},
@@ -114,10 +115,12 @@ print(f'건축면적 역산 (층수): {mask4.sum()}건')
 
 # ── 4. landCd 생성 ────────────────────────────────────────────────────
 def make_landcd(row):
+    """서울시 토지정보 API에 필요한 19자리 토지 코드를 만든다.
+    형식: 시군구(5) + 법정동(5) + 대지구분(1) + 본번(4) + 부번(4)"""
     try:
         sgg = str(int(float(row['시군구코드']))).zfill(5)
         bjd = str(int(float(row['법정동코드']))).zfill(5)
-        gbn = '1'  # 대지구분: 1=일반
+        gbn = '1'  # 대지구분: 1=일반(지번 토지)
         bun = str(int(float(row['번']))).zfill(4) if pd.notna(row['번']) else '0000'
         ji  = str(int(float(row['지']))).zfill(4) if pd.notna(row['지']) else '0000'
         return sgg + bjd + gbn + bun + ji
@@ -166,6 +169,7 @@ for k, v in cnt.most_common(10):
 
 # ── 6. 법정상한 컬럼 추가 ─────────────────────────────────────────────
 def get_limit(zone, kind):
+    """용도지역명(zone)에서 ZONE_LIMITS 키와 부분 일치로 법정상한값을 반환한다."""
     for key, val in ZONE_LIMITS.items():
         if key in str(zone):
             return val[kind]

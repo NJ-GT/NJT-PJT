@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-소방청_특정소방대상물정보서비스.csv 미조회 148개 좌표 추가 채우기 +
-두 CSV 모두 X/Y좌표 소수점 2자리로 정리
+[파일 설명]
+소방청_특정소방대상물정보서비스.csv에서 좌표가 없는 148개 행을
+카카오 API(주소검색 → 키워드검색 순)로 채우고,
+두 소방청 CSV 모두 X/Y좌표를 소수점 2자리로 정리하는 스크립트.
+
+입력: 소방청_특정소방대상물정보서비스.csv
+      소방청_특정소방대상물소방시설정보서비스.csv
+출력: 두 파일 모두 덮어쓰기 (좌표 추가/정리)
 """
 import pandas as pd
 import requests
@@ -12,6 +18,7 @@ from pyproj import Transformer
 
 BASE = os.path.join(os.path.dirname(__file__), '..')
 KAKAO_KEY = '96172db4c3b086f76853ed89242acefa'
+# WGS84(위경도) → EPSG:5174(한국 TM 서부) 좌표계 변환기
 transformer = Transformer.from_crs('EPSG:4326', 'EPSG:5174', always_xy=True)
 
 def kakao_address(query):

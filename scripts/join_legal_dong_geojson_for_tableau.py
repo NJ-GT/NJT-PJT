@@ -1,3 +1,16 @@
+"""
+[파일 설명]
+법정동 경계 GeoJSON과 건물 건축연한 구간 통계를 조인하여 Tableau 시각화용 GeoJSON을 생성하는 스크립트.
+
+join_legal_dong_geojson_approval_0415.py와 유사하지만 입력 CSV와 출력 파일명이 다르다.
+Tableau에서 지도 시각화를 위해 건물 노후화 구간 통계를 법정동 경계에 붙인다.
+
+입력: data/seoul_neighborhoods_geo_simple.json          (법정동 경계)
+      data/자치구_법정동별_사용승인연한구간_0415.csv        (건물 연한 구간 통계)
+출력: data/seoul_legal_dong_age_buckets_joined_0415.geojson          (전체)
+      data/seoul_legal_dong_age_buckets_joined_0415_only_data.geojson (데이터 있는 것만)
+"""
+
 from __future__ import annotations
 
 import csv
@@ -5,13 +18,13 @@ import json
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]  # 프로젝트 루트
 DATA_DIR = ROOT / "data"
 
-GEOJSON_PATH = DATA_DIR / "seoul_neighborhoods_geo_simple.json"
-STATS_PATH = DATA_DIR / "자치구_법정동별_사용승인연한구간_0415.csv"
-OUT_ALL_PATH = DATA_DIR / "seoul_legal_dong_age_buckets_joined_0415.geojson"
-OUT_FILTERED_PATH = DATA_DIR / "seoul_legal_dong_age_buckets_joined_0415_only_data.geojson"
+GEOJSON_PATH = DATA_DIR / "seoul_neighborhoods_geo_simple.json"                           # 법정동 경계
+STATS_PATH = DATA_DIR / "자치구_법정동별_사용승인연한구간_0415.csv"                         # 건물 연한 통계
+OUT_ALL_PATH = DATA_DIR / "seoul_legal_dong_age_buckets_joined_0415.geojson"              # 전체 출력
+OUT_FILTERED_PATH = DATA_DIR / "seoul_legal_dong_age_buckets_joined_0415_only_data.geojson"  # 데이터 있는 것만
 
 
 def load_stats(path: Path) -> dict[str, dict[str, object]]:

@@ -1,37 +1,62 @@
-import sys, json, numpy as np, os
-sys.stdout.reconfigure(encoding='utf-8')
+"""
+[파일 설명]
+10개 자치구의 집계구별 화재위험도를 박스플롯(boxplot)으로 시각화하는 HTML을 생성하는 스크립트.
 
+주요 역할:
+  1. oa_density.json에서 10개 구 + 숙박시설 있는 집계구 데이터를 필터링한다.
+  2. 구별로 화재위험도의 박스플롯 통계(최솟값, Q1, 중앙값, Q3, 최댓값, 이상치)를 계산한다.
+  3. ECharts 라이브러리로 박스플롯 차트와 상세 테이블을 담은 HTML을 생성한다.
+
+입력: data/oa_density.json  (집계구별 화재위험도 포함)
+출력: 위험도_분석.html        (박스플롯 + 상세 테이블 대시보드)
+"""
+
+import sys, json, numpy as np, os
+sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
+
+# 분석 대상 10개 자치구 (표시 순서 고정)
 GU = ['강남구','송파구','서초구','영등포구','강서구','성동구','용산구','마포구','중구','종로구']
 
+# ─── 1. 집계구 데이터 로드 ────────────────────────────────────────
 with open('data/oa_density.json', encoding='utf-8') as f:
     d = json.load(f)
 
+# 10개 구에 속하고 숙박시설이 있는 집계구만 추출
 rows = []
 for f in d['features']:
     p = f['properties']
     if p.get('gu_name', '') in GU and p.get('count', 0) > 0:
         rows.append({
             'gu':   p['gu_name'],
-            'no':   p.get('oa_no', p['id'][8:]),
-            'cnt':  p['count'],
-            'fire': round(p.get('fire_score') or 0, 1),
-            'age':  round(p.get('avg_age') or 0, 1),
-            'fl':   round(p.get('avg_floors') or 0, 1),
-            'gpye': round(p.get('avg_geonpye') or 0, 1),
-            'yong': round(p.get('avg_yongjuk') or 0, 1),
+            'no':   p.get('oa_no', p['id'][8:]),    # 집계구 번호 (없으면 ID에서 추출)
+            'cnt':  p['count'],                       # 숙박시설 수
+            'fire': round(p.get('fire_score') or 0, 1),  # 화재위험점수
+            'age':  round(p.get('avg_age') or 0, 1),     # 평균 건축연령
+            'fl':   round(p.get('avg_floors') or 0, 1),  # 평균 층수
+            'gpye': round(p.get('avg_geonpye') or 0, 1), # 건폐율
+            'yong': round(p.get('avg_yongjuk') or 0, 1), # 용적률
         })
 
+# 구 순서 기준으로 정렬하고, 같은 구 안에서는 화재위험도 높은 순
 rows.sort(key=lambda x: (GU.index(x['gu']) if x['gu'] in GU else 99, -x['fire']))
 
+# ─── 2. 박스플롯 통계 계산 ────────────────────────────────────────
 def bp_stats(scores):
+    """
+    화재위험도 점수 목록에서 박스플롯에 필요한 5가지 통계값과 이상치를 계산한다.
+    반환: ([최솟값, Q1, 중앙값, Q3, 최댓값], [이상치 목록])
+    - IQR(사분위 범위) = Q3 - Q1
+    - 정상 범위: Q1 - 1.5*IQR ~ Q3 + 1.5*IQR 밖의 값이 이상치
+    """
     arr = np.array(scores, dtype=float)
-    q1, q2, q3 = np.percentile(arr, [25, 50, 75])
+    q1, q2, q3 = np.percentile(arr, [25, 50, 75])  # 1사분위수, 중앙값, 3사분위수
     iqr = q3 - q1
-    lo = max(float(arr.min()), q1 - 1.5 * iqr)
-    hi = min(float(arr.max()), q3 + 1.5 * iqr)
-    outliers = arr[(arr < lo) | (arr > hi)].tolist()
+    lo = max(float(arr.min()), q1 - 1.5 * iqr)  # 하한선 (실제 최솟값보다 낮으면 최솟값 사용)
+    hi = min(float(arr.max()), q3 + 1.5 * iqr)  # 상한선 (실제 최댓값보다 높으면 최댓값 사용)
+    outliers = arr[(arr < lo) | (arr > hi)].tolist()  # 범위 밖 이상치
     return [round(lo,1), round(q1,1), round(q2,1), round(q3,1), round(hi,1)], [round(o,1) for o in outliers]
 
+# 구별로 박스플롯 데이터 생성
 bp_labels, bp_data, bp_outlier_pts = [], [], []
 for gu in GU:
     scores = [r['fire'] for r in rows if r['gu'] == gu]
@@ -39,18 +64,20 @@ for gu in GU:
         bp_labels.append(gu)
         stats, outs = bp_stats(scores)
         bp_data.append(stats)
-        idx = len(bp_labels) - 1
+        idx = len(bp_labels) - 1  # 현재 구의 X축 인덱스
         for o in outs:
-            bp_outlier_pts.append([idx, o])
+            bp_outlier_pts.append([idx, o])  # [X축 위치, 이상치 값]
 
-rows_json  = json.dumps(rows, ensure_ascii=False)
-labels_json = json.dumps(bp_labels, ensure_ascii=False)
-bpdata_json = json.dumps(bp_data, ensure_ascii=False)
-bpout_json  = json.dumps(bp_outlier_pts, ensure_ascii=False)
+# ─── 3. 데이터를 JavaScript 변수로 직렬화 ────────────────────────
+rows_json   = json.dumps(rows, ensure_ascii=False)       # 전체 행 데이터
+labels_json = json.dumps(bp_labels, ensure_ascii=False)  # 구 이름 목록
+bpdata_json = json.dumps(bp_data, ensure_ascii=False)    # 박스플롯 수치
+bpout_json  = json.dumps(bp_outlier_pts, ensure_ascii=False)  # 이상치 좌표
 
+# 데이터 없는 구 안내 메시지 생성 (공간결합 실패 등으로 데이터 없는 경우)
 no_data_gu = [g for g in GU if g not in bp_labels]
 no_data_note = ('<div class="note">※ 숙박시설 공간결합 데이터 부족으로 표시 제외: ' + ', '.join(no_data_gu) + '</div>') if no_data_gu else ''
-gu_options = ''.join(f'<option value="{g}">{g}</option>' for g in bp_labels)
+gu_options = ''.join(f'<option value="{g}">{g}</option>' for g in bp_labels)  # 필터 드롭다운 옵션
 
 HTML = f"""<!DOCTYPE html>
 <html lang="ko">
@@ -269,6 +296,7 @@ sortBy('fire');
 </body>
 </html>"""
 
+# ─── 4. HTML 파일 저장 ───────────────────────────────────────────
 with open('위험도_분석.html', 'w', encoding='utf-8') as f:
     f.write(HTML)
 print(f'Done: {os.path.getsize("위험도_분석.html")//1024} KB, 집계구 {len(rows)}개, 구 {len(bp_labels)}개')

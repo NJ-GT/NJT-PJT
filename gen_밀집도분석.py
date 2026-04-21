@@ -1,9 +1,31 @@
+"""
+[파일 설명]
+10개 자치구의 입체적 화재 하중 밀집도(VolumeRatio)를 계산하고 바차트로 시각화하는 HTML을 생성하는 스크립트.
+
+VolumeRatio(입체적 화재 하중 밀집도)란?
+  숙박시설 연면적(바닥면적×층수)의 합을 자치구 전체 면적으로 나눈 값.
+  단층/고층 여부를 반영하여 실질적인 화재 규모 잠재력을 나타낸다.
+  VR = Σ(개별 건물 연면적) / 자치구 면적
+
+주요 역할:
+  1. 숙박시설 CSV의 좌표를 위도/경도로 변환한다.
+  2. 집계구 shapefile로부터 자치구 면적을 계산한다.
+  3. 공간결합으로 각 숙박시설을 해당 자치구에 배정한다.
+  4. 구별 VolumeRatio를 계산하고 ECharts 바차트 HTML로 출력한다.
+
+입력: data/통합숙박시설최종안0415.csv  (숙박시설 4,246개)
+      data/bnd_oa_11_2025_2Q/bnd_oa_11_2025_2Q.shp (집계구 경계)
+출력: 밀집도_분석.html                  (VolumeRatio 바차트 + 순위 테이블)
+"""
+
 import sys, json, os, pandas as pd, numpy as np, geopandas as gpd
 from pyproj import Transformer
-sys.stdout.reconfigure(encoding='utf-8')
+sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
 
+# 분석 대상 10개 자치구 목록 (표시 순서 고정)
 GU = ['강남구','송파구','서초구','영등포구','강서구','성동구','용산구','마포구','중구','종로구']
 
+# 집계구 코드 앞 5자리 → 자치구 이름 변환 테이블
 gu_map = {
     '11010':'종로구','11020':'중구','11030':'용산구','11040':'성동구','11050':'광진구',
     '11060':'동대문구','11070':'중랑구','11080':'노원구','11090':'강북구','11100':'도봉구',
@@ -12,63 +34,75 @@ gu_map = {
     '11210':'서초구','11220':'강남구','11230':'송파구','11240':'강동구','11250':'도봉구',
 }
 
+# ─── 1. 숙박시설 CSV 로드 및 좌표 변환 ──────────────────────────
 print("1. 숙박시설 CSV 로드...")
 df = pd.read_csv('data/통합숙박시설최종안0415.csv', encoding='utf-8-sig')
-cols = df.columns.tolist()
+cols = df.columns.tolist()  # 열 이름 목록
+
+# 한국 좌표계(EPSG:5181) → WGS84 위도/경도(EPSG:4326) 변환
 tf = Transformer.from_crs('EPSG:5181', 'EPSG:4326', always_xy=True)
 xs, ys = tf.transform(df[cols[0]].values, df[cols[1]].values)
-df['lng'] = xs; df['lat'] = ys
-df['연면적'] = pd.to_numeric(df[cols[11]], errors='coerce').fillna(0)
-df['층수']   = pd.to_numeric(df[cols[16]], errors='coerce').fillna(1)
+df['lng'] = xs  # 경도
+df['lat'] = ys  # 위도
+
+df['연면적'] = pd.to_numeric(df[cols[11]], errors='coerce').fillna(0)  # 결측값은 0으로 처리
+df['층수']   = pd.to_numeric(df[cols[16]], errors='coerce').fillna(1)  # 층수 결측 시 1층으로 처리
+# 바닥면적 = 연면적 ÷ 층수 (층수가 0이 되지 않도록 clip(lower=1) 적용)
 df['바닥면적'] = df['연면적'] / df['층수'].clip(lower=1)
 print(f"   {len(df)}개 건물")
 
+# ─── 2. 집계구 경계 및 자치구 면적 로드 ─────────────────────────
 print("2. 집계구 경계/면적 로드...")
 oa = gpd.read_file('data/bnd_oa_11_2025_2Q/bnd_oa_11_2025_2Q.shp').to_crs('EPSG:4326')
-oa_m = oa.to_crs('EPSG:5179')
+oa_m = oa.to_crs('EPSG:5179')                         # 미터 단위 좌표계로 재투영
 oa['gu_name'] = oa['TOT_OA_CD'].str[:5].map(gu_map).fillna('알수없음')
-oa['area_m2'] = oa_m.geometry.area
+oa['area_m2'] = oa_m.geometry.area                    # 집계구 면적(m²)
 
-# 자치구 면적 (m²) — 집계구 합산
+# 집계구 면적을 합산하여 자치구 전체 면적 계산
 gu_area_m2 = oa.groupby('gu_name')['area_m2'].sum()
 
+# ─── 3. 숙박시설 → 자치구 공간결합 ─────────────────────────────
 print("3. 공간결합 (건물 → 구)...")
 gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df['lng'], df['lat']), crs='EPSG:4326')
 joined = gpd.sjoin(gdf, oa[['TOT_OA_CD','gu_name','geometry']], how='left', predicate='within')
+
+# 공간결합 후 컬럼명 충돌 처리 (gu_name이 _left/_right 접미사로 분리될 수 있음)
 gu_col = 'gu_name_left' if 'gu_name_left' in joined.columns else 'gu_name'
 joined['gu_name'] = joined[gu_col].fillna('알수없음')
 
-# 구별 집계
+# 구별 집계 : 시설 수, 연면적 합/평균, 평균 층수
 gu_stats = joined.groupby('gu_name').agg(
-    cnt       = ('연면적', 'count'),
-    sum_fa    = ('연면적', 'sum'),    # Σ연면적 (m²)
-    avg_fa    = ('연면적', 'mean'),
-    avg_fl    = ('층수',   'mean'),
+    cnt       = ('연면적', 'count'),   # 숙박시설 개수
+    sum_fa    = ('연면적', 'sum'),     # 연면적 합계 (m²)
+    avg_fa    = ('연면적', 'mean'),    # 평균 연면적
+    avg_fl    = ('층수',   'mean'),    # 평균 층수
 ).reset_index()
 
+# ─── 4. VolumeRatio 계산 ────────────────────────────────────────
 print("4. VolumeRatio 계산...")
 results = []
 for g in GU:
     row = gu_stats[gu_stats['gu_name'] == g]
-    area = float(gu_area_m2.get(g, 1))
+    area = float(gu_area_m2.get(g, 1))  # 구 면적(m²), 없으면 1로 (0 나누기 방지)
     if len(row) == 0:
+        # 공간결합 결과 없으면 0으로 처리
         results.append({'gu': g, 'cnt': 0, 'sum_fa': 0, 'avg_fa': 0, 'avg_fl': 0,
                         'area_km2': round(area/1e6, 2), 'vr': 0.0})
         continue
     r = row.iloc[0]
-    vr = float(r['sum_fa']) / area
+    vr = float(r['sum_fa']) / area  # VolumeRatio = 연면적 합 / 구 면적
     results.append({
         'gu':      g,
         'cnt':     int(r['cnt']),
-        'sum_fa':  round(float(r['sum_fa'])/1e4, 2),  # 만㎡ 단위
+        'sum_fa':  round(float(r['sum_fa'])/1e4, 2),  # m² → 만㎡ 단위로 변환
         'avg_fa':  round(float(r['avg_fa']), 1),
         'avg_fl':  round(float(r['avg_fl']), 1),
-        'area_km2': round(area/1e6, 2),
+        'area_km2': round(area/1e6, 2),                # m² → km² 변환
         'vr':      round(vr, 6),
     })
     print(f"   {g}: VR={vr:.4f}  Σ연면적={r['sum_fa']/1e4:.2f}만㎡  구면적={area/1e6:.2f}km²")
 
-# 정렬 (VR 높은 순)
+# VR 높은 순으로 정렬하여 차트에 표시
 results_sorted = sorted(results, key=lambda x: -x['vr'])
 labels = [r['gu'] for r in results_sorted]
 vr_vals = [r['vr'] for r in results_sorted]
@@ -76,23 +110,28 @@ cnt_vals = [r['cnt'] for r in results_sorted]
 fa_vals  = [r['sum_fa'] for r in results_sorted]
 area_vals= [r['area_km2'] for r in results_sorted]
 
-results_json = json.dumps(results, ensure_ascii=False)
-labels_json  = json.dumps(labels, ensure_ascii=False)
+# ─── 5. 데이터를 JavaScript 변수로 직렬화 ────────────────────────
+results_json = json.dumps(results, ensure_ascii=False)   # 원래 순서 (테이블용)
+labels_json  = json.dumps(labels, ensure_ascii=False)    # VR 정렬 순서 (차트용)
 vr_json      = json.dumps(vr_vals, ensure_ascii=False)
 cnt_json     = json.dumps(cnt_vals, ensure_ascii=False)
 fa_json      = json.dumps(fa_vals, ensure_ascii=False)
 area_json    = json.dumps(area_vals, ensure_ascii=False)
 
-# 색상: 상위 3개 강조
+# ─── 6. 막대 색상 결정 (최대값 대비 비율에 따라 색상 등급화) ────────
 def bar_colors(vals):
+    """
+    VolumeRatio 값의 상대적 크기에 따라 막대 색상을 결정한다.
+    최대값의 80% 이상: 빨강 / 50% 이상: 주황 / 30% 이상: 노랑 / 그 외: 파랑
+    """
     mx = max(vals) if vals else 1
     colors = []
     for v in vals:
         r = v / mx
-        if r >= 0.8:   colors.append('#ff3030')
-        elif r >= 0.5: colors.append('#ff8c00')
-        elif r >= 0.3: colors.append('#fcc419')
-        else:          colors.append('#4e9af1')
+        if r >= 0.8:   colors.append('#ff3030')   # 매우 높음 (빨강)
+        elif r >= 0.5: colors.append('#ff8c00')   # 높음 (주황)
+        elif r >= 0.3: colors.append('#fcc419')   # 보통 (노랑)
+        else:          colors.append('#4e9af1')   # 낮음 (파랑)
     return colors
 
 colors_json = json.dumps(bar_colors(vr_vals), ensure_ascii=False)
@@ -243,6 +282,7 @@ tbody.innerHTML = DATA.map(function(r,i){{
 </body>
 </html>"""
 
+# ─── 7. HTML 파일 저장 ───────────────────────────────────────────
 with open('밀집도_분석.html', 'w', encoding='utf-8') as f:
     f.write(HTML)
 print(f'Done: {os.path.getsize("밀집도_분석.html")//1024} KB')

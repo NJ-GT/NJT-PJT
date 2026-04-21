@@ -55,7 +55,7 @@ coord_null = feat['좌표정보X(EPSG5174)'].isna().sum()
 print(f'  좌표: null={coord_null}개')
 
 # ── 2. 건축물대장 API 호출 ────────────────────────────────────────────
-# 0값이 하나라도 있거나 사용승인일이 null인 행 대상
+# 건물 면적·층수·승강기수 등이 0이거나 사용승인일이 없는 행을 대상으로 API 조회
 target_mask = (
     (feat['건축면적(㎡)'] == 0) | (feat['지상층수'] == 0) |
     (feat['지하층수'] == 0) | (feat['연면적(㎡)'] == 0) |
@@ -65,7 +65,9 @@ targets = feat[target_mask][['관리건축물대장PK','대지위치','시군구
 print(f'\n건축물대장 API 조회 대상: {len(targets)}건')
 
 def fetch_bldg(sigungu_cd, bjdong_cd, bun, ji):
+    """건축물대장 API에서 주건축물 표제부 1건을 반환한다."""
     try:
+        # 시군구코드·법정동코드·본번·부번을 각각 5·5·4·4자리 0패딩
         url = (f'{BLDG_URL}?serviceKey={BLDG_KEY}'
                f'&sigunguCd={str(sigungu_cd).zfill(5)}'
                f'&bjdongCd={str(bjdong_cd).zfill(5)}'
@@ -76,9 +78,9 @@ def fetch_bldg(sigungu_cd, bjdong_cd, bun, ji):
         items = r.json().get('response', {}).get('body', {}).get('items', {})
         if not items: return None
         item_list = items.get('item', [])
-        if isinstance(item_list, dict): item_list = [item_list]
+        if isinstance(item_list, dict): item_list = [item_list]  # 단일 항목이면 리스트로 감쌈
         for item in item_list:
-            if item.get('mainAtchGbCdNm') == '주건축물':
+            if item.get('mainAtchGbCdNm') == '주건축물':  # 주건축물 우선 반환
                 return item
         return item_list[0] if item_list else None
     except:
@@ -100,6 +102,7 @@ print(f'API 응답: {len(api_results)}건')
 filled = feat.copy()
 filled['관리건축물대장PK'] = filled['관리건축물대장PK'].astype(str)
 
+# API 응답 필드명 → DataFrame 컬럼명 매핑표 (필드명, 타입, 기본값 0)
 col_map = {
     '건축면적(㎡)':  ('archArea',      float, 0),
     '지상층수':      ('grndFlrCnt',    int,   0),

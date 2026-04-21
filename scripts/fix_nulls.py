@@ -1,8 +1,20 @@
 # -*- coding: utf-8 -*-
+"""
+[파일 설명]
+등기부등본_숙박업_핵심피처_법정상한.csv에서 누락된 값을 보정하는 스크립트.
+
+주요 역할:
+  1. '도로명대지위치' 컬럼이 비어 있는 행을 카카오 주소검색 API로 보정한다.
+     (지번주소 → 도로명주소 변환)
+  2. '기타용동' 컬럼의 null 현황을 출력한다.
+
+입력/출력: data/등기부등본_숙박업_핵심피처_법정상한.csv (동일 파일 덮어씀)
+"""
+
 import pandas as pd, requests, os
-BASE = os.path.join(os.path.dirname(__file__), '..')
-KAKAO_KEY = '96172db4c3b086f76853ed89242acefa'
-path = os.path.join(BASE, 'data', '\ub4f1\uae30\ubd80\ub4f1\ubcf8_\uc219\ubc15\uc5c5_\ud575\uc2ec\ud53c\ucc98_\ubc95\uc815\uc0c1\ud55c.csv')
+BASE = os.path.join(os.path.dirname(__file__), '..')  # 프로젝트 루트
+KAKAO_KEY = '96172db4c3b086f76853ed89242acefa'         # 카카오 REST API 키
+path = os.path.join(BASE, 'data', '등기부등본_숙박업_핵심피처_법정상한.csv')
 df = pd.read_csv(path, encoding='utf-8-sig', skipinitialspace=True)
 df.columns = df.columns.str.strip()
 

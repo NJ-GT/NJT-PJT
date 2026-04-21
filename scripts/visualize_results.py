@@ -1,12 +1,27 @@
+"""
+[파일 설명]
+gis_analysis.py가 생성한 GIS 분석 요약 CSV를 바탕으로
+숙박시설 주변 50m 반경 건물 밀집도를 Folium 지도로 시각화하는 스크립트.
+
+주요 역할:
+  - 분석 요약 CSV를 읽어 각 지점을 색상 마커로 지도에 표시한다.
+    (빨강: 30개 초과 / 주황: 15~30개 / 초록: 15개 미만)
+  - 히트맵 레이어로 전체 밀집 현황을 오버레이로 표시한다.
+  - 마커 클러스터링으로 줌 아웃 시 가독성을 확보한다.
+
+입력: data/XY_GIS_Analysis_Summary.csv   (gis_analysis.py 출력)
+출력: Map_Building_Density.html           (Folium 인터랙티브 지도)
+"""
+
 import pandas as pd
 import folium
 from folium.plugins import HeatMap, MarkerCluster
 from pyproj import Transformer
 import os
 
-# Paths
-SUMMARY_PATH = 'data/XY_GIS_Analysis_Summary.csv'
-OUTPUT_MAP = 'Map_Building_Density.html'
+# 입출력 경로
+SUMMARY_PATH = 'data/XY_GIS_Analysis_Summary.csv'  # GIS 분석 결과 요약
+OUTPUT_MAP = 'Map_Building_Density.html'             # 출력 지도 파일
 
 def get_risk_color(count):
     if count > 30:

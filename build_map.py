@@ -1,13 +1,34 @@
-import sys, json, math, os
-sys.stdout.reconfigure(encoding='utf-8')
+"""
+[파일 설명]
+서울 숙박시설을 15m 그리드 기반 밀집도 지도로 시각화하는 HTML을 생성하는 스크립트.
 
+주요 역할:
+  Leaflet + Canvas API를 사용하여 서울 전체를 15m 격자로 분할하고,
+  각 셀 안의 숙박시설 개수에 따라 색상을 달리 칠한다.
+  - 파랑(1개) / 초록(2개) / 빨강(3개+) / 빈 셀(회색 격자선)
+  - 줌 레벨 15 이상에서만 개별 건물 위치(흰색 사각형) 표시
+  - Canvas 기반이므로 수만 개의 격자를 빠르게 렌더링
+
+입력: data/map_data.json  (숙박시설 위치 + 15m 그리드 집계 데이터)
+출력: 숙박밀집도_grid.html  (15m 그리드 밀집도 인터랙티브 지도)
+"""
+
+import sys, json, math, os
+sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
+
+# ─── 1. 지도 데이터 로드 ────────────────────────────────────────
 with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/map_data.json', encoding='utf-8') as f:
     d = json.load(f)
 
+# places: 개별 숙박시설 위치/정보 목록
+# grid: 15m 셀별 숙박시설 개수 집계 결과 [{lat, lng, count}, ...]
 places_json = json.dumps(d['places'], ensure_ascii=False)
 grid_json   = json.dumps(d['grid'],   ensure_ascii=False)
 
+# ─── 2. 15m 그리드 셀 크기 계산 ────────────────────────────────
+# 위도 1도 = 약 111,320m, 15m를 도(degree) 단위로 변환
 LAT_STEP = 15 / 111320
+# 경도 1도 = 위도에 따라 달라짐 (서울 위도 37.5° 기준으로 계산)
 LNG_STEP = 15 / (111320 * math.cos(37.5 * math.pi / 180))
 
 parts = []
@@ -258,6 +279,8 @@ document.getElementById('chk-dot').addEventListener('change', function() {
 </html>
 """)
 
+# ─── 4. HTML 파일 저장 ───────────────────────────────────────────
+# parts 리스트를 하나의 문자열로 합쳐 저장 (메모리 효율을 위해 리스트로 나눠 구성했음)
 out = 'c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/숙박밀집도_grid.html'
 with open(out, 'w', encoding='utf-8') as fout:
     fout.write(''.join(parts))

@@ -29,11 +29,12 @@ from registry_title_loader import load_registry as load_registry_title
 BASE = os.path.join(os.path.dirname(__file__), '..')
 
 # ── 핵심피처 로드 ─────────────────────────────────────────────────────
-feat_path = os.path.join(BASE, 'data', '\ub4f1\uae30\ubd80\ub4f1\ubcf8_\uc219\ubc15\uc5c5_\ud575\uc2ec\ud53c\ucc98.csv')
+feat_path = os.path.join(BASE, 'data', '등기부등본_숙박업_핵심피처.csv')
 feat = pd.read_csv(feat_path, encoding='utf-8-sig', low_memory=False)
 feat.columns = feat.columns.str.strip()
 print(f'핵심피처: {len(feat)}행')
 
+# 채울 대상 컬럼 목록: 집합건물(아파트 등) 세대 레코드는 0으로 저장된 경우가 많음
 TARGET_COLS = ['대지면적(㎡)', '건축면적(㎡)', '지상층수', '지하층수', '승용승강기수']
 for col in TARGET_COLS:
     feat[col] = pd.to_numeric(feat[col], errors='coerce').fillna(0)
@@ -43,6 +44,7 @@ for col in TARGET_COLS:
     print(f'  {col}: {(feat[col]==0).sum()}개')
 
 # ── 등기부등본 원본 전체 로드 ─────────────────────────────────────────
+# prefer_merged=True: 7개구 표제부 CSV를 하나로 합친 버전 우선 사용
 reg = load_registry_title(prefer_merged=True, low_memory=False)
 reg.columns = reg.columns.str.strip()
 print(f'등기부등본 원본: {len(reg)}행')
@@ -53,13 +55,16 @@ for col in TARGET_COLS:
 
 # ── 번지 정규화 (공백/번지 제거) ──────────────────────────────────────
 def norm_jibun(addr):
+    """'서울특별시 강남구 역삼동 123-4번지' → '서울특별시 강남구 역삼동 123-4'"""
     if pd.isna(addr): return ''
     return re.sub(r'\s*번지$', '', str(addr).strip()).strip()
 
+# 같은 대지위치끼리 묶기 위해 정규화 키 생성
 reg['_addr'] = reg['대지위치'].apply(norm_jibun)
 feat['_addr'] = feat['대지위치'].apply(norm_jibun)
 
 # ── 주소별 최댓값 테이블 ──────────────────────────────────────────────
+# 같은 번지에 여러 레코드가 있을 때, 0이 아닌 값 중 최댓값을 기준값으로 사용
 addr_max = {}
 for col in TARGET_COLS:
     if col in reg.columns:
@@ -70,9 +75,9 @@ filled = feat.copy()
 for col in TARGET_COLS:
     if col not in addr_max:
         continue
-    zero_mask = filled[col] == 0
-    new_vals = filled.loc[zero_mask, '_addr'].map(addr_max[col])
-    can_fill = zero_mask & new_vals.notna()
+    zero_mask = filled[col] == 0                          # 채워야 할 행
+    new_vals = filled.loc[zero_mask, '_addr'].map(addr_max[col])  # 주소로 최댓값 매핑
+    can_fill = zero_mask & new_vals.notna()               # 실제로 채울 수 있는 행
     filled.loc[can_fill, col] = new_vals[can_fill]
     still = (filled[col] == 0).sum()
     print(f'  {col}: {can_fill.sum()}개 채움 → 0 남음: {still}개')

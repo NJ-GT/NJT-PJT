@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-=============================================================
-[목적] 연도별 화재출동 CSV를 합치고 서울 7개구 화재 현황 지도 생성
+[파일 설명]
+연도별(2021~2024) 화재출동 CSV 파일들을 하나로 합치고, 서울 7개구 화재 현황 히트맵을 생성하는 스크립트.
 
-[입력]  화재출동_2021/화재출동_2021.csv  (및 2022~2024 동일 구조)
+주요 역할:
+  1. 2021~2024년 화재출동 CSV를 합쳐 data/화재출동/화재출동_2021_2024.csv로 저장한다.
+  2. 카카오 API로 서울 소방시설 위치를 검색한다.
+  3. Folium으로 출동 위치 히트맵 + 소방시설 마커를 합친 HTML 지도를 생성한다.
 
-[출력]  data/화재출동/화재출동_2021_2024.csv   (전체 합본, filter_casualties.py 입력)
-        data/화재출동/화재출동_서울_지도.html   (히트맵 + 소방시설 지도)
+입력: 화재출동_2021/화재출동_2021.csv  (및 2022, 2023, 2024 동일 구조)
+출력: data/화재출동/화재출동_2021_2024.csv   (통합 출동 데이터 → 화재위험도_계산.py 입력)
+      data/화재출동/화재출동_서울_지도.html   (Folium 히트맵 시각화)
 
-[사용 라이브러리]  pandas, folium, folium.plugins.HeatMap, requests
-[외부 API]  Kakao Local API (소방시설 검색)
-
-[실행 순서]  merge_fire.py → filter_casualties.py → visualize_casualties.py
-=============================================================
+실행 순서: merge_fire.py → (filter_casualties.py) → 화재위험도_계산.py
 """
 import pandas as pd, os, folium, requests, time
 from pyproj import Transformer

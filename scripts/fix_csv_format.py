@@ -1,9 +1,18 @@
 # -*- coding: utf-8 -*-
-"""CSV 공백 제거 후 깔끔하게 재저장 (파싱 오류 해결)"""
+"""
+[파일 설명]
+등기부등본_숙박업_핵심피처_법정상한.csv의 열 이름과 값에 있는 앞뒤 공백을 제거하고
+동일 경로에 덮어써 저장하는 정제 스크립트.
+
+파싱 오류(열 이름에 공백이 섞여 있어 df['컬럼명'] 접근 실패) 해결 목적.
+
+입력/출력: data/등기부등본_숙박업_핵심피처_법정상한.csv (동일 파일 덮어씀)
+"""
+
 import pandas as pd, os
-BASE = os.path.join(os.path.dirname(__file__), '..')
+BASE = os.path.join(os.path.dirname(__file__), '..')  # 프로젝트 루트
 path = os.path.join(BASE, 'data',
-    '\ub4f1\uae30\ubd80\ub4f1\ubcf8_\uc219\ubc15\uc5c5_\ud575\uc2ec\ud53c\ucc98_\ubc95\uc815\uc0c1\ud55c.csv')
+    '등기부등본_숙박업_핵심피처_법정상한.csv')  # 정제할 대상 파일
 
 df = pd.read_csv(path, encoding='utf-8-sig', skipinitialspace=True)
 df.columns = df.columns.str.strip()

@@ -1,15 +1,35 @@
-import sys, json, os
-sys.stdout.reconfigure(encoding='utf-8')
+"""
+[파일 설명]
+서울 집계구별 숙박시설 밀집도와 화재위험도를 Deck.gl 기반 3D 지도로 시각화하는 HTML을 생성하는 스크립트.
 
+주요 역할:
+  Deck.gl의 GeoJsonLayer와 ColumnLayer를 사용하여 집계구를 3D 건물처럼 돌출시킨다.
+  - 높이 기준: 평균 층수 / 숙박시설 수 / 화재위험도 중 선택 가능
+  - 색상 기준: 노후도 / 화재위험도 / 숙박밀집도 중 선택 가능
+  - 소방서는 큰 빨간 원기둥, 안전센터는 작은 주황 원기둥으로 표시
+  - 마우스 호버 시 상세 정보 팝업
+
+입력: data/oa_density.json       (집계구별 분석 데이터)
+      data/firestation_data.json  (소방서·안전센터 위치)
+출력: 숙박시설_3D.html            (Deck.gl 기반 3D 인터랙티브 맵)
+"""
+
+import sys, json, os
+sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
+
+# ─── 1. 집계구 데이터 로드 및 분리 ─────────────────────────────
 with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/oa_density.json', encoding='utf-8') as f:
     raw = json.load(f)
 
+# 숙박시설 있는 집계구(3D 돌출 표현)와 없는 집계구(바닥 평면 표현)로 분리
 filled = [f for f in raw['features'] if f['properties']['count'] > 0]
 empty  = [f for f in raw['features'] if f['properties']['count'] == 0]
 
+# JavaScript에 삽입할 GeoJSON 문자열로 변환
 filled_json = json.dumps({'type':'FeatureCollection','features':filled}, ensure_ascii=False)
 empty_json  = json.dumps({'type':'FeatureCollection','features':empty},  ensure_ascii=False)
 
+# ─── 2. 소방서/안전센터 데이터 로드 ─────────────────────────────
 with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/firestation_data.json', encoding='utf-8') as f:
     stations_json = json.dumps(json.load(f), ensure_ascii=False)
 
@@ -370,6 +390,7 @@ refresh();
 </html>
 """
 
+# ─── 3. HTML 파일 저장 ───────────────────────────────────────────
 out = 'c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/숙박시설_3D.html'
 with open(out, 'w', encoding='utf-8') as f:
     f.write(html)

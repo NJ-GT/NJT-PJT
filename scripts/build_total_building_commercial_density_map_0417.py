@@ -1,4 +1,19 @@
 # -*- coding: utf-8 -*-
+"""
+[파일 설명]
+서울시 10개구 건물 shapefile과 격자 GeoJSON을 조합하여
+건물·상가 밀집도 인터랙티브 HTML 지도를 생성하는 스크립트.
+
+주요 역할:
+  1. 50,000m² 격자별 건물 밀도·상가 밀도·용도별 비율 계산
+  2. 건물 개별 포인트를 JS 파일로 저장 (지도 오버레이용)
+  3. Leaflet 기반 HTML 지도 생성 (밀도 단계구분도 + 마커 클러스터)
+  4. 격자별 CSV·GeoJSON·요약 JSON 저장
+
+입력: data/AL_D010_11_20260409/AL_D010_11_20260409_filtered.shp (건물 shapefile)
+      data/상가숙소밀집도_10개구_0417/서울10개구_상가숙소_격자별_밀집도.geojson (격자)
+출력: data/건물상가밀집도_10개구_0417/ 폴더 내 HTML·JS·CSV·GeoJSON 파일들
+"""
 from __future__ import annotations
 
 import csv

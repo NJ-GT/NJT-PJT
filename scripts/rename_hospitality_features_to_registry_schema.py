@@ -1,14 +1,30 @@
 # -*- coding: utf-8 -*-
+"""
+[파일 설명]
+통합숙박시설표제부0414.csv의 컬럼명을 등기부등본 스키마 기준으로 변환하는 스크립트.
+
+주요 역할:
+  - 'registry_' 접두사가 붙은 컬럼에서 접두사를 제거한다.
+    예: 'registry_도로명대지위치' → '도로명대지위치'
+  - 매칭 메타데이터 컬럼은 별도 매핑 테이블(SPECIAL_RENAME)로 처리한다.
+  - 숙박업 인허가 정보 컬럼에는 '숙박_' 접두사를 추가한다.
+    예: '사업장명' → '숙박_사업장명'
+
+입력: 통합숙박시설표제부0414.csv
+출력: data/통합숙박시설표제부0414_등기부기준컬럼명.csv
+"""
+
 from pathlib import Path
 
 import pandas as pd
 
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-SOURCE_PATH = BASE_DIR / "통합숙박시설표제부0414.csv"
-OUTPUT_PATH = BASE_DIR / "data" / "통합숙박시설표제부0414_등기부기준컬럼명.csv"
+BASE_DIR = Path(__file__).resolve().parent.parent  # 프로젝트 루트
+SOURCE_PATH = BASE_DIR / "통합숙박시설표제부0414.csv"                          # 입력 파일
+OUTPUT_PATH = BASE_DIR / "data" / "통합숙박시설표제부0414_등기부기준컬럼명.csv"  # 출력 파일
 
 
+# 매칭 메타데이터 컬럼명 변환 규칙 (registry_ 접두사 방식으로 처리되지 않는 특수 컬럼)
 SPECIAL_RENAME = {
     "selected_registry_pk": "관리건축물대장PK_매칭",
     "selected_registry_name_similarity": "건물명유사도",
@@ -23,12 +39,13 @@ def main():
 
     df = pd.read_csv(SOURCE_PATH, encoding="utf-8-sig", low_memory=False)
 
+    # 컬럼별 이름 변환 규칙 결정
     rename_map = {}
     for col in df.columns:
         if col in SPECIAL_RENAME:
-            rename_map[col] = SPECIAL_RENAME[col]
+            rename_map[col] = SPECIAL_RENAME[col]   # 특수 매핑 우선 적용
         elif col.startswith("registry_"):
-            rename_map[col] = col.replace("registry_", "", 1)
+            rename_map[col] = col.replace("registry_", "", 1)  # 'registry_' 접두사 제거
         elif col in {
             "개방자치단체코드",
             "관리번호",

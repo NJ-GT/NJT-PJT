@@ -1,3 +1,17 @@
+"""
+[파일 설명]
+서울 10개 자치구의 행정동별 평균 사용승인연도(건축연도)와 건물 나이를 계산하는 스크립트.
+
+주요 역할:
+  1. 통합숙박시설 피처 선정본 CSV에서 사용승인일을 파싱한다.
+  2. KIKmix 엑셀에서 행정동 코드 → 행정동명 매핑을 로드한다.
+  3. 행정동별로 평균 건물 나이(2026년 4월 15일 기준)를 계산하여 CSV로 저장한다.
+
+입력: data/통합숙박시설표제부0415_피처선정본.csv   (숙박시설 피처 데이터)
+      data/jscode20200515/KIKmix.20200515.xlsx     (행정동 코드 매핑)
+출력: data/서울10개구_행정동별_평균사용승인연도_건물나이_0415.csv
+"""
+
 from __future__ import annotations
 
 import csv
@@ -9,13 +23,14 @@ from collections import defaultdict
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]  # 프로젝트 루트 (scripts의 부모)
 DATA_DIR = ROOT / "data"
 
-FEATURES_PATH = DATA_DIR / "통합숙박시설표제부0415_피처선정본.csv"
-MAPPING_XLSX_PATH = DATA_DIR / "jscode20200515" / "jscode20200515" / "KIKmix.20200515.xlsx"
-OUT_PATH = DATA_DIR / "서울10개구_행정동별_평균사용승인연도_건물나이_0415.csv"
+FEATURES_PATH = DATA_DIR / "통합숙박시설표제부0415_피처선정본.csv"                     # 입력: 숙박시설 피처
+MAPPING_XLSX_PATH = DATA_DIR / "jscode20200515" / "jscode20200515" / "KIKmix.20200515.xlsx"  # 행정동 코드표
+OUT_PATH = DATA_DIR / "서울10개구_행정동별_평균사용승인연도_건물나이_0415.csv"            # 출력
 
+# 분석 대상 10개 자치구
 TOP_10_GU = {
     "중구",
     "종로구",

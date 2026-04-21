@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+"""
+[파일 설명]
+통합숙박시설최종안0415.csv의 사용승인일을 기준으로 법정동별 건물 노후화 구간 통계를 생성한다.
+
+주요 역할:
+  1. KIKmix.xlsx에서 법정동코드 → 구명·법정동명 매핑 테이블을 로드한다.
+  2. 각 숙박시설의 사용승인일 → 연한 계산 → 구간(10/30/50년) 집계
+  3. 자치구·법정동별 건물 수와 연한 구간 통계를 CSV로 저장한다.
+
+입력: data/통합숙박시설최종안0415.csv
+      data/jscode20200515/jscode20200515/KIKmix.20200515.xlsx (법정동 코드 매핑)
+출력: data/자치구_법정동별_사용승인연한구간_최종안0415.csv
+"""
 from __future__ import annotations
 
 import csv
@@ -19,6 +33,7 @@ AS_OF_DATE = dt.date(2026, 4, 15)
 
 
 def load_legal_dong_mapping(path: Path) -> dict[str, dict[str, str]]:
+    """KIKmix.xlsx에서 서울 법정동코드 → {구, 법정동명} 딕셔너리를 반환한다."""
     ns = {"a": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
 
     with zipfile.ZipFile(path) as zf:
@@ -67,6 +82,7 @@ def load_legal_dong_mapping(path: Path) -> dict[str, dict[str, str]]:
 
 
 def parse_approval_date(value: str) -> dt.date | None:
+    """'20050312' 형식의 8자리 날짜 문자열을 date 객체로 변환한다. 형식 오류면 None."""
     text = str(value or "").strip()
     if text.endswith(".0"):
         text = text[:-2]
@@ -79,6 +95,7 @@ def parse_approval_date(value: str) -> dt.date | None:
 
 
 def age_in_years(approval_date: dt.date, as_of_date: dt.date) -> float:
+    """사용승인일로부터 기준일까지의 건물 연한을 연 단위 실수로 반환한다."""
     return (as_of_date - approval_date).days / 365.2425
 
 

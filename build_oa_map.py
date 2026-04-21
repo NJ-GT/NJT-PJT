@@ -1,17 +1,42 @@
-import sys, json, os
-sys.stdout.reconfigure(encoding='utf-8')
+"""
+[파일 설명]
+서울 집계구별 숙박시설 밀집도와 화재위험도를 종합 대시보드 지도로 시각화하는 HTML을 생성하는 스크립트.
 
+주요 역할:
+  Leaflet 라이브러리로 집계구 경계를 3가지 지표로 색상 표현한다:
+    - 숙박시설 수 (절대량)
+    - 전체 건물 중 숙박 비율(%)
+    - 시설수/ha (공간 밀도)
+  집계구 클릭 시 상세 패널에 화재위험도 점수와 지표 설명이 표시된다.
+  소방서/안전센터 위치도 마커로 함께 표시한다.
+
+입력: data/oa_density.json       (집계구별 분석 데이터)
+      data/map_data.json          (개별 숙박시설 위치)
+      data/firestation_data.json  (소방서·안전센터 위치)
+출력: 집계구_숙박밀집도.html       (Leaflet 집계구 대시보드 맵)
+"""
+
+import sys, json, os
+sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
+
+# ─── 1. 집계구 데이터 로드 및 분리 ─────────────────────────────
 with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/oa_density.json', encoding='utf-8') as f:
     raw = json.load(f)
 
+# 숙박시설이 있는 집계구(filled)와 없는 집계구(empty)로 분리
+# filled: 색상과 클릭 이벤트 적용, empty: 회색 경계선만 표시
 filled = [f for f in raw['features'] if f['properties']['count'] > 0]
 empty  = [f for f in raw['features'] if f['properties']['count'] == 0]
+
+# JavaScript에 직접 삽입할 GeoJSON 문자열로 변환
 filled_json = json.dumps({'type':'FeatureCollection','features':filled}, ensure_ascii=False)
 empty_json  = json.dumps({'type':'FeatureCollection','features':empty},  ensure_ascii=False)
 
+# ─── 2. 개별 숙박시설 위치 로드 ─────────────────────────────────
 with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/map_data.json', encoding='utf-8') as f:
     places_json = json.dumps(json.load(f)['places'], ensure_ascii=False)
 
+# ─── 3. 소방서/안전센터 데이터 로드 ─────────────────────────────
 with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/firestation_data.json', encoding='utf-8') as f:
     stations_json = json.dumps(json.load(f), ensure_ascii=False)
 
@@ -440,6 +465,9 @@ document.getElementById('chk-station').addEventListener('change', function(){
 </script></body></html>
 """
 
+# ─── 4. HTML 파일 저장 ───────────────────────────────────────────
+# out_html: HTML 구조(head, body, 스타일, 패널, 범례 등)
+# script_part: JavaScript 데이터와 지도 로직
 with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/집계구_숙박밀집도.html', 'w', encoding='utf-8') as f:
     f.write(out_html + script_part)
 

@@ -1,4 +1,21 @@
 # -*- coding: utf-8 -*-
+"""
+[파일 설명]
+통합숙박시설최종안0415.csv의 누락값을 외부 API와 로컬 CSV 여러 소스를 통해
+자동으로 채워 최종 정비하는 스크립트.
+
+주요 역할:
+  1. 건축물대장 API로 사용승인일 채우기 → 사용승인일 없는 행 삭제
+  2. 로컬 CSV(통합표제부·인허가 원본)에서 도로명주소·좌표 채우기
+  3. 카카오 지오코딩 API로 남은 도로명주소·좌표 채우기
+  4. 처리 결과를 JSON 보고서로 저장
+
+입력: data/통합숙박시설최종안0415.csv
+      원본데이터/통합숙박시설표제부0414.csv (로컬 후보 소스)
+      원본데이터/서울시 통합 숙박시설 0414.csv 등 4개 인허가 원본
+출력: data/통합숙박시설최종안0415.csv (덮어쓰기)
+      reports/통합숙박시설최종안0415_정비보고서_20260415.json
+"""
 from __future__ import annotations
 
 import csv
@@ -32,16 +49,19 @@ TRANSFORMER = Transformer.from_crs("EPSG:4326", "EPSG:5174", always_xy=True)
 
 
 def norm(value: object) -> str:
+    """None이면 빈 문자열, 아니면 문자열로 변환 후 앞뒤 공백 제거."""
     return "" if value is None else str(value).strip()
 
 
 def read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
+    """UTF-8-BOM CSV를 읽어 (헤더 목록, 행 목록) 튜플 반환."""
     with path.open("r", encoding="utf-8-sig", newline="") as fp:
         reader = csv.DictReader(fp)
         return list(reader.fieldnames or []), list(reader)
 
 
 def write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) -> None:
+    """UTF-8-BOM CSV로 저장."""
     with path.open("w", encoding="utf-8-sig", newline="") as fp:
         writer = csv.DictWriter(fp, fieldnames=fieldnames)
         writer.writeheader()
@@ -49,6 +69,7 @@ def write_csv(path: Path, fieldnames: list[str], rows: list[dict[str, str]]) -> 
 
 
 def valid_date(value: object) -> bool:
+    """8자리 숫자 날짜(YYYYMMDD)이고 00000000이나 앞자리 0으로 시작하지 않으면 유효."""
     text = norm(value)
     if text.endswith(".0"):
         text = text[:-2]
@@ -56,6 +77,7 @@ def valid_date(value: object) -> bool:
 
 
 def normalize_code(value: str, width: int) -> str:
+    """시군구코드·법정동코드를 width 자리 0패딩 문자열로 정규화."""
     text = norm(value)
     if text.endswith(".0"):
         text = text[:-2]
@@ -63,6 +85,7 @@ def normalize_code(value: str, width: int) -> str:
 
 
 def normalize_number(value: str) -> str:
+    """본번·부번을 4자리 0패딩 문자열로 정규화 (예: '3' → '0003')."""
     text = norm(value)
     if not text:
         return "0000"
@@ -75,6 +98,7 @@ def normalize_number(value: str) -> str:
 
 
 def clean_road_address(value: object) -> str:
+    """도로명주소에서 쉼표 이후 부가정보 제거, 괄호 안 동명 첫 번째 항목만 유지."""
     text = norm(value)
     if not text:
         return ""
@@ -92,6 +116,7 @@ def clean_road_address(value: object) -> str:
 
 
 def fetch_bldg_items(sigungu_cd: str, bjdong_cd: str, bun: str, ji: str, session: requests.Session) -> list[dict]:
+    """건축물대장 API에서 해당 필지의 건물 표제부 목록을 반환한다."""
     url = (
         f"{BLDG_URL}?serviceKey={BLDG_KEY}"
         f"&sigunguCd={normalize_code(sigungu_cd, 5)}"
@@ -108,11 +133,18 @@ def fetch_bldg_items(sigungu_cd: str, bjdong_cd: str, bun: str, ji: str, session
         return []
     data = items.get("item", [])
     if isinstance(data, dict):
-        return [data]
+        return [data]  # 단일 항목이면 리스트로 감쌈
     return data
 
 
 def choose_use_approval_date(row: dict[str, str], items: list[dict]) -> tuple[str, str]:
+    """API 응답 items에서 가장 신뢰할 수 있는 사용승인일을 선택한다.
+
+    우선순위:
+      1. 관리건축물대장PK 정확 일치
+      2. 유효한 날짜가 한 개뿐일 때
+      3. 주건축물 레코드에서 날짜가 한 개뿐일 때
+    """
     pk = norm(row.get("관리건축물대장PK"))
 
     for item in items:
@@ -133,6 +165,7 @@ def choose_use_approval_date(row: dict[str, str], items: list[dict]) -> tuple[st
 
 
 def build_local_candidates() -> tuple[dict[str, list[dict]], dict[str, list[dict]]]:
+    """통합표제부와 인허가 원본 CSV에서 PK별·사업장명별 좌표·도로명 후보를 수집한다."""
     by_pk: defaultdict[str, list[dict]] = defaultdict(list)
     by_name: defaultdict[str, list[dict]] = defaultdict(list)
 
