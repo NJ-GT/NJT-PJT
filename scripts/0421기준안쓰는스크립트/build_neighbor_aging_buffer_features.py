@@ -45,10 +45,16 @@ BUILDING_SHP = BUILDING_DIR / "AL_D010_11_20260409_filtered.shp"
 
 OUT_LODGING = DATA_DIR / "통합숙박시설최종안0415_주변노후도_50m100m.csv"
 OUT_ANALYSIS = DATA_DIR / "분석변수_테이블_주변노후도_50m100m.csv"
+OUT_LODGING_FLOOR_AREA_VALID = DATA_DIR / "통합숙박시설최종안0415_주변노후도_50m100m_연면적유효.csv"
+OUT_ANALYSIS_FLOOR_AREA_VALID = DATA_DIR / "분석변수_테이블_주변노후도_50m100m_연면적유효.csv"
+OUT_LODGING_APPROVAL_VALID = DATA_DIR / "통합숙박시설최종안0415_주변노후도_50m100m_사용승인일유효.csv"
+OUT_ANALYSIS_APPROVAL_VALID = DATA_DIR / "분석변수_테이블_주변노후도_50m100m_사용승인일유효.csv"
 OUT_CORR = DATA_DIR / "주변노후건물_50m100m_상관행렬.csv"
 OUT_VIF_FULL = DATA_DIR / "주변노후건물_50m100m_vif_전체후보.csv"
 OUT_VIF_CORE = DATA_DIR / "주변노후건물_50m100m_vif_핵심후보.csv"
 OUT_VIF_COMBINED = DATA_DIR / "주변노후건물_50m100m_vif_기존분석변수결합.csv"
+OUT_VIF_RECOMMENDED = DATA_DIR / "주변노후건물_50m100m_vif_추천변수.csv"
+OUT_VIF_APPROVAL_RECOMMENDED = DATA_DIR / "주변노후건물_50m100m_vif_사용승인일추천변수.csv"
 OUT_SUMMARY = DATA_DIR / "주변노후건물_50m100m_요약.json"
 OUT_COLUMNS = DATA_DIR / "주변노후건물_50m100m_컬럼정의.csv"
 
@@ -285,6 +291,20 @@ def core_feature_columns() -> list[str]:
     ]
 
 
+def floor_area_required_columns() -> list[str]:
+    return [
+        "주변_노후연면적비율_30년이상_50m",
+        "주변_노후연면적비율_30년이상_100m",
+    ]
+
+
+def approval_required_columns() -> list[str]:
+    return [
+        "주변_노후건물비율_30년이상_50m",
+        "주변_노후건물비율_30년이상_100m",
+    ]
+
+
 def write_column_dictionary(path: Path) -> None:
     descriptions = []
     for radius in RADII_M:
@@ -389,6 +409,34 @@ def combined_vif_columns(df: pd.DataFrame) -> list[str]:
     return [col for col in existing + new_candidates if col in df.columns]
 
 
+def recommended_vif_columns(df: pd.DataFrame) -> list[str]:
+    columns = [
+        "소방접근성_점수",
+        "노후도_점수",
+        "반경_50m_건물수",
+        "집중도(%)",
+        "로그_주변대비_상대위험도_고유단속지점_50m",
+        "공식도로폭m",
+        "주변_노후연면적비율_30년이상_50m",
+        "주변_노후연면적비율_30년이상_100m",
+    ]
+    return [col for col in columns if col in df.columns]
+
+
+def approval_recommended_vif_columns(df: pd.DataFrame) -> list[str]:
+    columns = [
+        "소방접근성_점수",
+        "노후도_점수",
+        "반경_50m_건물수",
+        "집중도(%)",
+        "로그_주변대비_상대위험도_고유단속지점_50m",
+        "공식도로폭m",
+        "주변_노후건물비율_30년이상_50m",
+        "주변_노후건물비율_30년이상_100m",
+    ]
+    return [col for col in columns if col in df.columns]
+
+
 def main() -> None:
     print("숙박시설 로드...")
     lodging = pd.read_csv(LODGING_PATH, encoding="utf-8-sig")
@@ -413,8 +461,26 @@ def main() -> None:
     enriched_lodging.to_csv(OUT_LODGING, index=False, encoding="utf-8-sig")
     print(f"저장: {OUT_LODGING}")
 
+    required_area_cols = floor_area_required_columns()
+    lodging_area_valid = enriched_lodging[required_area_cols].notna().all(axis=1)
+    enriched_lodging_area_valid = enriched_lodging[lodging_area_valid].copy()
+    enriched_lodging_area_valid.to_csv(OUT_LODGING_FLOOR_AREA_VALID, index=False, encoding="utf-8-sig")
+    print(f"저장: {OUT_LODGING_FLOOR_AREA_VALID} ({len(enriched_lodging_area_valid):,}/{len(enriched_lodging):,}행)")
+
+    required_approval_cols = approval_required_columns()
+    lodging_approval_valid = enriched_lodging[required_approval_cols].notna().all(axis=1)
+    enriched_lodging_approval_valid = enriched_lodging[lodging_approval_valid].copy()
+    enriched_lodging_approval_valid.to_csv(OUT_LODGING_APPROVAL_VALID, index=False, encoding="utf-8-sig")
+    print(
+        f"저장: {OUT_LODGING_APPROVAL_VALID} "
+        f"({len(enriched_lodging_approval_valid):,}/{len(enriched_lodging):,}행)"
+    )
+
     combined_vif_written = False
     analysis_join_message = "분석변수_테이블.csv 없음"
+    analysis_area_valid_count = 0
+    analysis_approval_valid_count = 0
+    analysis_total_count = 0
     if ANALYSIS_PATH.exists():
         analysis = pd.read_csv(ANALYSIS_PATH, encoding="utf-8-sig")
         enriched_analysis, analysis_join_message = append_features_to_analysis(lodging, analysis, features, feature_cols)
@@ -423,10 +489,40 @@ def main() -> None:
             print(f"저장: {OUT_ANALYSIS}")
             print(f"분석변수 결합 방식: {analysis_join_message}")
 
+            analysis_total_count = len(enriched_analysis)
+            analysis_area_valid = enriched_analysis[required_area_cols].notna().all(axis=1)
+            enriched_analysis_area_valid = enriched_analysis[analysis_area_valid].copy()
+            analysis_area_valid_count = len(enriched_analysis_area_valid)
+            enriched_analysis_area_valid.to_csv(OUT_ANALYSIS_FLOOR_AREA_VALID, index=False, encoding="utf-8-sig")
+            print(
+                f"저장: {OUT_ANALYSIS_FLOOR_AREA_VALID} "
+                f"({analysis_area_valid_count:,}/{analysis_total_count:,}행)"
+            )
+
+            analysis_approval_valid = enriched_analysis[required_approval_cols].notna().all(axis=1)
+            enriched_analysis_approval_valid = enriched_analysis[analysis_approval_valid].copy()
+            analysis_approval_valid_count = len(enriched_analysis_approval_valid)
+            enriched_analysis_approval_valid.to_csv(OUT_ANALYSIS_APPROVAL_VALID, index=False, encoding="utf-8-sig")
+            print(
+                f"저장: {OUT_ANALYSIS_APPROVAL_VALID} "
+                f"({analysis_approval_valid_count:,}/{analysis_total_count:,}행)"
+            )
+
             vif_combined = calculate_vif(enriched_analysis, combined_vif_columns(enriched_analysis))
             vif_combined.to_csv(OUT_VIF_COMBINED, index=False, encoding="utf-8-sig")
             combined_vif_written = True
             print(f"저장: {OUT_VIF_COMBINED}")
+
+            vif_recommended = calculate_vif(enriched_analysis, recommended_vif_columns(enriched_analysis))
+            vif_recommended.to_csv(OUT_VIF_RECOMMENDED, index=False, encoding="utf-8-sig")
+            print(f"저장: {OUT_VIF_RECOMMENDED}")
+
+            vif_approval_recommended = calculate_vif(
+                enriched_analysis_approval_valid,
+                approval_recommended_vif_columns(enriched_analysis_approval_valid),
+            )
+            vif_approval_recommended.to_csv(OUT_VIF_APPROVAL_RECOMMENDED, index=False, encoding="utf-8-sig")
+            print(f"저장: {OUT_VIF_APPROVAL_RECOMMENDED}")
         else:
             print(analysis_join_message)
 
@@ -456,13 +552,28 @@ def main() -> None:
         "산출파일": {
             "숙박시설상세": str(OUT_LODGING.relative_to(BASE_DIR)),
             "분석변수결합": str(OUT_ANALYSIS.relative_to(BASE_DIR)),
+            "숙박시설상세_연면적유효": str(OUT_LODGING_FLOOR_AREA_VALID.relative_to(BASE_DIR)),
+            "분석변수결합_연면적유효": str(OUT_ANALYSIS_FLOOR_AREA_VALID.relative_to(BASE_DIR)),
+            "숙박시설상세_사용승인일유효": str(OUT_LODGING_APPROVAL_VALID.relative_to(BASE_DIR)),
+            "분석변수결합_사용승인일유효": str(OUT_ANALYSIS_APPROVAL_VALID.relative_to(BASE_DIR)),
             "상관행렬": str(OUT_CORR.relative_to(BASE_DIR)),
             "vif_전체후보": str(OUT_VIF_FULL.relative_to(BASE_DIR)),
             "vif_핵심후보": str(OUT_VIF_CORE.relative_to(BASE_DIR)),
             "vif_기존분석변수결합": str(OUT_VIF_COMBINED.relative_to(BASE_DIR)) if combined_vif_written else "",
+            "vif_추천변수": str(OUT_VIF_RECOMMENDED.relative_to(BASE_DIR)) if combined_vif_written else "",
+            "vif_사용승인일추천변수": str(OUT_VIF_APPROVAL_RECOMMENDED.relative_to(BASE_DIR)) if combined_vif_written else "",
             "컬럼정의": str(OUT_COLUMNS.relative_to(BASE_DIR)),
         },
         "분석변수결합메시지": analysis_join_message,
+        "숙박시설_연면적유효행수": int(len(enriched_lodging_area_valid)),
+        "숙박시설_연면적제외행수": int(len(enriched_lodging) - len(enriched_lodging_area_valid)),
+        "분석변수_전체행수": int(analysis_total_count),
+        "분석변수_연면적유효행수": int(analysis_area_valid_count),
+        "분석변수_연면적제외행수": int(analysis_total_count - analysis_area_valid_count),
+        "숙박시설_사용승인일유효행수": int(len(enriched_lodging_approval_valid)),
+        "숙박시설_사용승인일제외행수": int(len(enriched_lodging) - len(enriched_lodging_approval_valid)),
+        "분석변수_사용승인일유효행수": int(analysis_approval_valid_count),
+        "분석변수_사용승인일제외행수": int(analysis_total_count - analysis_approval_valid_count),
     }
     for radius in RADII_M:
         prefix = f"{radius}m"
