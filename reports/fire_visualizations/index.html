@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>화재출동 6개 시각화</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif;
+      background: #f8fafc;
+      color: #111827;
+    }
+    main {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+    p {
+      margin: 0 0 24px;
+      color: #4b5563;
+      line-height: 1.6;
+    }
+    ul {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    li {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    a {
+      display: block;
+      padding: 16px;
+      color: #1d4ed8;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    a:hover {
+      background: #eff6ff;
+    }
+    .meta {
+      margin-top: 18px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>화재출동 6개 시각화</h1>
+    <p>각 링크를 열면 개별 인터랙티브 시각화를 볼 수 있습니다.</p>
+    <ul><li><a href="01_year_month_fire_trend.html">1. 연도-월별 화재 발생 추세</a></li>
+<li><a href="02_weekday_hour_fire_heatmap.html">2. 요일 × 시간대 화재 히트맵</a></li>
+<li><a href="03_district_fire_map.html">3. 구별 화재 발생 지도</a></li>
+<li><a href="04_top10_fire_causes.html">4. 발화요인 TOP 10</a></li>
+<li><a href="05_response_time_vs_distance.html">5. 출동소요시간 vs 현장거리</a></li>
+<li><a href="06_high_damage_fire_map_and_ranking.html">6. 재산피해액 TOP 화재 지도/랭킹</a></li></ul>
+    <p class="meta">요약 파일: <a href="summary.json">summary.json</a></p>
+  </main>
+</body>
+</html>

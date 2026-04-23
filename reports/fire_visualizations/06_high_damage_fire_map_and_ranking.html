@@ -1,0 +1,3475 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_d46bdcd94c4cc494e087b4a7c9134662 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/MarkerCluster.Default.css"/>
+</head>
+<body>
+    
+    
+    <div style="
+        position: fixed; top: 16px; right: 16px; z-index: 9999; width: 360px;
+        background: rgba(255,255,255,0.94); border: 1px solid #d1d5db;
+        border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+        font-family: Malgun Gothic, Apple SD Gothic Neo, Arial, sans-serif;
+        font-size: 12px; max-height: 56vh; overflow: auto;">
+      <div style="padding: 10px 12px; font-weight: 700; font-size: 14px; color: #111827;">
+        재산피해액 TOP 20
+      </div>
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: #f3f4f6;">
+            <th style="padding: 6px; text-align: right;">순위</th>
+            <th style="padding: 6px; text-align: left;">구</th>
+            <th style="padding: 6px; text-align: left;">일자</th>
+            <th style="padding: 6px; text-align: right;">백만원</th>
+          </tr>
+        </thead>
+        <tbody><tr><td>1</td><td>중구</td><td>20190922</td><td>71,613.3</td></tr>
+<tr><td>2</td><td>영등포구</td><td>20190329</td><td>2,397.8</td></tr>
+<tr><td>3</td><td>중구</td><td>20210214</td><td>1,586.3</td></tr>
+<tr><td>4</td><td>강남구</td><td>20230120</td><td>1,083.5</td></tr>
+<tr><td>5</td><td>마포구</td><td>20170310</td><td>980.7</td></tr>
+<tr><td>6</td><td>중구</td><td>20190815</td><td>782.1</td></tr>
+<tr><td>7</td><td>마포구</td><td>20201006</td><td>765.9</td></tr>
+<tr><td>8</td><td>중구</td><td>20200126</td><td>507.8</td></tr>
+<tr><td>9</td><td>강남구</td><td>20201215</td><td>500.5</td></tr>
+<tr><td>10</td><td>종로구</td><td>20170924</td><td>493.2</td></tr>
+<tr><td>11</td><td>성동구</td><td>20220319</td><td>485.5</td></tr>
+<tr><td>12</td><td>중구</td><td>20190214</td><td>478.7</td></tr>
+<tr><td>13</td><td>중구</td><td>20220407</td><td>474.1</td></tr>
+<tr><td>14</td><td>마포구</td><td>20200120</td><td>464.8</td></tr>
+<tr><td>15</td><td>영등포구</td><td>20230323</td><td>442.7</td></tr>
+<tr><td>16</td><td>성동구</td><td>20220304</td><td>437.6</td></tr>
+<tr><td>17</td><td>성동구</td><td>20190115</td><td>409.9</td></tr>
+<tr><td>18</td><td>중구</td><td>20220701</td><td>357.8</td></tr>
+<tr><td>19</td><td>서초구</td><td>20191115</td><td>317.2</td></tr>
+<tr><td>20</td><td>영등포구</td><td>20170311</td><td>307.5</td></tr></tbody>
+      </table>
+    </div>
+    
+    
+            <div class="folium-map" id="map_d46bdcd94c4cc494e087b4a7c9134662" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_d46bdcd94c4cc494e087b4a7c9134662 = L.map(
+                "map_d46bdcd94c4cc494e087b4a7c9134662",
+                {
+                    center: [37.54355635, 127.00392665],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 11,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_785350b65223ae6546628d38642ef754 = L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 20,
+  "maxNativeZoom": 20,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors \u0026copy; \u003ca href=\"https://carto.com/attributions\"\u003eCARTO\u003c/a\u003e",
+  "subdomains": "abcd",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_785350b65223ae6546628d38642ef754.addTo(map_d46bdcd94c4cc494e087b4a7c9134662);
+        
+    
+            var marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2 = L.markerClusterGroup(
+                {
+}
+            );
+        
+    
+            var circle_marker_05827f61123ac831b676edc0402ded7e = L.circleMarker(
+                [37.5684404, 127.0113839],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 23.0, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_163c0e29a0b0ada33c366f3e7d6ac900 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_fc7b66c118683c76ef95a432639c18ef = $(`<div id="html_fc7b66c118683c76ef95a432639c18ef" style="width: 100.0%; height: 100.0%;"><b>#1 재산피해 71,613.3백만원</b><br>발생일자: 20190922<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 판매시설<br>사상자: 0명</div>`)[0];
+                popup_163c0e29a0b0ada33c366f3e7d6ac900.setContent(html_fc7b66c118683c76ef95a432639c18ef);
+            
+        
+
+        circle_marker_05827f61123ac831b676edc0402ded7e.bindPopup(popup_163c0e29a0b0ada33c366f3e7d6ac900)
+        ;
+
+        
+    
+    
+            circle_marker_05827f61123ac831b676edc0402ded7e.bindTooltip(
+                `<div>
+                     #1 중구: 71,613.3백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_f703bb7e7635a3c8a8e91cf2b24f6e64 = L.circleMarker(
+                [37.5163513, 126.9050452],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 19.61955089117997, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_13a6b33b3f93768a919a7d731808e646 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_72987a4521d4c76e1366ad317f14461f = $(`<div id="html_72987a4521d4c76e1366ad317f14461f" style="width: 100.0%; height: 100.0%;"><b>#2 재산피해 2,397.8백만원</b><br>발생일자: 20190329<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 방화 / 방화<br>장소: 주거 / 기타주택<br>사상자: 2명</div>`)[0];
+                popup_13a6b33b3f93768a919a7d731808e646.setContent(html_72987a4521d4c76e1366ad317f14461f);
+            
+        
+
+        circle_marker_f703bb7e7635a3c8a8e91cf2b24f6e64.bindPopup(popup_13a6b33b3f93768a919a7d731808e646)
+        ;
+
+        
+    
+    
+            circle_marker_f703bb7e7635a3c8a8e91cf2b24f6e64.bindTooltip(
+                `<div>
+                     #2 영등포구: 2,397.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_23a9c3cd2db0e72c2bbcc8dcc751ffa4 = L.circleMarker(
+                [37.5638555, 126.9839949],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 19.208425839690204, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_e1857b356f19de33251fd2dd33bc1605 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_4c77ddbb91ac7d7bfaa5b20a4713083b = $(`<div id="html_4c77ddbb91ac7d7bfaa5b20a4713083b" style="width: 100.0%; height: 100.0%;"><b>#3 재산피해 1,586.3백만원</b><br>발생일자: 20210214<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 미확인단락<br>장소: 판매/업무시설 / 판매시설<br>사상자: 3명</div>`)[0];
+                popup_e1857b356f19de33251fd2dd33bc1605.setContent(html_4c77ddbb91ac7d7bfaa5b20a4713083b);
+            
+        
+
+        circle_marker_23a9c3cd2db0e72c2bbcc8dcc751ffa4.bindPopup(popup_e1857b356f19de33251fd2dd33bc1605)
+        ;
+
+        
+    
+    
+            circle_marker_23a9c3cd2db0e72c2bbcc8dcc751ffa4.bindTooltip(
+                `<div>
+                     #3 중구: 1,586.3백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_2efbe37664f8163453a8c42e00a9fc73 = L.circleMarker(
+                [37.47698377, 127.0640769],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 18.829040471793537, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_c116ede3286411fdb7f8e4ec43a5d920 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_9bd761464013f8a0d6dd862e543aa2a5 = $(`<div id="html_9bd761464013f8a0d6dd862e543aa2a5" style="width: 100.0%; height: 100.0%;"><b>#4 재산피해 1,083.5백만원</b><br>발생일자: 20230120<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 접촉불량에 의한 단락<br>장소: 주거 / 기타주택<br>사상자: 0명</div>`)[0];
+                popup_c116ede3286411fdb7f8e4ec43a5d920.setContent(html_9bd761464013f8a0d6dd862e543aa2a5);
+            
+        
+
+        circle_marker_2efbe37664f8163453a8c42e00a9fc73.bindPopup(popup_c116ede3286411fdb7f8e4ec43a5d920)
+        ;
+
+        
+    
+    
+            circle_marker_2efbe37664f8163453a8c42e00a9fc73.bindTooltip(
+                `<div>
+                     #4 강남구: 1,083.5백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_bd31f01e61ee20c96a17577a78f5b7b6 = L.circleMarker(
+                [37.5819342, 126.8892357],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 18.72983302068928, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_89f92241562a6855dad1157f0e1236c6 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_90f82c690132f09912172e9ec8ea686a = $(`<div id="html_90f82c690132f09912172e9ec8ea686a" style="width: 100.0%; height: 100.0%;"><b>#5 재산피해 980.7백만원</b><br>발생일자: 20170310<br>지역: 마포구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 용접/ 절단/ 연마<br>장소: 판매/업무시설 / 일반업무<br>사상자: 1명</div>`)[0];
+                popup_89f92241562a6855dad1157f0e1236c6.setContent(html_90f82c690132f09912172e9ec8ea686a);
+            
+        
+
+        circle_marker_bd31f01e61ee20c96a17577a78f5b7b6.bindPopup(popup_89f92241562a6855dad1157f0e1236c6)
+        ;
+
+        
+    
+    
+            circle_marker_bd31f01e61ee20c96a17577a78f5b7b6.bindTooltip(
+                `<div>
+                     #5 마포구: 980.7백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_447aad3cb7cc2dfd92ca9a839facb34d = L.circleMarker(
+                [37.5576489, 126.9759062],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 18.50456315421448, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_fbec37ecd60e7d9a205354dd68aaea9c = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_8789fbd1408e609f1be8384a448968f8 = $(`<div id="html_8789fbd1408e609f1be8384a448968f8" style="width: 100.0%; height: 100.0%;"><b>#6 재산피해 782.1백만원</b><br>발생일자: 20190815<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 미확인단락<br>장소: 판매/업무시설 / 일반업무<br>사상자: 0명</div>`)[0];
+                popup_fbec37ecd60e7d9a205354dd68aaea9c.setContent(html_8789fbd1408e609f1be8384a448968f8);
+            
+        
+
+        circle_marker_447aad3cb7cc2dfd92ca9a839facb34d.bindPopup(popup_fbec37ecd60e7d9a205354dd68aaea9c)
+        ;
+
+        
+    
+    
+            circle_marker_447aad3cb7cc2dfd92ca9a839facb34d.bindTooltip(
+                `<div>
+                     #6 중구: 782.1백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_2fce5bfebec38a694ca9035117beeec4 = L.circleMarker(
+                [37.5399473, 126.9455565],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 18.483837910070864, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_07384d58763379bd33ebf1e720dc4d91 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_f33d6fe3b68ccbb349006b0f5123c90f = $(`<div id="html_f33d6fe3b68ccbb349006b0f5123c90f" style="width: 100.0%; height: 100.0%;"><b>#7 재산피해 765.9백만원</b><br>발생일자: 20201006<br>지역: 마포구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 음식물 조리중<br>장소: 주거 / 공동주택<br>사상자: 3명</div>`)[0];
+                popup_07384d58763379bd33ebf1e720dc4d91.setContent(html_f33d6fe3b68ccbb349006b0f5123c90f);
+            
+        
+
+        circle_marker_2fce5bfebec38a694ca9035117beeec4.bindPopup(popup_07384d58763379bd33ebf1e720dc4d91)
+        ;
+
+        
+    
+    
+            circle_marker_2fce5bfebec38a694ca9035117beeec4.bindTooltip(
+                `<div>
+                     #7 마포구: 765.9백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d3336a8cf2104a6eb35fab36718decbf = L.circleMarker(
+                [37.5602234, 127.0022471],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 18.074722818620202, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_acaca6120408d8807b37cb20fdd29da9 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_fc79ae0fbb879e1f87498598a96a2dff = $(`<div id="html_fc79ae0fbb879e1f87498598a96a2dff" style="width: 100.0%; height: 100.0%;"><b>#8 재산피해 507.8백만원</b><br>발생일자: 20200126<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 트래킹에 의한 단락<br>장소: 판매/업무시설 / 숙박시설<br>사상자: 4명</div>`)[0];
+                popup_acaca6120408d8807b37cb20fdd29da9.setContent(html_fc79ae0fbb879e1f87498598a96a2dff);
+            
+        
+
+        circle_marker_d3336a8cf2104a6eb35fab36718decbf.bindPopup(popup_acaca6120408d8807b37cb20fdd29da9)
+        ;
+
+        
+    
+    
+            circle_marker_d3336a8cf2104a6eb35fab36718decbf.bindTooltip(
+                `<div>
+                     #8 중구: 507.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_955c1ea5e364955278c8a84216cb5ba3 = L.circleMarker(
+                [37.5046476, 127.0412877],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 18.06030912918687, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_efa7817c81d3b63d1d3c30e9ed453b34 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_57adf8f835eed0b7e3c9cdd83292446e = $(`<div id="html_57adf8f835eed0b7e3c9cdd83292446e" style="width: 100.0%; height: 100.0%;"><b>#9 재산피해 500.5백만원</b><br>발생일자: 20201215<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 미확인단락<br>장소: 판매/업무시설 / 일반업무<br>사상자: 0명</div>`)[0];
+                popup_efa7817c81d3b63d1d3c30e9ed453b34.setContent(html_57adf8f835eed0b7e3c9cdd83292446e);
+            
+        
+
+        circle_marker_955c1ea5e364955278c8a84216cb5ba3.bindPopup(popup_efa7817c81d3b63d1d3c30e9ed453b34)
+        ;
+
+        
+    
+    
+            circle_marker_955c1ea5e364955278c8a84216cb5ba3.bindTooltip(
+                `<div>
+                     #9 강남구: 500.5백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_2da901b69033056c75c8838eb2931e9c = L.circleMarker(
+                [37.5722232, 127.0195704],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 18.04581477407921, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_0e096e19f2ff5e3455137bb2a07c8efe = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_bf100e63942b33312cb72135b67ba1bf = $(`<div id="html_bf100e63942b33312cb72135b67ba1bf" style="width: 100.0%; height: 100.0%;"><b>#10 재산피해 493.2백만원</b><br>발생일자: 20170924<br>지역: 종로구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 공장시설<br>사상자: 0명</div>`)[0];
+                popup_0e096e19f2ff5e3455137bb2a07c8efe.setContent(html_bf100e63942b33312cb72135b67ba1bf);
+            
+        
+
+        circle_marker_2da901b69033056c75c8838eb2931e9c.bindPopup(popup_0e096e19f2ff5e3455137bb2a07c8efe)
+        ;
+
+        
+    
+    
+            circle_marker_2da901b69033056c75c8838eb2931e9c.bindTooltip(
+                `<div>
+                     #10 종로구: 493.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_264aaec1950455e2c18def6470914804 = L.circleMarker(
+                [37.570921, 127.041424],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 18.03012892030319, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_37b19b0efed4afd24dbc1128b48fc3de = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_789468538cbaeb9c22e304ed664c831c = $(`<div id="html_789468538cbaeb9c22e304ed664c831c" style="width: 100.0%; height: 100.0%;"><b>#11 재산피해 485.5백만원</b><br>발생일자: 20220319<br>지역: 성동구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 접촉불량에 의한 단락<br>장소: 판매/업무시설 / 판매시설<br>사상자: 2명</div>`)[0];
+                popup_37b19b0efed4afd24dbc1128b48fc3de.setContent(html_789468538cbaeb9c22e304ed664c831c);
+            
+        
+
+        circle_marker_264aaec1950455e2c18def6470914804.bindPopup(popup_37b19b0efed4afd24dbc1128b48fc3de)
+        ;
+
+        
+    
+    
+            circle_marker_264aaec1950455e2c18def6470914804.bindTooltip(
+                `<div>
+                     #11 성동구: 485.5백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_3b54ed0a81065fb38853ede8decbcd47 = L.circleMarker(
+                [37.5668269, 126.996895],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 18.015987783532875, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_0a6dca1ba02bececd2c2baa043c907df = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_a6ce1ebef26fe0bb7612f02edd9e2898 = $(`<div id="html_a6ce1ebef26fe0bb7612f02edd9e2898" style="width: 100.0%; height: 100.0%;"><b>#12 재산피해 478.7백만원</b><br>발생일자: 20190214<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 기계적 요인 / 기타(기계적요인)<br>장소: 산업시설 / 작업장<br>사상자: 0명</div>`)[0];
+                popup_0a6dca1ba02bececd2c2baa043c907df.setContent(html_a6ce1ebef26fe0bb7612f02edd9e2898);
+            
+        
+
+        circle_marker_3b54ed0a81065fb38853ede8decbcd47.bindPopup(popup_0a6dca1ba02bececd2c2baa043c907df)
+        ;
+
+        
+    
+    
+            circle_marker_3b54ed0a81065fb38853ede8decbcd47.bindTooltip(
+                `<div>
+                     #12 중구: 478.7백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_4bd9a256942fdaf03415b21ea47cbde5 = L.circleMarker(
+                [37.562076, 126.994384],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 18.006539138870558, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_360697e1a5e1276070b41826273e9153 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_58c8f96be2801471a59ff4fa59d88c58 = $(`<div id="html_58c8f96be2801471a59ff4fa59d88c58" style="width: 100.0%; height: 100.0%;"><b>#13 재산피해 474.1백만원</b><br>발생일자: 20220407<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 작업장<br>사상자: 3명</div>`)[0];
+                popup_360697e1a5e1276070b41826273e9153.setContent(html_58c8f96be2801471a59ff4fa59d88c58);
+            
+        
+
+        circle_marker_4bd9a256942fdaf03415b21ea47cbde5.bindPopup(popup_360697e1a5e1276070b41826273e9153)
+        ;
+
+        
+    
+    
+            circle_marker_4bd9a256942fdaf03415b21ea47cbde5.bindTooltip(
+                `<div>
+                     #13 중구: 474.1백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_40edd7bd55d3569cb44a740ca55182fc = L.circleMarker(
+                [37.555817, 126.9437394],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.986666292500686, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_9a1657cf8c514da85da8562b9aa1418a = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_7f15f411a00e75d4d44b284e07132b4d = $(`<div id="html_7f15f411a00e75d4d44b284e07132b4d" style="width: 100.0%; height: 100.0%;"><b>#14 재산피해 464.8백만원</b><br>발생일자: 20200120<br>지역: 마포구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 집합시설 / 운동시설<br>사상자: 0명</div>`)[0];
+                popup_9a1657cf8c514da85da8562b9aa1418a.setContent(html_7f15f411a00e75d4d44b284e07132b4d);
+            
+        
+
+        circle_marker_40edd7bd55d3569cb44a740ca55182fc.bindPopup(popup_9a1657cf8c514da85da8562b9aa1418a)
+        ;
+
+        
+    
+    
+            circle_marker_40edd7bd55d3569cb44a740ca55182fc.bindTooltip(
+                `<div>
+                     #14 마포구: 464.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_8e8a694123f1aed0e8407c8a7948992e = L.circleMarker(
+                [37.51440074, 126.8922023],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.938201576905712, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_d98dda5d4b79401e8dff71ccce191831 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_fc54892c7802d48157e0b3bbf63a2e90 = $(`<div id="html_fc54892c7802d48157e0b3bbf63a2e90" style="width: 100.0%; height: 100.0%;"><b>#15 재산피해 442.7백만원</b><br>발생일자: 20230323<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 절연열화에 의한 단락<br>장소: 산업시설 / 공장시설<br>사상자: 0명</div>`)[0];
+                popup_d98dda5d4b79401e8dff71ccce191831.setContent(html_fc54892c7802d48157e0b3bbf63a2e90);
+            
+        
+
+        circle_marker_8e8a694123f1aed0e8407c8a7948992e.bindPopup(popup_d98dda5d4b79401e8dff71ccce191831)
+        ;
+
+        
+    
+    
+            circle_marker_8e8a694123f1aed0e8407c8a7948992e.bindTooltip(
+                `<div>
+                     #15 영등포구: 442.7백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_f3bd6146d0b67f134c07c7ab2bad2e40 = L.circleMarker(
+                [37.538592, 127.060578],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.926703497947663, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_448cd8c97bd885f630c75b1519ed3eb5 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_db0a271664168dbeaec8621231b9fbaa = $(`<div id="html_db0a271664168dbeaec8621231b9fbaa" style="width: 100.0%; height: 100.0%;"><b>#16 재산피해 437.6백만원</b><br>발생일자: 20220304<br>지역: 성동구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 작업장<br>사상자: 0명</div>`)[0];
+                popup_448cd8c97bd885f630c75b1519ed3eb5.setContent(html_db0a271664168dbeaec8621231b9fbaa);
+            
+        
+
+        circle_marker_f3bd6146d0b67f134c07c7ab2bad2e40.bindPopup(popup_448cd8c97bd885f630c75b1519ed3eb5)
+        ;
+
+        
+    
+    
+            circle_marker_f3bd6146d0b67f134c07c7ab2bad2e40.bindTooltip(
+                `<div>
+                     #16 성동구: 437.6백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_9088a3a34ce115edda4a3a88a32b3fbc = L.circleMarker(
+                [37.5691319, 127.0387829],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.861725392505736, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_9c831f2e75462b233047707bf3693abf = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_b7546f4991cc8d4eef4c17ef6f76f6dc = $(`<div id="html_b7546f4991cc8d4eef4c17ef6f76f6dc" style="width: 100.0%; height: 100.0%;"><b>#17 재산피해 409.9백만원</b><br>발생일자: 20190115<br>지역: 성동구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 트래킹에 의한 단락<br>장소: 산업시설 / 창고시설<br>사상자: 0명</div>`)[0];
+                popup_9c831f2e75462b233047707bf3693abf.setContent(html_b7546f4991cc8d4eef4c17ef6f76f6dc);
+            
+        
+
+        circle_marker_9088a3a34ce115edda4a3a88a32b3fbc.bindPopup(popup_9c831f2e75462b233047707bf3693abf)
+        ;
+
+        
+    
+    
+            circle_marker_9088a3a34ce115edda4a3a88a32b3fbc.bindTooltip(
+                `<div>
+                     #17 성동구: 409.9백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c12862d24babc26ada5f4a023417e565 = L.circleMarker(
+                [37.56282, 126.989543],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.72632131893826, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_ebd9647bae1d76252c3dd341a6caafe3 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_fa988ed33888aa12eff4c4d0569bc8f4 = $(`<div id="html_fa988ed33888aa12eff4c4d0569bc8f4" style="width: 100.0%; height: 100.0%;"><b>#18 재산피해 357.8백만원</b><br>발생일자: 20220701<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 일반업무<br>사상자: 2명</div>`)[0];
+                popup_ebd9647bae1d76252c3dd341a6caafe3.setContent(html_fa988ed33888aa12eff4c4d0569bc8f4);
+            
+        
+
+        circle_marker_c12862d24babc26ada5f4a023417e565.bindPopup(popup_ebd9647bae1d76252c3dd341a6caafe3)
+        ;
+
+        
+    
+    
+            circle_marker_c12862d24babc26ada5f4a023417e565.bindTooltip(
+                `<div>
+                     #18 중구: 357.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_982959df63257f8721b59f63481780fd = L.circleMarker(
+                [37.4970946, 127.0237321],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.606389142379555, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_0a00416f3a8496a8408e6823d7e15530 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_2e284eaff68be7174d135073a37a39fe = $(`<div id="html_2e284eaff68be7174d135073a37a39fe" style="width: 100.0%; height: 100.0%;"><b>#19 재산피해 317.2백만원</b><br>발생일자: 20191115<br>지역: 서초구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 판매시설<br>사상자: 15명</div>`)[0];
+                popup_0a00416f3a8496a8408e6823d7e15530.setContent(html_2e284eaff68be7174d135073a37a39fe);
+            
+        
+
+        circle_marker_982959df63257f8721b59f63481780fd.bindPopup(popup_0a00416f3a8496a8408e6823d7e15530)
+        ;
+
+        
+    
+    
+            circle_marker_982959df63257f8721b59f63481780fd.bindTooltip(
+                `<div>
+                     #19 서초구: 317.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_bbb3b1bd7c825d7a250f68d8fd14080d = L.circleMarker(
+                [37.5013344, 126.8986258],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.57575553602594, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_7bb34aea3fc11d593b8d75abbfbff412 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_1489f0681d47e2215de38ae97f5059e4 = $(`<div id="html_1489f0681d47e2215de38ae97f5059e4" style="width: 100.0%; height: 100.0%;"><b>#20 재산피해 307.5백만원</b><br>발생일자: 20170311<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 가스누출(폭발) / 가스누출(폭발)<br>장소: 판매/업무시설 / 일반업무<br>사상자: 3명</div>`)[0];
+                popup_7bb34aea3fc11d593b8d75abbfbff412.setContent(html_1489f0681d47e2215de38ae97f5059e4);
+            
+        
+
+        circle_marker_bbb3b1bd7c825d7a250f68d8fd14080d.bindPopup(popup_7bb34aea3fc11d593b8d75abbfbff412)
+        ;
+
+        
+    
+    
+            circle_marker_bbb3b1bd7c825d7a250f68d8fd14080d.bindTooltip(
+                `<div>
+                     #20 영등포구: 307.5백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_6475d9c1e843dba3eab63ebc764ceb1f = L.circleMarker(
+                [37.56315579, 126.9967044],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.571192176899885, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_3fdfb055301000178463cc162f6f652c = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_8479a320bc9e821f1b437b68eace565a = $(`<div id="html_8479a320bc9e821f1b437b68eace565a" style="width: 100.0%; height: 100.0%;"><b>#21 재산피해 306.1백만원</b><br>발생일자: 20230403<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 작업장<br>사상자: 2명</div>`)[0];
+                popup_3fdfb055301000178463cc162f6f652c.setContent(html_8479a320bc9e821f1b437b68eace565a);
+            
+        
+
+        circle_marker_6475d9c1e843dba3eab63ebc764ceb1f.bindPopup(popup_3fdfb055301000178463cc162f6f652c)
+        ;
+
+        
+    
+    
+            circle_marker_6475d9c1e843dba3eab63ebc764ceb1f.bindTooltip(
+                `<div>
+                     #21 중구: 306.1백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_0563756951ab77a26740c2247ffb5901 = L.circleMarker(
+                [37.56805924, 126.9942429],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.502204781976165, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_3e7d684e168bc97da406ff2faba46e2a = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_392f55eccbed899791cbac52b1876ae3 = $(`<div id="html_392f55eccbed899791cbac52b1876ae3" style="width: 100.0%; height: 100.0%;"><b>#22 재산피해 285.6백만원</b><br>발생일자: 20231021<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 방화 / 방화<br>장소: 주거 / 공동주택<br>사상자: 2명</div>`)[0];
+                popup_3e7d684e168bc97da406ff2faba46e2a.setContent(html_392f55eccbed899791cbac52b1876ae3);
+            
+        
+
+        circle_marker_0563756951ab77a26740c2247ffb5901.bindPopup(popup_3e7d684e168bc97da406ff2faba46e2a)
+        ;
+
+        
+    
+    
+            circle_marker_0563756951ab77a26740c2247ffb5901.bindTooltip(
+                `<div>
+                     #22 중구: 285.6백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_554109d6bc51d759a48aa3fa2d10d8ed = L.circleMarker(
+                [37.5408431, 126.936475],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.472359288256694, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_a8e96934e1eaa9356a34ce7a9f6aa792 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_c133de70d22fc67e6cf776e6c9087b3f = $(`<div id="html_c133de70d22fc67e6cf776e6c9087b3f" style="width: 100.0%; height: 100.0%;"><b>#23 재산피해 277.2백만원</b><br>발생일자: 20200423<br>지역: 마포구<br>화재유형: 자동차/철도차량<br>발화요인: 미상 / 미상<br>장소: 자동차/철도차량 / 자동차<br>사상자: 0명</div>`)[0];
+                popup_a8e96934e1eaa9356a34ce7a9f6aa792.setContent(html_c133de70d22fc67e6cf776e6c9087b3f);
+            
+        
+
+        circle_marker_554109d6bc51d759a48aa3fa2d10d8ed.bindPopup(popup_a8e96934e1eaa9356a34ce7a9f6aa792)
+        ;
+
+        
+    
+    
+            circle_marker_554109d6bc51d759a48aa3fa2d10d8ed.bindTooltip(
+                `<div>
+                     #23 마포구: 277.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b4f92daef614b43c44e7384defedf162 = L.circleMarker(
+                [37.5167061, 127.1135153],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.438947317946646, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_29de45520a7fc2c9ed64ce477d1aa2d4 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_d2dc32578570b16788b0f60c7a6ac201 = $(`<div id="html_d2dc32578570b16788b0f60c7a6ac201" style="width: 100.0%; height: 100.0%;"><b>#24 재산피해 268.0백만원</b><br>발생일자: 20211228<br>지역: 송파구<br>화재유형: 자동차/철도차량<br>발화요인: 전기적 요인 / 절연열화에 의한 단락<br>장소: 자동차/철도차량 / 자동차<br>사상자: 0명</div>`)[0];
+                popup_29de45520a7fc2c9ed64ce477d1aa2d4.setContent(html_d2dc32578570b16788b0f60c7a6ac201);
+            
+        
+
+        circle_marker_b4f92daef614b43c44e7384defedf162.bindPopup(popup_29de45520a7fc2c9ed64ce477d1aa2d4)
+        ;
+
+        
+    
+    
+            circle_marker_b4f92daef614b43c44e7384defedf162.bindTooltip(
+                `<div>
+                     #24 송파구: 268.0백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_348ca759c94be69a7090a1d556dad9af = L.circleMarker(
+                [37.5462696, 127.0591559],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.434288053834294, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_14ed9c7b3fdb51e2fe1e453389759e5c = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_81ac01a980c5191ceef14dff2b93d55d = $(`<div id="html_81ac01a980c5191ceef14dff2b93d55d" style="width: 100.0%; height: 100.0%;"><b>#25 재산피해 266.8백만원</b><br>발생일자: 20200314<br>지역: 성동구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 공장시설<br>사상자: 0명</div>`)[0];
+                popup_14ed9c7b3fdb51e2fe1e453389759e5c.setContent(html_81ac01a980c5191ceef14dff2b93d55d);
+            
+        
+
+        circle_marker_348ca759c94be69a7090a1d556dad9af.bindPopup(popup_14ed9c7b3fdb51e2fe1e453389759e5c)
+        ;
+
+        
+    
+    
+            circle_marker_348ca759c94be69a7090a1d556dad9af.bindTooltip(
+                `<div>
+                     #25 성동구: 266.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d3831e311f353b303d6d467c142c5b5b = L.circleMarker(
+                [37.5633578, 126.9854675],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.393039591274388, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_72828cf501056f9d4a4358698b507530 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_6ed2f3527f162b54ef488260fba54dcd = $(`<div id="html_6ed2f3527f162b54ef488260fba54dcd" style="width: 100.0%; height: 100.0%;"><b>#26 재산피해 256.0백만원</b><br>발생일자: 20190919<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 음식물 조리중<br>장소: 생활서비스 / 음식점<br>사상자: 1명</div>`)[0];
+                popup_72828cf501056f9d4a4358698b507530.setContent(html_6ed2f3527f162b54ef488260fba54dcd);
+            
+        
+
+        circle_marker_d3831e311f353b303d6d467c142c5b5b.bindPopup(popup_72828cf501056f9d4a4358698b507530)
+        ;
+
+        
+    
+    
+            circle_marker_d3831e311f353b303d6d467c142c5b5b.bindTooltip(
+                `<div>
+                     #26 중구: 256.0백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c141740f3dec2399d6b0d06296fd9990 = L.circleMarker(
+                [37.5201749, 126.9076395],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.368796383601506, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_21d562bbb5b5f4f9e22e020970177d25 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_c4f7107bcfd7bcf97a5370f7f6204559 = $(`<div id="html_c4f7107bcfd7bcf97a5370f7f6204559" style="width: 100.0%; height: 100.0%;"><b>#27 재산피해 249.8백만원</b><br>발생일자: 20180920<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 트래킹에 의한 단락<br>장소: 판매/업무시설 / 판매시설<br>사상자: 0명</div>`)[0];
+                popup_21d562bbb5b5f4f9e22e020970177d25.setContent(html_c4f7107bcfd7bcf97a5370f7f6204559);
+            
+        
+
+        circle_marker_c141740f3dec2399d6b0d06296fd9990.bindPopup(popup_21d562bbb5b5f4f9e22e020970177d25)
+        ;
+
+        
+    
+    
+            circle_marker_c141740f3dec2399d6b0d06296fd9990.bindTooltip(
+                `<div>
+                     #27 영등포구: 249.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_3b161aca86dd835e58b0289b3525bfdb = L.circleMarker(
+                [37.5160971, 127.1116491],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.35893531224619, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_080c21d331fe111f134ac9aec8c240ae = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_d719a07b57e509f7f1c6174afb7cb9fc = $(`<div id="html_d719a07b57e509f7f1c6174afb7cb9fc" style="width: 100.0%; height: 100.0%;"><b>#28 재산피해 247.3백만원</b><br>발생일자: 20191030<br>지역: 송파구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 운수자동차시설 / 자동차시설<br>사상자: 5명</div>`)[0];
+                popup_080c21d331fe111f134ac9aec8c240ae.setContent(html_d719a07b57e509f7f1c6174afb7cb9fc);
+            
+        
+
+        circle_marker_3b161aca86dd835e58b0289b3525bfdb.bindPopup(popup_080c21d331fe111f134ac9aec8c240ae)
+        ;
+
+        
+    
+    
+            circle_marker_3b161aca86dd835e58b0289b3525bfdb.bindTooltip(
+                `<div>
+                     #28 송파구: 247.3백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a830dc68a48e707502fc5b6f64c7e5ad = L.circleMarker(
+                [37.5184643, 127.0429481],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.345045993199683, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_8f7abcb6f1ff38b734c4ec944583fca8 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_a6cc9a14c2ad1b97be504a9e7986f601 = $(`<div id="html_a6cc9a14c2ad1b97be504a9e7986f601" style="width: 100.0%; height: 100.0%;"><b>#29 재산피해 243.9백만원</b><br>발생일자: 20181226<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 일반업무<br>사상자: 1명</div>`)[0];
+                popup_8f7abcb6f1ff38b734c4ec944583fca8.setContent(html_a6cc9a14c2ad1b97be504a9e7986f601);
+            
+        
+
+        circle_marker_a830dc68a48e707502fc5b6f64c7e5ad.bindPopup(popup_8f7abcb6f1ff38b734c4ec944583fca8)
+        ;
+
+        
+    
+    
+            circle_marker_a830dc68a48e707502fc5b6f64c7e5ad.bindTooltip(
+                `<div>
+                     #29 강남구: 243.9백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_024b688d9c225f8254ae79b3f408736a = L.circleMarker(
+                [37.560912, 126.97835],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.344188796378056, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_4c4d676cdab06d2d216e596296a54411 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_4080fb9b3bb347018b7830a89643f3f5 = $(`<div id="html_4080fb9b3bb347018b7830a89643f3f5" style="width: 100.0%; height: 100.0%;"><b>#30 재산피해 243.7백만원</b><br>발생일자: 20221214<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 기타(부주의)<br>장소: 생활서비스 / 일상서비스<br>사상자: 1명</div>`)[0];
+                popup_4c4d676cdab06d2d216e596296a54411.setContent(html_4080fb9b3bb347018b7830a89643f3f5);
+            
+        
+
+        circle_marker_024b688d9c225f8254ae79b3f408736a.bindPopup(popup_4c4d676cdab06d2d216e596296a54411)
+        ;
+
+        
+    
+    
+            circle_marker_024b688d9c225f8254ae79b3f408736a.bindTooltip(
+                `<div>
+                     #30 중구: 243.7백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_ca3eeab2d5a1321dfbdb3548529e94df = L.circleMarker(
+                [37.5557928, 127.0156881],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.29184778707993, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_4d86f8b6d9c977b97540caf3b136f85d = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_a00cb4bc425b26c8d91701fa3e8b7664 = $(`<div id="html_a00cb4bc425b26c8d91701fa3e8b7664" style="width: 100.0%; height: 100.0%;"><b>#31 재산피해 231.2백만원</b><br>발생일자: 20210604<br>지역: 중구<br>화재유형: 자동차/철도차량<br>발화요인: 부주의 / 가연물 근접방치<br>장소: 자동차/철도차량 / 자동차<br>사상자: 2명</div>`)[0];
+                popup_4d86f8b6d9c977b97540caf3b136f85d.setContent(html_a00cb4bc425b26c8d91701fa3e8b7664);
+            
+        
+
+        circle_marker_ca3eeab2d5a1321dfbdb3548529e94df.bindPopup(popup_4d86f8b6d9c977b97540caf3b136f85d)
+        ;
+
+        
+    
+    
+            circle_marker_ca3eeab2d5a1321dfbdb3548529e94df.bindTooltip(
+                `<div>
+                     #31 중구: 231.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_bdefeaf6fc74ddf0a898fc09e9b9cf21 = L.circleMarker(
+                [37.5108195, 127.0469239],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.286318816432278, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_2cbafb043bb4c84be457c8064635f88d = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_18246f4fc4c736093453fbb2beeb4db9 = $(`<div id="html_18246f4fc4c736093453fbb2beeb4db9" style="width: 100.0%; height: 100.0%;"><b>#32 재산피해 229.9백만원</b><br>발생일자: 20171019<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 용접/ 절단/ 연마<br>장소: 판매/업무시설 / 숙박시설<br>사상자: 0명</div>`)[0];
+                popup_2cbafb043bb4c84be457c8064635f88d.setContent(html_18246f4fc4c736093453fbb2beeb4db9);
+            
+        
+
+        circle_marker_bdefeaf6fc74ddf0a898fc09e9b9cf21.bindPopup(popup_2cbafb043bb4c84be457c8064635f88d)
+        ;
+
+        
+    
+    
+            circle_marker_bdefeaf6fc74ddf0a898fc09e9b9cf21.bindTooltip(
+                `<div>
+                     #32 강남구: 229.9백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_87093196aa2654577044920fd34ef7bd = L.circleMarker(
+                [37.52616442, 126.9310342],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.27382324097597, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_7da0ba34980b4a701494214f80444fbb = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_288dda0b53c1054be0a40182920538c3 = $(`<div id="html_288dda0b53c1054be0a40182920538c3" style="width: 100.0%; height: 100.0%;"><b>#33 재산피해 227.1백만원</b><br>발생일자: 20240322<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 판매시설<br>사상자: 1명</div>`)[0];
+                popup_7da0ba34980b4a701494214f80444fbb.setContent(html_288dda0b53c1054be0a40182920538c3);
+            
+        
+
+        circle_marker_87093196aa2654577044920fd34ef7bd.bindPopup(popup_7da0ba34980b4a701494214f80444fbb)
+        ;
+
+        
+    
+    
+            circle_marker_87093196aa2654577044920fd34ef7bd.bindTooltip(
+                `<div>
+                     #33 영등포구: 227.1백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_16f68b58186af39723b54df29120f2dc = L.circleMarker(
+                [37.54889992, 126.8755682],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.26881422565191, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_7a9fefa7e848b0e0d27db773f78825a3 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_f18f5c2546ad7c38be08b0c725cf5743 = $(`<div id="html_f18f5c2546ad7c38be08b0c725cf5743" style="width: 100.0%; height: 100.0%;"><b>#34 재산피해 225.9백만원</b><br>발생일자: 20230216<br>지역: 강서구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 미확인단락<br>장소: 운수자동차시설 / 자동차시설<br>사상자: 0명</div>`)[0];
+                popup_7a9fefa7e848b0e0d27db773f78825a3.setContent(html_f18f5c2546ad7c38be08b0c725cf5743);
+            
+        
+
+        circle_marker_16f68b58186af39723b54df29120f2dc.bindPopup(popup_7a9fefa7e848b0e0d27db773f78825a3)
+        ;
+
+        
+    
+    
+            circle_marker_16f68b58186af39723b54df29120f2dc.bindTooltip(
+                `<div>
+                     #34 강서구: 225.9백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_43e131c37fce7cd3212d2b83a9a9554d = L.circleMarker(
+                [37.49974924, 127.0472881],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.267901983192438, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_56fd00a1041f9714d7d02a17af328776 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_4a3b3c35666b3a277f14a636fb005914 = $(`<div id="html_4a3b3c35666b3a277f14a636fb005914" style="width: 100.0%; height: 100.0%;"><b>#35 재산피해 225.7백만원</b><br>발생일자: 20240620<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 용접/ 절단/ 연마<br>장소: 주거 / 공동주택<br>사상자: 4명</div>`)[0];
+                popup_56fd00a1041f9714d7d02a17af328776.setContent(html_4a3b3c35666b3a277f14a636fb005914);
+            
+        
+
+        circle_marker_43e131c37fce7cd3212d2b83a9a9554d.bindPopup(popup_56fd00a1041f9714d7d02a17af328776)
+        ;
+
+        
+    
+    
+            circle_marker_43e131c37fce7cd3212d2b83a9a9554d.bindTooltip(
+                `<div>
+                     #35 강남구: 225.7백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_cdcdda54a8f0aeb8d8138ad0ed3dd2e8 = L.circleMarker(
+                [37.5184985, 126.9101142],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.245929289005034, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_ea1d94df773238a191b0ad5b7ea47eb3 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_c83fc6a4016a6f09ca052640cb5294ab = $(`<div id="html_c83fc6a4016a6f09ca052640cb5294ab" style="width: 100.0%; height: 100.0%;"><b>#36 재산피해 220.8백만원</b><br>발생일자: 20190707<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 불씨/불꽃/화원방치<br>장소: 판매/업무시설 / 숙박시설<br>사상자: 32명</div>`)[0];
+                popup_ea1d94df773238a191b0ad5b7ea47eb3.setContent(html_c83fc6a4016a6f09ca052640cb5294ab);
+            
+        
+
+        circle_marker_cdcdda54a8f0aeb8d8138ad0ed3dd2e8.bindPopup(popup_ea1d94df773238a191b0ad5b7ea47eb3)
+        ;
+
+        
+    
+    
+            circle_marker_cdcdda54a8f0aeb8d8138ad0ed3dd2e8.bindTooltip(
+                `<div>
+                     #36 영등포구: 220.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_83ea65e99f8900daa42b32dc548f3d47 = L.circleMarker(
+                [37.5668228, 126.9928127],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.236454818556084, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_999b0d90c2408844e38f3fed86d08d8f = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_68e8821bbd5d5073a3ddaf2d15229cac = $(`<div id="html_68e8821bbd5d5073a3ddaf2d15229cac" style="width: 100.0%; height: 100.0%;"><b>#37 재산피해 218.7백만원</b><br>발생일자: 20211123<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 음식물 조리중<br>장소: 생활서비스 / 음식점<br>사상자: 0명</div>`)[0];
+                popup_999b0d90c2408844e38f3fed86d08d8f.setContent(html_68e8821bbd5d5073a3ddaf2d15229cac);
+            
+        
+
+        circle_marker_83ea65e99f8900daa42b32dc548f3d47.bindPopup(popup_999b0d90c2408844e38f3fed86d08d8f)
+        ;
+
+        
+    
+    
+            circle_marker_83ea65e99f8900daa42b32dc548f3d47.bindTooltip(
+                `<div>
+                     #37 중구: 218.7백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_91db89ef8ed3ed650e7fabf7bee5b4c2 = L.circleMarker(
+                [37.5077052, 127.1032648],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.22410112446301, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_793e6baada8942934b3e5e1949f7741a = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_1a4d67cb6ca85abc5d7dfbb8c986c3fb = $(`<div id="html_1a4d67cb6ca85abc5d7dfbb8c986c3fb" style="width: 100.0%; height: 100.0%;"><b>#38 재산피해 216.0백만원</b><br>발생일자: 20191001<br>지역: 송파구<br>화재유형: 건축/구조물<br>발화요인: 기타 / 기타<br>장소: 운수자동차시설 / 자동차시설<br>사상자: 0명</div>`)[0];
+                popup_793e6baada8942934b3e5e1949f7741a.setContent(html_1a4d67cb6ca85abc5d7dfbb8c986c3fb);
+            
+        
+
+        circle_marker_91db89ef8ed3ed650e7fabf7bee5b4c2.bindPopup(popup_793e6baada8942934b3e5e1949f7741a)
+        ;
+
+        
+    
+    
+            circle_marker_91db89ef8ed3ed650e7fabf7bee5b4c2.bindTooltip(
+                `<div>
+                     #38 송파구: 216.0백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_203bab14ca4acae7b6de6f0a6852f8bf = L.circleMarker(
+                [37.5099498, 126.8970877],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.215066652313006, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_eb154b6ef45b61b54915c8b9a7d5b06e = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_1137e67da7b00cdd8abafe39e8fafdca = $(`<div id="html_1137e67da7b00cdd8abafe39e8fafdca" style="width: 100.0%; height: 100.0%;"><b>#39 재산피해 214.0백만원</b><br>발생일자: 20210823<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 용접/ 절단/ 연마<br>장소: 집합시설 / 종교시설<br>사상자: 0명</div>`)[0];
+                popup_eb154b6ef45b61b54915c8b9a7d5b06e.setContent(html_1137e67da7b00cdd8abafe39e8fafdca);
+            
+        
+
+        circle_marker_203bab14ca4acae7b6de6f0a6852f8bf.bindPopup(popup_eb154b6ef45b61b54915c8b9a7d5b06e)
+        ;
+
+        
+    
+    
+            circle_marker_203bab14ca4acae7b6de6f0a6852f8bf.bindTooltip(
+                `<div>
+                     #39 영등포구: 214.0백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a57e917049da4f201d56f6d5e7f093a6 = L.circleMarker(
+                [37.557019, 126.9537462],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.202296897007876, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_3fccf8bc640f31e0ce073a347b9b14a0 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_0f3f901d582c3f53c701b41f7deb2b0f = $(`<div id="html_0f3f901d582c3f53c701b41f7deb2b0f" style="width: 100.0%; height: 100.0%;"><b>#40 재산피해 211.3백만원</b><br>발생일자: 20231112<br>지역: 마포구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 주거 / 공동주택<br>사상자: 0명</div>`)[0];
+                popup_3fccf8bc640f31e0ce073a347b9b14a0.setContent(html_0f3f901d582c3f53c701b41f7deb2b0f);
+            
+        
+
+        circle_marker_a57e917049da4f201d56f6d5e7f093a6.bindPopup(popup_3fccf8bc640f31e0ce073a347b9b14a0)
+        ;
+
+        
+    
+    
+            circle_marker_a57e917049da4f201d56f6d5e7f093a6.bindTooltip(
+                `<div>
+                     #40 마포구: 211.3백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_7f013bbd1d37c036999b9a3520fd6053 = L.circleMarker(
+                [37.513753, 127.04822],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.128906377615504, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_e97d3f15454d48c98278fa6f4b2ebe95 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_8184f27e5ff03db0196ce1c47f34c68b = $(`<div id="html_8184f27e5ff03db0196ce1c47f34c68b" style="width: 100.0%; height: 100.0%;"><b>#41 재산피해 196.3백만원</b><br>발생일자: 20220808<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 트래킹에 의한 단락<br>장소: 주거 / 공동주택<br>사상자: 1명</div>`)[0];
+                popup_e97d3f15454d48c98278fa6f4b2ebe95.setContent(html_8184f27e5ff03db0196ce1c47f34c68b);
+            
+        
+
+        circle_marker_7f013bbd1d37c036999b9a3520fd6053.bindPopup(popup_e97d3f15454d48c98278fa6f4b2ebe95)
+        ;
+
+        
+    
+    
+            circle_marker_7f013bbd1d37c036999b9a3520fd6053.bindTooltip(
+                `<div>
+                     #41 강남구: 196.3백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d90fcdabe155843583e9ae3b30337d1a = L.circleMarker(
+                [37.524759, 126.934089],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.126596918390568, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_73e7461bb05274758c15270d4bfa6937 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_158af8e5764cceffaeae6b999d73fcce = $(`<div id="html_158af8e5764cceffaeae6b999d73fcce" style="width: 100.0%; height: 100.0%;"><b>#42 재산피해 195.8백만원</b><br>발생일자: 20220521<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 기타(전기적요인)<br>장소: 교육시설 / 학교<br>사상자: 0명</div>`)[0];
+                popup_73e7461bb05274758c15270d4bfa6937.setContent(html_158af8e5764cceffaeae6b999d73fcce);
+            
+        
+
+        circle_marker_d90fcdabe155843583e9ae3b30337d1a.bindPopup(popup_73e7461bb05274758c15270d4bfa6937)
+        ;
+
+        
+    
+    
+            circle_marker_d90fcdabe155843583e9ae3b30337d1a.bindTooltip(
+                `<div>
+                     #42 영등포구: 195.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_5b14431e2ca72bd2fca24842fe771c83 = L.circleMarker(
+                [37.4937594, 127.1246965],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.11779740287991, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_3ac96181533a929449be1cb99272ef4e = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_67bb068885a4304ca24530441a471c79 = $(`<div id="html_67bb068885a4304ca24530441a471c79" style="width: 100.0%; height: 100.0%;"><b>#43 재산피해 194.1백만원</b><br>발생일자: 20171201<br>지역: 송파구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 운수자동차시설 / 자동차시설<br>사상자: 0명</div>`)[0];
+                popup_3ac96181533a929449be1cb99272ef4e.setContent(html_67bb068885a4304ca24530441a471c79);
+            
+        
+
+        circle_marker_5b14431e2ca72bd2fca24842fe771c83.bindPopup(popup_3ac96181533a929449be1cb99272ef4e)
+        ;
+
+        
+    
+    
+            circle_marker_5b14431e2ca72bd2fca24842fe771c83.bindTooltip(
+                `<div>
+                     #43 송파구: 194.1백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c764a28a8e8c9637a600dcea21089aba = L.circleMarker(
+                [37.55120202, 126.9196887],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.10657857737273, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_43378345eddfe6436870a645e61970ba = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_46cf082056b081041c1a80f44a1f3bb4 = $(`<div id="html_46cf082056b081041c1a80f44a1f3bb4" style="width: 100.0%; height: 100.0%;"><b>#44 재산피해 191.9백만원</b><br>발생일자: 20231127<br>지역: 마포구<br>화재유형: 건축/구조물<br>발화요인: 방화의심 / 방화의심<br>장소: 집합시설 / 공연장<br>사상자: 1명</div>`)[0];
+                popup_43378345eddfe6436870a645e61970ba.setContent(html_46cf082056b081041c1a80f44a1f3bb4);
+            
+        
+
+        circle_marker_c764a28a8e8c9637a600dcea21089aba.bindPopup(popup_43378345eddfe6436870a645e61970ba)
+        ;
+
+        
+    
+    
+            circle_marker_c764a28a8e8c9637a600dcea21089aba.bindTooltip(
+                `<div>
+                     #44 마포구: 191.9백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_d0fbc89c276f1b7d13aa76dcd4c73640 = L.circleMarker(
+                [37.5674909, 126.9931652],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.105784974439736, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_8cbb9a7ba6e845b5fc1ed150fdc562ed = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_3c5d25f6b28cd93b691a19047645649f = $(`<div id="html_3c5d25f6b28cd93b691a19047645649f" style="width: 100.0%; height: 100.0%;"><b>#45 재산피해 191.8백만원</b><br>발생일자: 20180222<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 작업장<br>사상자: 0명</div>`)[0];
+                popup_8cbb9a7ba6e845b5fc1ed150fdc562ed.setContent(html_3c5d25f6b28cd93b691a19047645649f);
+            
+        
+
+        circle_marker_d0fbc89c276f1b7d13aa76dcd4c73640.bindPopup(popup_8cbb9a7ba6e845b5fc1ed150fdc562ed)
+        ;
+
+        
+    
+    
+            circle_marker_d0fbc89c276f1b7d13aa76dcd4c73640.bindTooltip(
+                `<div>
+                     #45 중구: 191.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_6239c02eaf9bfa8c8168439ae83b0110 = L.circleMarker(
+                [37.52891735, 126.8933619],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.08619692044099, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_1c5a316f7e3a0e8dcd2f2e1876f2e792 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_92e8092368336e6c1569bee4d4e720ac = $(`<div id="html_92e8092368336e6c1569bee4d4e720ac" style="width: 100.0%; height: 100.0%;"><b>#46 재산피해 188.1백만원</b><br>발생일자: 20241215<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 미확인단락<br>장소: 산업시설 / 공장시설<br>사상자: 0명</div>`)[0];
+                popup_1c5a316f7e3a0e8dcd2f2e1876f2e792.setContent(html_92e8092368336e6c1569bee4d4e720ac);
+            
+        
+
+        circle_marker_6239c02eaf9bfa8c8168439ae83b0110.bindPopup(popup_1c5a316f7e3a0e8dcd2f2e1876f2e792)
+        ;
+
+        
+    
+    
+            circle_marker_6239c02eaf9bfa8c8168439ae83b0110.bindTooltip(
+                `<div>
+                     #46 영등포구: 188.1백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_270a766384b01161f147c347428221dd = L.circleMarker(
+                [37.51881545, 126.8896424],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.067861053487203, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_bc8fa630f7043827ffe900fe6e7bbd81 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_a844682f19c97d0ebe4e6c9142672298 = $(`<div id="html_a844682f19c97d0ebe4e6c9142672298" style="width: 100.0%; height: 100.0%;"><b>#47 재산피해 184.6백만원</b><br>발생일자: 20230521<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 담배꽁초<br>장소: 운수자동차시설 / 자동차시설<br>사상자: 0명</div>`)[0];
+                popup_bc8fa630f7043827ffe900fe6e7bbd81.setContent(html_a844682f19c97d0ebe4e6c9142672298);
+            
+        
+
+        circle_marker_270a766384b01161f147c347428221dd.bindPopup(popup_bc8fa630f7043827ffe900fe6e7bbd81)
+        ;
+
+        
+    
+    
+            circle_marker_270a766384b01161f147c347428221dd.bindTooltip(
+                `<div>
+                     #47 영등포구: 184.6백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_0819caead17cf671d7c7702eb650a0f2 = L.circleMarker(
+                [37.52313783, 127.0420702],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.06333347377202, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_5a93c914d38db5952da0a1312b80816b = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_eb100608b663eed2396ce306184f0f85 = $(`<div id="html_eb100608b663eed2396ce306184f0f85" style="width: 100.0%; height: 100.0%;"><b>#48 재산피해 183.8백만원</b><br>발생일자: 20230319<br>지역: 강남구<br>화재유형: 자동차/철도차량<br>발화요인: 미상 / 미상<br>장소: 자동차/철도차량 / 자동차<br>사상자: 0명</div>`)[0];
+                popup_5a93c914d38db5952da0a1312b80816b.setContent(html_eb100608b663eed2396ce306184f0f85);
+            
+        
+
+        circle_marker_0819caead17cf671d7c7702eb650a0f2.bindPopup(popup_5a93c914d38db5952da0a1312b80816b)
+        ;
+
+        
+    
+    
+            circle_marker_0819caead17cf671d7c7702eb650a0f2.bindTooltip(
+                `<div>
+                     #48 강남구: 183.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_2c19ae5e804a2fccbd5febd40be3860e = L.circleMarker(
+                [37.504761, 127.134173],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.05392089533008, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_d4e2c8d30d8248c10df738a7e14b9a18 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_02a81b494ad3ffbe04f01f8e3a6c9c65 = $(`<div id="html_02a81b494ad3ffbe04f01f8e3a6c9c65" style="width: 100.0%; height: 100.0%;"><b>#49 재산피해 182.1백만원</b><br>발생일자: 20220103<br>지역: 송파구<br>화재유형: 건축/구조물<br>발화요인: 가스누출(폭발) / 가스누출(폭발)<br>장소: 주거 / 단독주택<br>사상자: 0명</div>`)[0];
+                popup_d4e2c8d30d8248c10df738a7e14b9a18.setContent(html_02a81b494ad3ffbe04f01f8e3a6c9c65);
+            
+        
+
+        circle_marker_2c19ae5e804a2fccbd5febd40be3860e.bindPopup(popup_d4e2c8d30d8248c10df738a7e14b9a18)
+        ;
+
+        
+    
+    
+            circle_marker_2c19ae5e804a2fccbd5febd40be3860e.bindTooltip(
+                `<div>
+                     #49 송파구: 182.1백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_889c107e5fd2fba9acacc08188466c57 = L.circleMarker(
+                [37.57013703, 127.0378525],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.04922495097543, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_0589aacbe3e5ad4b7e3dbb8d99bd8c80 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_1cbe01b08f37ab0b93afd04206f0e516 = $(`<div id="html_1cbe01b08f37ab0b93afd04206f0e516" style="width: 100.0%; height: 100.0%;"><b>#50 재산피해 181.2백만원</b><br>발생일자: 20230930<br>지역: 성동구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 판매시설<br>사상자: 0명</div>`)[0];
+                popup_0589aacbe3e5ad4b7e3dbb8d99bd8c80.setContent(html_1cbe01b08f37ab0b93afd04206f0e516);
+            
+        
+
+        circle_marker_889c107e5fd2fba9acacc08188466c57.bindPopup(popup_0589aacbe3e5ad4b7e3dbb8d99bd8c80)
+        ;
+
+        
+    
+    
+            circle_marker_889c107e5fd2fba9acacc08188466c57.bindTooltip(
+                `<div>
+                     #50 성동구: 181.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_f877e7ce76355b3fb93eb66a3080f934 = L.circleMarker(
+                [37.528302, 126.9083473],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.04127867194756, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_c405590a27ea82600442bde73f81082a = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_9fb1457e11ce09099536e86fdf94f104 = $(`<div id="html_9fb1457e11ce09099536e86fdf94f104" style="width: 100.0%; height: 100.0%;"><b>#51 재산피해 179.8백만원</b><br>발생일자: 20170608<br>지역: 영등포구<br>화재유형: 자동차/철도차량<br>발화요인: 방화 / 방화<br>장소: 자동차/철도차량 / 자동차<br>사상자: 1명</div>`)[0];
+                popup_c405590a27ea82600442bde73f81082a.setContent(html_9fb1457e11ce09099536e86fdf94f104);
+            
+        
+
+        circle_marker_f877e7ce76355b3fb93eb66a3080f934.bindPopup(popup_c405590a27ea82600442bde73f81082a)
+        ;
+
+        
+    
+    
+            circle_marker_f877e7ce76355b3fb93eb66a3080f934.bindTooltip(
+                `<div>
+                     #51 영등포구: 179.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_354a373d5fe721970cae0cc8b8f52df1 = L.circleMarker(
+                [37.5663826, 127.0011138],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.018129177142917, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_1fdebe3616e7906dfcb95928f40e0c99 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_e7d307bc2c5f08457582e29856075aba = $(`<div id="html_e7d307bc2c5f08457582e29856075aba" style="width: 100.0%; height: 100.0%;"><b>#52 재산피해 175.6백만원</b><br>발생일자: 20170524<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 작업장<br>사상자: 4명</div>`)[0];
+                popup_1fdebe3616e7906dfcb95928f40e0c99.setContent(html_e7d307bc2c5f08457582e29856075aba);
+            
+        
+
+        circle_marker_354a373d5fe721970cae0cc8b8f52df1.bindPopup(popup_1fdebe3616e7906dfcb95928f40e0c99)
+        ;
+
+        
+    
+    
+            circle_marker_354a373d5fe721970cae0cc8b8f52df1.bindTooltip(
+                `<div>
+                     #52 중구: 175.6백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c071f59c8ab26f613ff8850f6b96b916 = L.circleMarker(
+                [37.5482679, 126.8781865],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.012645647068645, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_7a02f134713128386d70541b93d482c1 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_364f589feae2a00abc9a91b139acc5b7 = $(`<div id="html_364f589feae2a00abc9a91b139acc5b7" style="width: 100.0%; height: 100.0%;"><b>#53 재산피해 174.7백만원</b><br>발생일자: 20241219<br>지역: 강서구<br>화재유형: 자동차/철도차량<br>발화요인: 전기적 요인 / 미확인단락<br>장소: 자동차/철도차량 / 자동차<br>사상자: 0명</div>`)[0];
+                popup_7a02f134713128386d70541b93d482c1.setContent(html_364f589feae2a00abc9a91b139acc5b7);
+            
+        
+
+        circle_marker_c071f59c8ab26f613ff8850f6b96b916.bindPopup(popup_7a02f134713128386d70541b93d482c1)
+        ;
+
+        
+    
+    
+            circle_marker_c071f59c8ab26f613ff8850f6b96b916.bindTooltip(
+                `<div>
+                     #53 강서구: 174.7백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_aeb6af4a68ce014bba4e71f7057b693c = L.circleMarker(
+                [37.5464786, 126.8234835],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.010843417129127, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_61a7b61988af501aa22f3a77102423e8 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_84d6b616c920c61482b55746755addad = $(`<div id="html_84d6b616c920c61482b55746755addad" style="width: 100.0%; height: 100.0%;"><b>#54 재산피해 174.3백만원</b><br>발생일자: 20210612<br>지역: 강서구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 미확인단락<br>장소: 산업시설 / 창고시설<br>사상자: 0명</div>`)[0];
+                popup_61a7b61988af501aa22f3a77102423e8.setContent(html_84d6b616c920c61482b55746755addad);
+            
+        
+
+        circle_marker_aeb6af4a68ce014bba4e71f7057b693c.bindPopup(popup_61a7b61988af501aa22f3a77102423e8)
+        ;
+
+        
+    
+    
+            circle_marker_aeb6af4a68ce014bba4e71f7057b693c.bindTooltip(
+                `<div>
+                     #54 강서구: 174.3백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b149428eb1e85424e1e0e29b0e64815c = L.circleMarker(
+                [37.5296301, 126.8476866],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 17.007675913466834, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_74ef901c6b6e59afff4f9e9d1e6ce239 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_0f1744e8a02be20788e0b03766f19aa1 = $(`<div id="html_0f1744e8a02be20788e0b03766f19aa1" style="width: 100.0%; height: 100.0%;"><b>#55 재산피해 173.8백만원</b><br>발생일자: 20241010<br>지역: 강서구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 음식물 조리중<br>장소: 생활서비스 / 음식점<br>사상자: 0명</div>`)[0];
+                popup_74ef901c6b6e59afff4f9e9d1e6ce239.setContent(html_0f1744e8a02be20788e0b03766f19aa1);
+            
+        
+
+        circle_marker_b149428eb1e85424e1e0e29b0e64815c.bindPopup(popup_74ef901c6b6e59afff4f9e9d1e6ce239)
+        ;
+
+        
+    
+    
+            circle_marker_b149428eb1e85424e1e0e29b0e64815c.bindTooltip(
+                `<div>
+                     #55 강서구: 173.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_6522b860f3833ec59db9bc3ca103ce4d = L.circleMarker(
+                [37.52159171, 127.0285204],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.97632060872734, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_594049b1408b20debce74f835918417e = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_a57d87af85fb73e8662bcb4b8d68707c = $(`<div id="html_a57d87af85fb73e8662bcb4b8d68707c" style="width: 100.0%; height: 100.0%;"><b>#56 재산피해 168.4백만원</b><br>발생일자: 20240804<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 미확인단락<br>장소: 의료/복지시설 / 의료시설<br>사상자: 0명</div>`)[0];
+                popup_594049b1408b20debce74f835918417e.setContent(html_a57d87af85fb73e8662bcb4b8d68707c);
+            
+        
+
+        circle_marker_6522b860f3833ec59db9bc3ca103ce4d.bindPopup(popup_594049b1408b20debce74f835918417e)
+        ;
+
+        
+    
+    
+            circle_marker_6522b860f3833ec59db9bc3ca103ce4d.bindTooltip(
+                `<div>
+                     #56 강남구: 168.4백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_37e01706305e5cc94f85331a1dabeb73 = L.circleMarker(
+                [37.56588698, 127.0055617],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.972673421687958, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_45c77d76da1488da391c4ceb546c8864 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_511c01899e086b0ab3b4ffdd0cf6075b = $(`<div id="html_511c01899e086b0ab3b4ffdd0cf6075b" style="width: 100.0%; height: 100.0%;"><b>#57 재산피해 167.8백만원</b><br>발생일자: 20241128<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 트래킹에 의한 단락<br>장소: 판매/업무시설 / 일반업무<br>사상자: 1명</div>`)[0];
+                popup_45c77d76da1488da391c4ceb546c8864.setContent(html_511c01899e086b0ab3b4ffdd0cf6075b);
+            
+        
+
+        circle_marker_37e01706305e5cc94f85331a1dabeb73.bindPopup(popup_45c77d76da1488da391c4ceb546c8864)
+        ;
+
+        
+    
+    
+            circle_marker_37e01706305e5cc94f85331a1dabeb73.bindTooltip(
+                `<div>
+                     #57 중구: 167.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_c828d3befc419813bda499521c691dd7 = L.circleMarker(
+                [37.52173858, 126.9279189],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.97222251639261, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_65539b5a791053cd03d5148cbc771cf6 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_bd16f17dcaa2f367fe13ce15aebc4110 = $(`<div id="html_bd16f17dcaa2f367fe13ce15aebc4110" style="width: 100.0%; height: 100.0%;"><b>#58 재산피해 167.7백만원</b><br>발생일자: 20240109<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 음식물 조리중<br>장소: 판매/업무시설 / 일반업무<br>사상자: 2명</div>`)[0];
+                popup_65539b5a791053cd03d5148cbc771cf6.setContent(html_bd16f17dcaa2f367fe13ce15aebc4110);
+            
+        
+
+        circle_marker_c828d3befc419813bda499521c691dd7.bindPopup(popup_65539b5a791053cd03d5148cbc771cf6)
+        ;
+
+        
+    
+    
+            circle_marker_c828d3befc419813bda499521c691dd7.bindTooltip(
+                `<div>
+                     #58 영등포구: 167.7백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_09293f09f5e8e65b5ef994d5f9b2a5f2 = L.circleMarker(
+                [37.51280839, 127.0159758],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.967839292414446, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_02cc59ab3f32f480eeb216f6c0998f09 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_ab71db969483627b70ba2f094a4d8d06 = $(`<div id="html_ab71db969483627b70ba2f094a4d8d06" style="width: 100.0%; height: 100.0%;"><b>#59 재산피해 167.0백만원</b><br>발생일자: 20241218<br>지역: 서초구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 주거 / 공동주택<br>사상자: 1명</div>`)[0];
+                popup_02cc59ab3f32f480eeb216f6c0998f09.setContent(html_ab71db969483627b70ba2f094a4d8d06);
+            
+        
+
+        circle_marker_09293f09f5e8e65b5ef994d5f9b2a5f2.bindPopup(popup_02cc59ab3f32f480eeb216f6c0998f09)
+        ;
+
+        
+    
+    
+            circle_marker_09293f09f5e8e65b5ef994d5f9b2a5f2.bindTooltip(
+                `<div>
+                     #59 서초구: 167.0백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_2fcff2dd4293958d7b1bff29f7f6fba1 = L.circleMarker(
+                [37.5647901, 126.9946346],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.909729347529066, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_498316acd96d8bab8bbcefeed1170957 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_4553bd755090f6a524ed83c8dfc59985 = $(`<div id="html_4553bd755090f6a524ed83c8dfc59985" style="width: 100.0%; height: 100.0%;"><b>#60 재산피해 157.5백만원</b><br>발생일자: 20190911<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 절연열화에 의한 단락<br>장소: 산업시설 / 작업장<br>사상자: 0명</div>`)[0];
+                popup_498316acd96d8bab8bbcefeed1170957.setContent(html_4553bd755090f6a524ed83c8dfc59985);
+            
+        
+
+        circle_marker_2fcff2dd4293958d7b1bff29f7f6fba1.bindPopup(popup_498316acd96d8bab8bbcefeed1170957)
+        ;
+
+        
+    
+    
+            circle_marker_2fcff2dd4293958d7b1bff29f7f6fba1.bindTooltip(
+                `<div>
+                     #60 중구: 157.5백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_4c221cab9a2a5b14d595d013a0b69b64 = L.circleMarker(
+                [37.46437371, 127.1101798],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.883180190935988, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_fb2b3c2bd671034b1f897ff296813acc = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_4b75cc49b10e37581f0abab3f88ee191 = $(`<div id="html_4b75cc49b10e37581f0abab3f88ee191" style="width: 100.0%; height: 100.0%;"><b>#61 재산피해 153.3백만원</b><br>발생일자: 20230303<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 주거 / 기타주택<br>사상자: 0명</div>`)[0];
+                popup_fb2b3c2bd671034b1f897ff296813acc.setContent(html_4b75cc49b10e37581f0abab3f88ee191);
+            
+        
+
+        circle_marker_4c221cab9a2a5b14d595d013a0b69b64.bindPopup(popup_fb2b3c2bd671034b1f897ff296813acc)
+        ;
+
+        
+    
+    
+            circle_marker_4c221cab9a2a5b14d595d013a0b69b64.bindTooltip(
+                `<div>
+                     #61 강남구: 153.3백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_7679865c860917ec525e57cf28a84f9b = L.circleMarker(
+                [37.5078, 127.0669973],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.87800742901583, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_c052f80d1e0f7d713ac3a809a9a1c746 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_b8e50d101e60c971ccafe158e2e78ebb = $(`<div id="html_b8e50d101e60c971ccafe158e2e78ebb" style="width: 100.0%; height: 100.0%;"><b>#62 재산피해 152.6백만원</b><br>발생일자: 20191113<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 담배꽁초<br>장소: 운수자동차시설 / 자동차시설<br>사상자: 0명</div>`)[0];
+                popup_c052f80d1e0f7d713ac3a809a9a1c746.setContent(html_b8e50d101e60c971ccafe158e2e78ebb);
+            
+        
+
+        circle_marker_7679865c860917ec525e57cf28a84f9b.bindPopup(popup_c052f80d1e0f7d713ac3a809a9a1c746)
+        ;
+
+        
+    
+    
+            circle_marker_7679865c860917ec525e57cf28a84f9b.bindTooltip(
+                `<div>
+                     #62 강남구: 152.6백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_dad706ef06fdcded340030fb3a074b27 = L.circleMarker(
+                [37.4784876, 127.0655503],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.872978126492896, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_5da990bede6211b51cc92ad2c0af0335 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_55d84a0e8ea26a3868f1eaa52c07e7ae = $(`<div id="html_55d84a0e8ea26a3868f1eaa52c07e7ae" style="width: 100.0%; height: 100.0%;"><b>#63 재산피해 151.8백만원</b><br>발생일자: 20170329<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 기타(부주의)<br>장소: 기타서비스 / 기타건축물<br>사상자: 1명</div>`)[0];
+                popup_5da990bede6211b51cc92ad2c0af0335.setContent(html_55d84a0e8ea26a3868f1eaa52c07e7ae);
+            
+        
+
+        circle_marker_dad706ef06fdcded340030fb3a074b27.bindPopup(popup_5da990bede6211b51cc92ad2c0af0335)
+        ;
+
+        
+    
+    
+            circle_marker_dad706ef06fdcded340030fb3a074b27.bindTooltip(
+                `<div>
+                     #63 강남구: 151.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_31b561a9b63b64ea4ddff44b93174978 = L.circleMarker(
+                [37.5575949, 127.014417],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.864140029603334, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_40e349707b3a92ee8fe4d9674b65253d = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_8a0591d21c56fed4b40c866f9d731fac = $(`<div id="html_8a0591d21c56fed4b40c866f9d731fac" style="width: 100.0%; height: 100.0%;"><b>#64 재산피해 150.4백만원</b><br>발생일자: 20181101<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 작업장<br>사상자: 1명</div>`)[0];
+                popup_40e349707b3a92ee8fe4d9674b65253d.setContent(html_8a0591d21c56fed4b40c866f9d731fac);
+            
+        
+
+        circle_marker_31b561a9b63b64ea4ddff44b93174978.bindPopup(popup_40e349707b3a92ee8fe4d9674b65253d)
+        ;
+
+        
+    
+    
+            circle_marker_31b561a9b63b64ea4ddff44b93174978.bindTooltip(
+                `<div>
+                     #64 중구: 150.4백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_556cd1409f9c236373c7283a73ec5b1a = L.circleMarker(
+                [37.5029775, 127.0398422],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.849318231526993, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_0e6ca54ac288ca7134a90c232dbbeea8 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_62f9bad25efbf13d3e1dc97ad33cfd59 = $(`<div id="html_62f9bad25efbf13d3e1dc97ad33cfd59" style="width: 100.0%; height: 100.0%;"><b>#65 재산피해 148.2백만원</b><br>발생일자: 20210104<br>지역: 강남구<br>화재유형: 기타(쓰레기 화재등)<br>발화요인: 부주의 / 담배꽁초<br>장소: 기타 / 야외<br>사상자: 0명</div>`)[0];
+                popup_0e6ca54ac288ca7134a90c232dbbeea8.setContent(html_62f9bad25efbf13d3e1dc97ad33cfd59);
+            
+        
+
+        circle_marker_556cd1409f9c236373c7283a73ec5b1a.bindPopup(popup_0e6ca54ac288ca7134a90c232dbbeea8)
+        ;
+
+        
+    
+    
+            circle_marker_556cd1409f9c236373c7283a73ec5b1a.bindTooltip(
+                `<div>
+                     #65 강남구: 148.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_073392177f38307848c31d34714bf073 = L.circleMarker(
+                [37.5751052, 126.9891555],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.80298116146577, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_eef81c5e4eca0d4b400dd0468c023ca4 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_4e3d04db9ec7f339a72e19d8cb84fb69 = $(`<div id="html_4e3d04db9ec7f339a72e19d8cb84fb69" style="width: 100.0%; height: 100.0%;"><b>#66 재산피해 141.5백만원</b><br>발생일자: 20190202<br>지역: 종로구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 일반업무<br>사상자: 0명</div>`)[0];
+                popup_eef81c5e4eca0d4b400dd0468c023ca4.setContent(html_4e3d04db9ec7f339a72e19d8cb84fb69);
+            
+        
+
+        circle_marker_073392177f38307848c31d34714bf073.bindPopup(popup_eef81c5e4eca0d4b400dd0468c023ca4)
+        ;
+
+        
+    
+    
+            circle_marker_073392177f38307848c31d34714bf073.bindTooltip(
+                `<div>
+                     #66 종로구: 141.5백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_1e62b65e637a5ff56d6d184b0bc2095e = L.circleMarker(
+                [37.5402636, 127.0619212],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.779615162321672, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_e5ddc5e1d0d05b063841345965cd7c65 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_be24be4218bd8d5c30af54ec66a476b6 = $(`<div id="html_be24be4218bd8d5c30af54ec66a476b6" style="width: 100.0%; height: 100.0%;"><b>#67 재산피해 138.2백만원</b><br>발생일자: 20211119<br>지역: 성동구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 불씨/불꽃/화원방치<br>장소: 산업시설 / 작업장<br>사상자: 0명</div>`)[0];
+                popup_e5ddc5e1d0d05b063841345965cd7c65.setContent(html_be24be4218bd8d5c30af54ec66a476b6);
+            
+        
+
+        circle_marker_1e62b65e637a5ff56d6d184b0bc2095e.bindPopup(popup_e5ddc5e1d0d05b063841345965cd7c65)
+        ;
+
+        
+    
+    
+            circle_marker_1e62b65e637a5ff56d6d184b0bc2095e.bindTooltip(
+                `<div>
+                     #67 성동구: 138.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_f2b61b1b4dc1581212fbdc409d4d9766 = L.circleMarker(
+                [37.478126, 127.065175],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.720688799782174, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_beb1f342c5746db9f38c0a61cbf5b036 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_57c463c7034d5306d202c818c7931920 = $(`<div id="html_57c463c7034d5306d202c818c7931920" style="width: 100.0%; height: 100.0%;"><b>#68 재산피해 130.2백만원</b><br>발생일자: 20220304<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 주거 / 기타주택<br>사상자: 0명</div>`)[0];
+                popup_beb1f342c5746db9f38c0a61cbf5b036.setContent(html_57c463c7034d5306d202c818c7931920);
+            
+        
+
+        circle_marker_f2b61b1b4dc1581212fbdc409d4d9766.bindPopup(popup_beb1f342c5746db9f38c0a61cbf5b036)
+        ;
+
+        
+    
+    
+            circle_marker_f2b61b1b4dc1581212fbdc409d4d9766.bindTooltip(
+                `<div>
+                     #68 강남구: 130.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_09d80f0cfc5a6547b82ef2c546649a80 = L.circleMarker(
+                [37.48685082, 127.1204963],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.714257465976463, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_df05fb648e38dc22072fdb438751fc84 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_3c590955c07230ac65faf8f9a0522185 = $(`<div id="html_3c590955c07230ac65faf8f9a0522185" style="width: 100.0%; height: 100.0%;"><b>#69 재산피해 129.4백만원</b><br>발생일자: 20241216<br>지역: 송파구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 절연열화에 의한 단락<br>장소: 판매/업무시설 / 일반업무<br>사상자: 0명</div>`)[0];
+                popup_df05fb648e38dc22072fdb438751fc84.setContent(html_3c590955c07230ac65faf8f9a0522185);
+            
+        
+
+        circle_marker_09d80f0cfc5a6547b82ef2c546649a80.bindPopup(popup_df05fb648e38dc22072fdb438751fc84)
+        ;
+
+        
+    
+    
+            circle_marker_09d80f0cfc5a6547b82ef2c546649a80.bindTooltip(
+                `<div>
+                     #69 송파구: 129.4백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a7c7a98aaaf01843cfc30dacc733e956 = L.circleMarker(
+                [37.5189092, 126.9007249],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.7097716182239, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_b2e6d720348cb472d4e25d57cd5bb77f = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_37e4e740aca07107fe297a8365a63df3 = $(`<div id="html_37e4e740aca07107fe297a8365a63df3" style="width: 100.0%; height: 100.0%;"><b>#70 재산피해 128.8백만원</b><br>발생일자: 20170109<br>지역: 영등포구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 불씨/불꽃/화원방치<br>장소: 생활서비스 / 일상서비스<br>사상자: 0명</div>`)[0];
+                popup_b2e6d720348cb472d4e25d57cd5bb77f.setContent(html_37e4e740aca07107fe297a8365a63df3);
+            
+        
+
+        circle_marker_a7c7a98aaaf01843cfc30dacc733e956.bindPopup(popup_b2e6d720348cb472d4e25d57cd5bb77f)
+        ;
+
+        
+    
+    
+            circle_marker_a7c7a98aaaf01843cfc30dacc733e956.bindTooltip(
+                `<div>
+                     #70 영등포구: 128.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_8e661e5263aea5cbc51e095ecf71fd75 = L.circleMarker(
+                [37.5624045, 126.995957],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.705630116756055, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_efb104983d446063e36bbc6d100796a9 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_72a5e4b6c67d6c361878c65ecf6b4279 = $(`<div id="html_72a5e4b6c67d6c361878c65ecf6b4279" style="width: 100.0%; height: 100.0%;"><b>#71 재산피해 128.3백만원</b><br>발생일자: 20180529<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 방화 / 방화<br>장소: 주거 / 공동주택<br>사상자: 14명</div>`)[0];
+                popup_efb104983d446063e36bbc6d100796a9.setContent(html_72a5e4b6c67d6c361878c65ecf6b4279);
+            
+        
+
+        circle_marker_8e661e5263aea5cbc51e095ecf71fd75.bindPopup(popup_efb104983d446063e36bbc6d100796a9)
+        ;
+
+        
+    
+    
+            circle_marker_8e661e5263aea5cbc51e095ecf71fd75.bindTooltip(
+                `<div>
+                     #71 중구: 128.3백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_6050be9c2f2b740ff7eb3a322da45877 = L.circleMarker(
+                [37.5005361, 127.1514038],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.694066950223807, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_c9a5047c875297d2d280d7c4c5f6a186 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_c5f778e7d68df105d5d90442f0bff3a5 = $(`<div id="html_c5f778e7d68df105d5d90442f0bff3a5" style="width: 100.0%; height: 100.0%;"><b>#72 재산피해 126.8백만원</b><br>발생일자: 20180319<br>지역: 송파구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 음식물 조리중<br>장소: 생활서비스 / 음식점<br>사상자: 0명</div>`)[0];
+                popup_c9a5047c875297d2d280d7c4c5f6a186.setContent(html_c5f778e7d68df105d5d90442f0bff3a5);
+            
+        
+
+        circle_marker_6050be9c2f2b740ff7eb3a322da45877.bindPopup(popup_c9a5047c875297d2d280d7c4c5f6a186)
+        ;
+
+        
+    
+    
+            circle_marker_6050be9c2f2b740ff7eb3a322da45877.bindTooltip(
+                `<div>
+                     #72 송파구: 126.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_3c9725a0bc0a5a392b116abe02d59b89 = L.circleMarker(
+                [37.528757, 126.846657],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.693470330232806, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_bd1239bbf2064fc695d04ddb45556337 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_8fbcf1e99e2f23a60dca50b7b29b9fdf = $(`<div id="html_8fbcf1e99e2f23a60dca50b7b29b9fdf" style="width: 100.0%; height: 100.0%;"><b>#73 재산피해 126.7백만원</b><br>발생일자: 20220120<br>지역: 강서구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 숙박시설<br>사상자: 0명</div>`)[0];
+                popup_bd1239bbf2064fc695d04ddb45556337.setContent(html_8fbcf1e99e2f23a60dca50b7b29b9fdf);
+            
+        
+
+        circle_marker_3c9725a0bc0a5a392b116abe02d59b89.bindPopup(popup_bd1239bbf2064fc695d04ddb45556337)
+        ;
+
+        
+    
+    
+            circle_marker_3c9725a0bc0a5a392b116abe02d59b89.bindTooltip(
+                `<div>
+                     #73 강서구: 126.7백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_e159d3720834bded226c1844d01f9776 = L.circleMarker(
+                [37.4900019, 126.9959038],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.673338125467694, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_6e80f5edad0b705eece2d68a4ad95e37 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_1622aaa82f1d96ec665156ada24c665e = $(`<div id="html_1622aaa82f1d96ec665156ada24c665e" style="width: 100.0%; height: 100.0%;"><b>#74 재산피해 124.2백만원</b><br>발생일자: 20180524<br>지역: 서초구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 미확인단락<br>장소: 주거 / 단독주택<br>사상자: 3명</div>`)[0];
+                popup_6e80f5edad0b705eece2d68a4ad95e37.setContent(html_1622aaa82f1d96ec665156ada24c665e);
+            
+        
+
+        circle_marker_e159d3720834bded226c1844d01f9776.bindPopup(popup_6e80f5edad0b705eece2d68a4ad95e37)
+        ;
+
+        
+    
+    
+            circle_marker_e159d3720834bded226c1844d01f9776.bindTooltip(
+                `<div>
+                     #74 서초구: 124.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_0ba7b282c324cbf8ec0ef25ba6e34d61 = L.circleMarker(
+                [37.5694309, 126.9813261],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.67319387944853, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_da74382cb0351103b71ab66a9911d35a = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_dc96f8d0f53ea54ccb4c80a72cfb8a83 = $(`<div id="html_dc96f8d0f53ea54ccb4c80a72cfb8a83" style="width: 100.0%; height: 100.0%;"><b>#75 재산피해 124.2백만원</b><br>발생일자: 20200703<br>지역: 종로구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 음식물 조리중<br>장소: 생활서비스 / 음식점<br>사상자: 0명</div>`)[0];
+                popup_da74382cb0351103b71ab66a9911d35a.setContent(html_dc96f8d0f53ea54ccb4c80a72cfb8a83);
+            
+        
+
+        circle_marker_0ba7b282c324cbf8ec0ef25ba6e34d61.bindPopup(popup_da74382cb0351103b71ab66a9911d35a)
+        ;
+
+        
+    
+    
+            circle_marker_0ba7b282c324cbf8ec0ef25ba6e34d61.bindTooltip(
+                `<div>
+                     #75 종로구: 124.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_04a4cfa18100cea39a2f1e86a9564a89 = L.circleMarker(
+                [37.4897132, 127.0155532],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.662995767368606, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_09cd7595fb980d6906c1a2a7338f8d4f = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_42822b70b610c04df307096e123720c8 = $(`<div id="html_42822b70b610c04df307096e123720c8" style="width: 100.0%; height: 100.0%;"><b>#76 재산피해 122.9백만원</b><br>발생일자: 20171116<br>지역: 서초구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 용접/ 절단/ 연마<br>장소: 교육시설 / 학교<br>사상자: 0명</div>`)[0];
+                popup_09cd7595fb980d6906c1a2a7338f8d4f.setContent(html_42822b70b610c04df307096e123720c8);
+            
+        
+
+        circle_marker_04a4cfa18100cea39a2f1e86a9564a89.bindPopup(popup_09cd7595fb980d6906c1a2a7338f8d4f)
+        ;
+
+        
+    
+    
+            circle_marker_04a4cfa18100cea39a2f1e86a9564a89.bindTooltip(
+                `<div>
+                     #76 서초구: 122.9백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_47c890ad907bc46dc1910accbf7d678d = L.circleMarker(
+                [37.564417, 127.021537],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.645590172909593, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_9ef610750e5c98e374c3ddae6e20d578 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_eaea71e603968526ad0240cddcb8b7b1 = $(`<div id="html_eaea71e603968526ad0240cddcb8b7b1" style="width: 100.0%; height: 100.0%;"><b>#77 재산피해 120.8백만원</b><br>발생일자: 20220124<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 작업장<br>사상자: 0명</div>`)[0];
+                popup_9ef610750e5c98e374c3ddae6e20d578.setContent(html_eaea71e603968526ad0240cddcb8b7b1);
+            
+        
+
+        circle_marker_47c890ad907bc46dc1910accbf7d678d.bindPopup(popup_9ef610750e5c98e374c3ddae6e20d578)
+        ;
+
+        
+    
+    
+            circle_marker_47c890ad907bc46dc1910accbf7d678d.bindTooltip(
+                `<div>
+                     #77 중구: 120.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_8838f879e0e0874daade759cce3b1406 = L.circleMarker(
+                [37.556688, 127.01145],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.644609171255368, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_7300e688ca12654d426446df6597481c = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_b30aa3e44141510f5a3913897d19b40c = $(`<div id="html_b30aa3e44141510f5a3913897d19b40c" style="width: 100.0%; height: 100.0%;"><b>#78 재산피해 120.7백만원</b><br>발생일자: 20220918<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 작업장<br>사상자: 0명</div>`)[0];
+                popup_7300e688ca12654d426446df6597481c.setContent(html_b30aa3e44141510f5a3913897d19b40c);
+            
+        
+
+        circle_marker_8838f879e0e0874daade759cce3b1406.bindPopup(popup_7300e688ca12654d426446df6597481c)
+        ;
+
+        
+    
+    
+            circle_marker_8838f879e0e0874daade759cce3b1406.bindTooltip(
+                `<div>
+                     #78 중구: 120.7백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_58a78f1ed4de448249e8d90857557827 = L.circleMarker(
+                [37.567765, 126.997402],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.63363710220262, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_844413b31232ae3ec243320f3197601e = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_06818af120496b2f76788868a60979cf = $(`<div id="html_06818af120496b2f76788868a60979cf" style="width: 100.0%; height: 100.0%;"><b>#79 재산피해 119.3백만원</b><br>발생일자: 20180224<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 가연물 근접방치<br>장소: 산업시설 / 작업장<br>사상자: 0명</div>`)[0];
+                popup_844413b31232ae3ec243320f3197601e.setContent(html_06818af120496b2f76788868a60979cf);
+            
+        
+
+        circle_marker_58a78f1ed4de448249e8d90857557827.bindPopup(popup_844413b31232ae3ec243320f3197601e)
+        ;
+
+        
+    
+    
+            circle_marker_58a78f1ed4de448249e8d90857557827.bindTooltip(
+                `<div>
+                     #79 중구: 119.3백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_5bfc01ae0958df46cc26d3b73cfe1107 = L.circleMarker(
+                [37.50666, 127.0386458],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.623537277470348, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_b335ca44f5259a788fb7b1edab56b2cf = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_e38662041129046bece9fdbf45ca25da = $(`<div id="html_e38662041129046bece9fdbf45ca25da" style="width: 100.0%; height: 100.0%;"><b>#80 재산피해 118.1백만원</b><br>발생일자: 20210120<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 음식물 조리중<br>장소: 주거 / 공동주택<br>사상자: 0명</div>`)[0];
+                popup_b335ca44f5259a788fb7b1edab56b2cf.setContent(html_e38662041129046bece9fdbf45ca25da);
+            
+        
+
+        circle_marker_5bfc01ae0958df46cc26d3b73cfe1107.bindPopup(popup_b335ca44f5259a788fb7b1edab56b2cf)
+        ;
+
+        
+    
+    
+            circle_marker_5bfc01ae0958df46cc26d3b73cfe1107.bindTooltip(
+                `<div>
+                     #80 강남구: 118.1백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_906abe5a361d8c813063d1887d0cbf4a = L.circleMarker(
+                [37.554745, 127.011598],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.608051545840077, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_f78fcf8bcf659b12020b315500d1ddb7 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_b444f2864ce0ed2a81fcd64d727192ec = $(`<div id="html_b444f2864ce0ed2a81fcd64d727192ec" style="width: 100.0%; height: 100.0%;"><b>#81 재산피해 116.3백만원</b><br>발생일자: 20221223<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 생활서비스 / 오락시설<br>사상자: 0명</div>`)[0];
+                popup_f78fcf8bcf659b12020b315500d1ddb7.setContent(html_b444f2864ce0ed2a81fcd64d727192ec);
+            
+        
+
+        circle_marker_906abe5a361d8c813063d1887d0cbf4a.bindPopup(popup_f78fcf8bcf659b12020b315500d1ddb7)
+        ;
+
+        
+    
+    
+            circle_marker_906abe5a361d8c813063d1887d0cbf4a.bindTooltip(
+                `<div>
+                     #81 중구: 116.3백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_0a4ed9fad2246a53850c3cb976cad4c1 = L.circleMarker(
+                [37.5632311, 126.9772628],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.600838105557607, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_7f97ff2c44c593914f96f7581649b149 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_9777597de8baf5caf3186d06c7ec73b4 = $(`<div id="html_9777597de8baf5caf3186d06c7ec73b4" style="width: 100.0%; height: 100.0%;"><b>#82 재산피해 115.5백만원</b><br>발생일자: 20190827<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 일반업무<br>사상자: 1명</div>`)[0];
+                popup_7f97ff2c44c593914f96f7581649b149.setContent(html_9777597de8baf5caf3186d06c7ec73b4);
+            
+        
+
+        circle_marker_0a4ed9fad2246a53850c3cb976cad4c1.bindPopup(popup_7f97ff2c44c593914f96f7581649b149)
+        ;
+
+        
+    
+    
+            circle_marker_0a4ed9fad2246a53850c3cb976cad4c1.bindTooltip(
+                `<div>
+                     #82 중구: 115.5백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b857312ef6ceea70624ec80be6a938bb = L.circleMarker(
+                [37.573308, 127.0050937],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.58902975845816, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_1387038914ba108a04b7cb527493f429 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_f2ec555fba8db8210fa4c6c771153609 = $(`<div id="html_f2ec555fba8db8210fa4c6c771153609" style="width: 100.0%; height: 100.0%;"><b>#83 재산피해 114.1백만원</b><br>발생일자: 20170617<br>지역: 종로구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 창고시설<br>사상자: 0명</div>`)[0];
+                popup_1387038914ba108a04b7cb527493f429.setContent(html_f2ec555fba8db8210fa4c6c771153609);
+            
+        
+
+        circle_marker_b857312ef6ceea70624ec80be6a938bb.bindPopup(popup_1387038914ba108a04b7cb527493f429)
+        ;
+
+        
+    
+    
+            circle_marker_b857312ef6ceea70624ec80be6a938bb.bindTooltip(
+                `<div>
+                     #83 종로구: 114.1백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_5983384f8fabfb235ee729bc89fe5ce4 = L.circleMarker(
+                [37.567661, 126.99848],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.58671587374572, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_85cf27793679a9cbe235eb0d0bba300f = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_057548f4757020b0cfca8fad6ab09f4e = $(`<div id="html_057548f4757020b0cfca8fad6ab09f4e" style="width: 100.0%; height: 100.0%;"><b>#84 재산피해 113.8백만원</b><br>발생일자: 20220810<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 누전/지락<br>장소: 산업시설 / 창고시설<br>사상자: 0명</div>`)[0];
+                popup_85cf27793679a9cbe235eb0d0bba300f.setContent(html_057548f4757020b0cfca8fad6ab09f4e);
+            
+        
+
+        circle_marker_5983384f8fabfb235ee729bc89fe5ce4.bindPopup(popup_85cf27793679a9cbe235eb0d0bba300f)
+        ;
+
+        
+    
+    
+            circle_marker_5983384f8fabfb235ee729bc89fe5ce4.bindTooltip(
+                `<div>
+                     #84 중구: 113.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_cf5323e44efa1c5688d1f7e7bc9edf63 = L.circleMarker(
+                [37.57830401, 127.0122845],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.542794854506965, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_e767182bc4204015aeb315ec3d587ddd = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_3b1168dda5162a32d09781dcd56c6da0 = $(`<div id="html_3b1168dda5162a32d09781dcd56c6da0" style="width: 100.0%; height: 100.0%;"><b>#85 재산피해 108.9백만원</b><br>발생일자: 20241120<br>지역: 종로구<br>화재유형: 건축/구조물<br>발화요인: 전기적 요인 / 미확인단락<br>장소: 산업시설 / 작업장<br>사상자: 0명</div>`)[0];
+                popup_e767182bc4204015aeb315ec3d587ddd.setContent(html_3b1168dda5162a32d09781dcd56c6da0);
+            
+        
+
+        circle_marker_cf5323e44efa1c5688d1f7e7bc9edf63.bindPopup(popup_e767182bc4204015aeb315ec3d587ddd)
+        ;
+
+        
+    
+    
+            circle_marker_cf5323e44efa1c5688d1f7e7bc9edf63.bindTooltip(
+                `<div>
+                     #85 종로구: 108.9백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_a97251d9839094e0692bccf100b33093 = L.circleMarker(
+                [37.464302, 127.1067],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.528921150180594, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_080b3cfed0d0e54ce7c204b208f3fea5 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_5e957503613507c22721e1bc479f9d51 = $(`<div id="html_5e957503613507c22721e1bc479f9d51" style="width: 100.0%; height: 100.0%;"><b>#86 재산피해 107.4백만원</b><br>발생일자: 20220319<br>지역: 강남구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 판매시설<br>사상자: 0명</div>`)[0];
+                popup_080b3cfed0d0e54ce7c204b208f3fea5.setContent(html_5e957503613507c22721e1bc479f9d51);
+            
+        
+
+        circle_marker_a97251d9839094e0692bccf100b33093.bindPopup(popup_080b3cfed0d0e54ce7c204b208f3fea5)
+        ;
+
+        
+    
+    
+            circle_marker_a97251d9839094e0692bccf100b33093.bindTooltip(
+                `<div>
+                     #86 강남구: 107.4백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_472b44de46fea461be4a5f49e065bd04 = L.circleMarker(
+                [37.5364316, 127.0047941],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.509140726836733, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_6aa0c252c98644098696c65598e48e09 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_a6638c5a78ff1cb581414902e7277d31 = $(`<div id="html_a6638c5a78ff1cb581414902e7277d31" style="width: 100.0%; height: 100.0%;"><b>#87 재산피해 105.3백만원</b><br>발생일자: 20201209<br>지역: 용산구<br>화재유형: 자동차/철도차량<br>발화요인: 교통사고 / 교통사고<br>장소: 자동차/철도차량 / 자동차<br>사상자: 0명</div>`)[0];
+                popup_6aa0c252c98644098696c65598e48e09.setContent(html_a6638c5a78ff1cb581414902e7277d31);
+            
+        
+
+        circle_marker_472b44de46fea461be4a5f49e065bd04.bindPopup(popup_6aa0c252c98644098696c65598e48e09)
+        ;
+
+        
+    
+    
+            circle_marker_472b44de46fea461be4a5f49e065bd04.bindTooltip(
+                `<div>
+                     #87 용산구: 105.3백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_46190647365c291ba2ee3ac9ff639b30 = L.circleMarker(
+                [37.56436791, 126.9689266],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.492915008994324, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_41c7139ee9334a668a512666abfd8cf8 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_0e57d31185d4a46968565e41d4f480c3 = $(`<div id="html_0e57d31185d4a46968565e41d4f480c3" style="width: 100.0%; height: 100.0%;"><b>#88 재산피해 103.6백만원</b><br>발생일자: 20230422<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 불씨/불꽃/화원방치<br>장소: 의료/복지시설 / 의료시설<br>사상자: 0명</div>`)[0];
+                popup_41c7139ee9334a668a512666abfd8cf8.setContent(html_0e57d31185d4a46968565e41d4f480c3);
+            
+        
+
+        circle_marker_46190647365c291ba2ee3ac9ff639b30.bindPopup(popup_41c7139ee9334a668a512666abfd8cf8)
+        ;
+
+        
+    
+    
+            circle_marker_46190647365c291ba2ee3ac9ff639b30.bindTooltip(
+                `<div>
+                     #88 중구: 103.6백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_20f742e009f96ccd52dcada23917cecf = L.circleMarker(
+                [37.575654, 127.0030592],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.49247304315492, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_1d0bcbd25a1ba261b7c83ef623a59d6a = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_2951adbb561557b8897f5e79f08bd330 = $(`<div id="html_2951adbb561557b8897f5e79f08bd330" style="width: 100.0%; height: 100.0%;"><b>#89 재산피해 103.6백만원</b><br>발생일자: 20170106<br>지역: 종로구<br>화재유형: 건축/구조물<br>발화요인: 방화 / 방화<br>장소: 산업시설 / 작업장<br>사상자: 0명</div>`)[0];
+                popup_1d0bcbd25a1ba261b7c83ef623a59d6a.setContent(html_2951adbb561557b8897f5e79f08bd330);
+            
+        
+
+        circle_marker_20f742e009f96ccd52dcada23917cecf.bindPopup(popup_1d0bcbd25a1ba261b7c83ef623a59d6a)
+        ;
+
+        
+    
+    
+            circle_marker_20f742e009f96ccd52dcada23917cecf.bindTooltip(
+                `<div>
+                     #89 종로구: 103.6백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_34035a11b5e1c806c887f1c23a7280b3 = L.circleMarker(
+                [37.5501292, 126.9136498],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.49096311467138, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_0fcc566a49afcc15fefbbaad687c3f8f = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_db557eb9c20a3381bcc4238374ad4419 = $(`<div id="html_db557eb9c20a3381bcc4238374ad4419" style="width: 100.0%; height: 100.0%;"><b>#90 재산피해 103.4백만원</b><br>발생일자: 20200630<br>지역: 마포구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 음식물 조리중<br>장소: 판매/업무시설 / 판매시설<br>사상자: 2명</div>`)[0];
+                popup_0fcc566a49afcc15fefbbaad687c3f8f.setContent(html_db557eb9c20a3381bcc4238374ad4419);
+            
+        
+
+        circle_marker_34035a11b5e1c806c887f1c23a7280b3.bindPopup(popup_0fcc566a49afcc15fefbbaad687c3f8f)
+        ;
+
+        
+    
+    
+            circle_marker_34035a11b5e1c806c887f1c23a7280b3.bindTooltip(
+                `<div>
+                     #90 마포구: 103.4백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_6493addd78f0a90524054e68e86d2145 = L.circleMarker(
+                [37.4808764, 127.0009611],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.465796658302327, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_884d6922b761a881ca96f7de989bec88 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_b8455b392d5331cec3bfa898076ee90e = $(`<div id="html_b8455b392d5331cec3bfa898076ee90e" style="width: 100.0%; height: 100.0%;"><b>#91 재산피해 100.8백만원</b><br>발생일자: 20180602<br>지역: 서초구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 판매시설<br>사상자: 0명</div>`)[0];
+                popup_884d6922b761a881ca96f7de989bec88.setContent(html_b8455b392d5331cec3bfa898076ee90e);
+            
+        
+
+        circle_marker_6493addd78f0a90524054e68e86d2145.bindPopup(popup_884d6922b761a881ca96f7de989bec88)
+        ;
+
+        
+    
+    
+            circle_marker_6493addd78f0a90524054e68e86d2145.bindTooltip(
+                `<div>
+                     #91 서초구: 100.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_8847a42f5ddc2f73d8f2a6717304b265 = L.circleMarker(
+                [37.565008, 127.008734],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.458226365379538, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_9a36b36da6be27a0c9ba85fe5ca69afa = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_db18a1d0e6e32ab4d94133c74acd3e30 = $(`<div id="html_db18a1d0e6e32ab4d94133c74acd3e30" style="width: 100.0%; height: 100.0%;"><b>#92 재산피해 100.1백만원</b><br>발생일자: 20220525<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 창고시설<br>사상자: 0명</div>`)[0];
+                popup_9a36b36da6be27a0c9ba85fe5ca69afa.setContent(html_db18a1d0e6e32ab4d94133c74acd3e30);
+            
+        
+
+        circle_marker_8847a42f5ddc2f73d8f2a6717304b265.bindPopup(popup_9a36b36da6be27a0c9ba85fe5ca69afa)
+        ;
+
+        
+    
+    
+            circle_marker_8847a42f5ddc2f73d8f2a6717304b265.bindTooltip(
+                `<div>
+                     #92 중구: 100.1백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_bf31e3bd6b812a84f37f98807426ebfe = L.circleMarker(
+                [37.5793597, 127.0158759],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.454060001391316, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_702622856fef504554b07f870f383a12 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_679cc30f9b617c0821c1c2674178f64e = $(`<div id="html_679cc30f9b617c0821c1c2674178f64e" style="width: 100.0%; height: 100.0%;"><b>#93 재산피해 99.6백만원</b><br>발생일자: 20210503<br>지역: 종로구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 주거 / 단독주택<br>사상자: 1명</div>`)[0];
+                popup_702622856fef504554b07f870f383a12.setContent(html_679cc30f9b617c0821c1c2674178f64e);
+            
+        
+
+        circle_marker_bf31e3bd6b812a84f37f98807426ebfe.bindPopup(popup_702622856fef504554b07f870f383a12)
+        ;
+
+        
+    
+    
+            circle_marker_bf31e3bd6b812a84f37f98807426ebfe.bindTooltip(
+                `<div>
+                     #93 종로구: 99.6백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_3f29a230479f0327c14796271d6e999f = L.circleMarker(
+                [37.570839, 127.0149701],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.45006668017937, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_be4a0b64a23203f530e8395a939711bd = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_2b3f1b05f78e8fe929b4a4b29ae0f0f8 = $(`<div id="html_2b3f1b05f78e8fe929b4a4b29ae0f0f8" style="width: 100.0%; height: 100.0%;"><b>#94 재산피해 99.2백만원</b><br>발생일자: 20210331<br>지역: 종로구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 산업시설 / 창고시설<br>사상자: 0명</div>`)[0];
+                popup_be4a0b64a23203f530e8395a939711bd.setContent(html_2b3f1b05f78e8fe929b4a4b29ae0f0f8);
+            
+        
+
+        circle_marker_3f29a230479f0327c14796271d6e999f.bindPopup(popup_be4a0b64a23203f530e8395a939711bd)
+        ;
+
+        
+    
+    
+            circle_marker_3f29a230479f0327c14796271d6e999f.bindTooltip(
+                `<div>
+                     #94 종로구: 99.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_eb0f76f772f79e21d619ddb601e2c3aa = L.circleMarker(
+                [37.501046, 127.107679],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.435621698409502, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_3b1db9c234e93bc1dee45662362e675f = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_b0682a11d9f49e5c3c7052b8a27d2d9f = $(`<div id="html_b0682a11d9f49e5c3c7052b8a27d2d9f" style="width: 100.0%; height: 100.0%;"><b>#95 재산피해 97.8백만원</b><br>발생일자: 20220506<br>지역: 송파구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 용접/ 절단/ 연마<br>장소: 기타서비스 / 기타건축물<br>사상자: 0명</div>`)[0];
+                popup_3b1db9c234e93bc1dee45662362e675f.setContent(html_b0682a11d9f49e5c3c7052b8a27d2d9f);
+            
+        
+
+        circle_marker_eb0f76f772f79e21d619ddb601e2c3aa.bindPopup(popup_3b1db9c234e93bc1dee45662362e675f)
+        ;
+
+        
+    
+    
+            circle_marker_eb0f76f772f79e21d619ddb601e2c3aa.bindTooltip(
+                `<div>
+                     #95 송파구: 97.8백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_adcbddb7312c63b773523152883094b7 = L.circleMarker(
+                [37.56522454, 127.0189363],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.41910353934515, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_9be195887b203b457f67ca675a0e0b07 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_894a0c1b5feb19a69b17e4dbd0d4e23b = $(`<div id="html_894a0c1b5feb19a69b17e4dbd0d4e23b" style="width: 100.0%; height: 100.0%;"><b>#96 재산피해 96.2백만원</b><br>발생일자: 20241002<br>지역: 중구<br>화재유형: 건축/구조물<br>발화요인: 부주의 / 용접/ 절단/ 연마<br>장소: 판매/업무시설 / 숙박시설<br>사상자: 0명</div>`)[0];
+                popup_9be195887b203b457f67ca675a0e0b07.setContent(html_894a0c1b5feb19a69b17e4dbd0d4e23b);
+            
+        
+
+        circle_marker_adcbddb7312c63b773523152883094b7.bindPopup(popup_9be195887b203b457f67ca675a0e0b07)
+        ;
+
+        
+    
+    
+            circle_marker_adcbddb7312c63b773523152883094b7.bindTooltip(
+                `<div>
+                     #96 중구: 96.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_1a29b117b4a4fbef865d29fed3aad0fb = L.circleMarker(
+                [37.54979473, 127.0515579],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.41864824009285, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_8b1b36abf336f43239a6fa51b7c313d4 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_4a030b5119a360c3d8d8c04f40d98663 = $(`<div id="html_4a030b5119a360c3d8d8c04f40d98663" style="width: 100.0%; height: 100.0%;"><b>#97 재산피해 96.2백만원</b><br>발생일자: 20240108<br>지역: 성동구<br>화재유형: 건축/구조물<br>발화요인: 기계적 요인 / 과열/ 과부하<br>장소: 운수자동차시설 / 자동차시설<br>사상자: 0명</div>`)[0];
+                popup_8b1b36abf336f43239a6fa51b7c313d4.setContent(html_4a030b5119a360c3d8d8c04f40d98663);
+            
+        
+
+        circle_marker_1a29b117b4a4fbef865d29fed3aad0fb.bindPopup(popup_8b1b36abf336f43239a6fa51b7c313d4)
+        ;
+
+        
+    
+    
+            circle_marker_1a29b117b4a4fbef865d29fed3aad0fb.bindTooltip(
+                `<div>
+                     #97 성동구: 96.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_545fd5559259afe39a9f484da27fd5dd = L.circleMarker(
+                [37.569027, 126.9867851],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.418337689314942, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_18bd0486425151f297b483a3ff02ec02 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_676e8c69f45d33f89251c13b3d5f1798 = $(`<div id="html_676e8c69f45d33f89251c13b3d5f1798" style="width: 100.0%; height: 100.0%;"><b>#98 재산피해 96.1백만원</b><br>발생일자: 20200714<br>지역: 종로구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 생활서비스 / 음식점<br>사상자: 0명</div>`)[0];
+                popup_18bd0486425151f297b483a3ff02ec02.setContent(html_676e8c69f45d33f89251c13b3d5f1798);
+            
+        
+
+        circle_marker_545fd5559259afe39a9f484da27fd5dd.bindPopup(popup_18bd0486425151f297b483a3ff02ec02)
+        ;
+
+        
+    
+    
+            circle_marker_545fd5559259afe39a9f484da27fd5dd.bindTooltip(
+                `<div>
+                     #98 종로구: 96.1백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_b6b15bda0bba10ca3774d8545ba0d352 = L.circleMarker(
+                [37.4831762, 127.1280673],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.413501315207903, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_7696eeec46cd31f4836f6ed300012f59 = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_f2b224979b3ec457ff2f9bd8b274cc7a = $(`<div id="html_f2b224979b3ec457ff2f9bd8b274cc7a" style="width: 100.0%; height: 100.0%;"><b>#99 재산피해 95.7백만원</b><br>발생일자: 20190202<br>지역: 송파구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 판매/업무시설 / 일반업무<br>사상자: 0명</div>`)[0];
+                popup_7696eeec46cd31f4836f6ed300012f59.setContent(html_f2b224979b3ec457ff2f9bd8b274cc7a);
+            
+        
+
+        circle_marker_b6b15bda0bba10ca3774d8545ba0d352.bindPopup(popup_7696eeec46cd31f4836f6ed300012f59)
+        ;
+
+        
+    
+    
+            circle_marker_b6b15bda0bba10ca3774d8545ba0d352.bindTooltip(
+                `<div>
+                     #99 송파구: 95.7백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            var circle_marker_998ab9829d5c3a59aad2ef4fd3c130e0 = L.circleMarker(
+                [37.5126483, 127.1404501],
+                {"bubblingMouseEvents": true, "color": "#7f1d1d", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "#dc2626", "fillOpacity": 0.72, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 16.40825442482967, "stroke": true, "weight": 1}
+            ).addTo(marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2);
+        
+    
+        var popup_f7893a2e486055d279c872d1e82d4b0d = L.popup({
+  "maxWidth": 360,
+});
+
+        
+            
+                var html_bd69894fe487be1368c395b9afb3c79c = $(`<div id="html_bd69894fe487be1368c395b9afb3c79c" style="width: 100.0%; height: 100.0%;"><b>#100 재산피해 95.2백만원</b><br>발생일자: 20180419<br>지역: 송파구<br>화재유형: 건축/구조물<br>발화요인: 미상 / 미상<br>장소: 기타서비스 / 기타건축물<br>사상자: 0명</div>`)[0];
+                popup_f7893a2e486055d279c872d1e82d4b0d.setContent(html_bd69894fe487be1368c395b9afb3c79c);
+            
+        
+
+        circle_marker_998ab9829d5c3a59aad2ef4fd3c130e0.bindPopup(popup_f7893a2e486055d279c872d1e82d4b0d)
+        ;
+
+        
+    
+    
+            circle_marker_998ab9829d5c3a59aad2ef4fd3c130e0.bindTooltip(
+                `<div>
+                     #100 송파구: 95.2백만원
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+            marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2.addTo(map_d46bdcd94c4cc494e087b4a7c9134662);
+        
+    
+            var layer_control_06fa8c40ab2ada8d4552b2358acc3133_layers = {
+                base_layers : {
+                    "cartodbpositron" : tile_layer_785350b65223ae6546628d38642ef754,
+                },
+                overlays :  {
+                    "\uc7ac\uc0b0\ud53c\ud574 TOP 100" : marker_cluster_20df426a82903bf0bc2b4d6ad1b256f2,
+                },
+            };
+            let layer_control_06fa8c40ab2ada8d4552b2358acc3133 = L.control.layers(
+                layer_control_06fa8c40ab2ada8d4552b2358acc3133_layers.base_layers,
+                layer_control_06fa8c40ab2ada8d4552b2358acc3133_layers.overlays,
+                {
+  "position": "topright",
+  "collapsed": false,
+  "autoZIndex": true,
+}
+            ).addTo(map_d46bdcd94c4cc494e087b4a7c9134662);
+
+        
+</script>
+</html>

@@ -1,0 +1,48 @@
+{
+  "source_csv": "C:\\Users\\USER\\Documents\\GitHub\\기말공모전\\NJT-PJT\\data\\화재출동\\화재출동_2021_2024.csv",
+  "row_count": 20350,
+  "year_min": 2017,
+  "year_max": 2024,
+  "fire_count_by_year": {
+    "2017": 2576,
+    "2018": 2792,
+    "2019": 2735,
+    "2020": 2374,
+    "2021": 1985,
+    "2022": 2528,
+    "2023": 2675,
+    "2024": 2685
+  },
+  "top_districts": {
+    "강남구": 3324,
+    "송파구": 2611,
+    "강서구": 2261,
+    "영등포구": 2073,
+    "마포구": 2016,
+    "서초구": 1855,
+    "종로구": 1668,
+    "성동구": 1524,
+    "용산구": 1514,
+    "중구": 1504
+  },
+  "top_causes": {
+    "부주의": 11338,
+    "전기적 요인": 5084,
+    "미상": 1912,
+    "기계적 요인": 1075,
+    "방화": 189,
+    "화학적 요인": 169,
+    "방화의심": 159,
+    "기타": 154,
+    "교통사고": 117,
+    "제품결함": 75
+  },
+  "outputs": [
+    "01_year_month_fire_trend.png",
+    "02_weekday_hour_fire_heatmap.png",
+    "03_district_fire_map.png",
+    "04_top10_fire_causes.png",
+    "05_response_time_vs_distance.png",
+    "06_high_damage_fire_map_and_ranking.png"
+  ]
+}
