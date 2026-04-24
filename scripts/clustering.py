@@ -12,7 +12,7 @@ plt.rcParams['axes.unicode_minus'] = False
 
 df = pd.read_csv('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/서울10구_숙소_소방거리_유클리드.csv', encoding='utf-8-sig')
 
-VARS = ['소방접근성_점수', '노후도_점수', '반경_50m_건물수', '집중도(%)']
+VARS = ['소방위험도_점수', '노후도_점수', '반경_50m_건물수', '집중도(%)']
 X = df[VARS].values
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
@@ -61,15 +61,15 @@ for cluster in range(best_k):
     mask = df['군집'] == cluster
     cnt = mask.sum()
     avg_risk = df[mask]['위험점수_AHP'].mean()
-    axes[0].scatter(df[mask]['소방접근성_점수'], df[mask]['노후도_점수'],
+    axes[0].scatter(df[mask]['소방위험도_점수'], df[mask]['노후도_점수'],
                     c=colors[cluster], s=20, alpha=0.6,
                     label=f'군집{cluster} ({cnt}개, 위험점수{avg_risk:.0f})')
     axes[1].scatter(df[mask]['반경_50m_건물수'], df[mask]['집중도(%)'],
                     c=colors[cluster], s=20, alpha=0.6,
                     label=f'군집{cluster}')
 
-axes[0].set_xlabel('소방접근성_점수'); axes[0].set_ylabel('노후도_점수')
-axes[0].set_title('소방접근성 vs 노후도'); axes[0].legend(fontsize=8); axes[0].grid(alpha=0.3)
+axes[0].set_xlabel('소방위험도_점수'); axes[0].set_ylabel('노후도_점수')
+axes[0].set_title('소방위험도 vs 노후도'); axes[0].legend(fontsize=8); axes[0].grid(alpha=0.3)
 axes[1].set_xlabel('반경_50m_건물수'); axes[1].set_ylabel('집중도(%)')
 axes[1].set_title('밀집도 vs 집중도'); axes[1].legend(fontsize=8); axes[1].grid(alpha=0.3)
 

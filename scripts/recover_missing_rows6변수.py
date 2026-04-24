@@ -90,8 +90,8 @@ for i, row in missing_src.iterrows():
         approval_yr = np.nan
     building_age = (2025 - approval_yr) if not pd.isna(approval_yr) else np.nan
 
-    # 소방접근성_점수
-    fire_access = max(0, 1 - best / 2000)
+    # 소방위험도_점수
+    fire_risk = min(1, best / 2000)
 
     rows.append({
         '구':               row['구'],
@@ -112,7 +112,7 @@ for i, row in missing_src.iterrows():
         '승인연도':          approval_yr,
         '건물나이':          building_age,
         '노후도_점수':       np.nan,   # 전체 Z-score 재계산 후 채움
-        '소방접근성_점수':   round(fire_access, 4),
+        '소방위험도_점수':   round(fire_risk, 4),
         '반경_50m_건물수':   missing_gis.loc[i, '반경_50m_건물수'],
         '집중도(%)':         missing_gis.loc[i, '집중도(%)'],
         '주요_시설군':       missing_gis.loc[i, '주요_시설군'],
@@ -145,7 +145,6 @@ full['노후도_점수'] = (0.05 + 0.95 * (z - z_min) / (z_max - z_min)).clip(0.
 # ── 위험점수_AHP 재계산 ───────────────────────────────────────────────
 from sklearn.preprocessing import MinMaxScaler
 scaler = MinMaxScaler()
-full['소방_위험도']   = 1 - full['소방접근성_점수']
 full['밀집도_정규화'] = scaler.fit_transform(full[['반경_50m_건물수']])
 full['집중도_정규화'] = full['집중도(%)'] / 100
 
@@ -160,15 +159,15 @@ max_idx = np.argmax(eigenvalues.real)
 ahp_weights = eigenvectors[:, max_idx].real
 ahp_weights = ahp_weights / ahp_weights.sum()
 
-X = full[['소방_위험도','노후도_점수','밀집도_정규화','집중도_정규화']].values
+X = full[['소방위험도_점수','노후도_점수','밀집도_정규화','집중도_정규화']].values
 score = (X * ahp_weights).sum(axis=1)
 full['위험점수_AHP'] = ((score - score.min()) / (score.max() - score.min()) * 100).round(2)
-full = full.drop(columns=['소방_위험도','밀집도_정규화','집중도_정규화'])
+full = full.drop(columns=['밀집도_정규화','집중도_정규화'])
 
 # ── 군집 재할당 ───────────────────────────────────────────────────────
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
-VARS = ['소방접근성_점수','노후도_점수','반경_50m_건물수','집중도(%)']
+VARS = ['소방위험도_점수','노후도_점수','반경_50m_건물수','집중도(%)']
 X_cl = StandardScaler().fit_transform(full[VARS].fillna(0))
 best_k = int(full['군집'].dropna().max()) + 1 if full['군집'].notna().any() else 2
 km = KMeans(n_clusters=best_k, random_state=42, n_init=10)

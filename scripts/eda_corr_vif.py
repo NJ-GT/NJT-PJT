@@ -11,10 +11,10 @@ plt.rcParams['axes.unicode_minus'] = False
 BASE = 'c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data'
 df = pd.read_csv(f'{BASE}/분석변수_테이블.csv', encoding='utf-8-sig')
 
-VARS = ['소방접근성_점수', '노후도_점수',
+VARS = ['소방위험도_점수', '노후도_점수',
         '반경_50m_건물수', '집중도(%)',
         '로그_주변대비_상대위험도_고유단속지점_50m', '공식도로폭m']
-LABELS = ['소방접근성', '노후도', '밀집도', '집중도', '불법주정차', '도로폭(m)']
+LABELS = ['소방위험도', '노후도', '밀집도', '집중도', '불법주정차', '도로폭(m)']
 
 data = df[VARS].copy()
 data.columns = LABELS

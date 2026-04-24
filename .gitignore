@@ -1,3 +1,6 @@
+# Streamlit secrets (Mapbox token 등 민감 정보)
+.streamlit/secrets.toml
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

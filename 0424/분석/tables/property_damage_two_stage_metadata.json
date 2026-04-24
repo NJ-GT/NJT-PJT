@@ -1,0 +1,26 @@
+{
+  "analysis_years": [
+    2021,
+    2024
+  ],
+  "target_design": {
+    "stage1": "50m 내 재산피해 화재 존재 여부",
+    "stage2": "50m 내 누적 재산피해액(log1p, 양성 숙소만)",
+    "combined": "발생확률 × 양성조건 피해규모"
+  },
+  "target_meta": {
+    "target_radius_m": 50.0,
+    "positive_share_overall": 0.3815355628827131,
+    "positive_share_train_group": 0.41760423560555926,
+    "positive_share_test_group": 0.36160877513711154,
+    "median_positive_damage_천원": 295.0,
+    "p90_positive_damage_천원": 10397.800000000016
+  },
+  "rows_total": 4246,
+  "rows_train": 1511,
+  "rows_test": 2735,
+  "rows_train_positive": 631,
+  "rows_test_positive": 989,
+  "best_stage1_model": "XGBoost",
+  "best_stage2_model": "Dummy"
+}

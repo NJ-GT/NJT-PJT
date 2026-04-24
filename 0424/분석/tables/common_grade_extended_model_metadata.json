@@ -1,0 +1,16 @@
+{
+  "target": "공통_3등급",
+  "rows_total": 4246,
+  "rows_train_outer": 3184,
+  "rows_train_fit": 2547,
+  "rows_val": 637,
+  "rows_test": 1062,
+  "svd_components": 64,
+  "gp_components": 24,
+  "gnn_neighbors": 10,
+  "grade_distribution_total": {
+    "안전": 1417,
+    "위험": 1416,
+    "보통": 1413
+  }
+}

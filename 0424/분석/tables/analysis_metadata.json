@@ -1,0 +1,22 @@
+{
+  "lodging_rows": 4246,
+  "train_rows": 1511,
+  "test_rows": 2735,
+  "filtered_fire_rows": 267,
+  "fire_year_min": 2021,
+  "fire_year_max": 2024,
+  "fire_rows_filtered": 267,
+  "tie_count_for_classification": 701,
+  "train_domain": [
+    "숙박업",
+    "관광숙박업"
+  ],
+  "test_domain": "외국인관광도시민박업",
+  "regression_targets": [
+    "log1p_r500m_injury_fire_count_all",
+    "log1p_r500m_injury_fire_count_주거",
+    "log1p_r500m_injury_fire_count_판매업무시설",
+    "log1p_r500m_injury_fire_count_생활서비스"
+  ],
+  "classification_target": "r500m_injury_fire_dominant_type"
+}

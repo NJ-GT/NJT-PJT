@@ -1,0 +1,14 @@
+{
+  "analysis_rows": 4246,
+  "base_core_match_rows": 4246,
+  "current_vs_corrected_diff_rows": 0,
+  "all_rows_match_0floor_only_rule": true,
+  "rule": "총층수 = max((지상층수 if 지상층수!=0 else 1) + 지하층수, 1)",
+  "files": {
+    "analysis_table": "0424\\data\\분석변수_최종테이블0423.csv",
+    "core_table": "data\\통합숙박시설_최종안0421.csv",
+    "lodging_source": "원본데이터\\서울시 숙박업 인허가 정보.csv",
+    "tourism_source": "원본데이터\\서울시 관광숙박업 인허가 정보.csv",
+    "foreign_source": "원본데이터\\서울시 외국인관광도시민박업 인허가 정보.csv"
+  }
+}
