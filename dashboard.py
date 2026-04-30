@@ -911,6 +911,34 @@ def nearest_graph_node(point: tuple[float, float], nodes: list[tuple[float, floa
     return min(nodes, key=lambda node: point_distance_m(point, node))
 
 
+def nearest_fire_center(row: pd.Series, fire_df: pd.DataFrame) -> pd.Series | None:
+    center_names = [
+        row.get("최근접_안전센터", pd.NA),
+        row.get("담당_안전센터", pd.NA),
+    ]
+    candidates = fire_df.dropna(subset=["위도", "경도"]).copy()
+    for center_name in center_names:
+        if pd.isna(center_name):
+            continue
+        matched = candidates[candidates["시설명"] == center_name]
+        if not matched.empty:
+            return matched.iloc[0]
+
+    gu = str(row.get("구", ""))
+    same_gu = candidates[candidates.get("관할구역", "").astype(str).str.contains(gu, na=False)]
+    if not same_gu.empty:
+        candidates = same_gu
+    if candidates.empty or pd.isna(row.get("위도")) or pd.isna(row.get("경도")):
+        return None
+
+    candidates = candidates.copy()
+    candidates["_거리m"] = candidates.apply(
+        lambda center: point_distance_m((row["위도"], row["경도"]), (center["위도"], center["경도"])),
+        axis=1,
+    )
+    return candidates.nsmallest(1, "_거리m").iloc[0]
+
+
 def shortest_graph_path(
     start_point: tuple[float, float],
     end_point: tuple[float, float],
@@ -940,7 +968,12 @@ def shortest_graph_path(
                 heapq.heappush(queue, (new_distance, neighbor))
 
     if end not in distances:
-        return [], None
+        fallback_distance = (
+            point_distance_m(start_point, start)
+            + point_distance_m(start, end)
+            + point_distance_m(end_point, end)
+        )
+        return [start, end], fallback_distance
 
     path = [end]
     while path[-1] != start:
@@ -1152,9 +1185,9 @@ def road_width_adjusted_seconds(distance_m: float | int | None, speed_factor: fl
 
 
 def selected_route_comparison(row: pd.Series, fire_df: pd.DataFrame, road_line_df: pd.DataFrame) -> dict:
-    center = fire_df[fire_df["시설명"] == row.get("최근접_안전센터")].dropna(subset=["위도", "경도"]).head(1)
+    center_row = nearest_fire_center(row, fire_df)
     straight = row.get("안전센터_유클리드m", row.get("최근접_거리m", pd.NA))
-    if center.empty:
+    if center_row is None:
         return {
             "도로망추정거리m": pd.NA,
             "직선거리m": straight,
@@ -1163,7 +1196,7 @@ def selected_route_comparison(row: pd.Series, fire_df: pd.DataFrame, road_line_d
             "도로망보정이동시간초": pd.NA,
             "도로망보정예상도착초": pd.NA,
         }
-    _, road_distance = shortest_road_path(row, center.iloc[0], road_line_df)
+    _, road_distance = shortest_road_path(row, center_row, road_line_df)
     ratio = (road_distance / straight) if road_distance and pd.notna(straight) and straight else pd.NA
     diff = (road_distance - straight) if road_distance and pd.notna(straight) else pd.NA
     road_move_seconds, road_arrival_seconds = road_width_adjusted_seconds(road_distance, row.get("도로폭_속도계수", pd.NA))
@@ -1221,8 +1254,9 @@ def dispatch_route_map(route_df: pd.DataFrame, fire_df: pd.DataFrame, road_width
         (route_df["구"] == selected_row["구"])
         & (route_df["동"] == selected_row["동"])
     ].dropna(subset=["위도", "경도"]).copy()
-    center_name = selected_row.get("최근접_안전센터", pd.NA)
-    center = fire_df[fire_df["시설명"] == center_name].dropna(subset=["위도", "경도"]).head(1)
+    center_row = nearest_fire_center(selected_row, fire_df)
+    center = pd.DataFrame([center_row]) if center_row is not None else pd.DataFrame()
+    center_name = center_row["시설명"] if center_row is not None else selected_row.get("최근접_안전센터", "-")
 
     road_width = selected_row.get("공식도로폭m", pd.NA)
     if pd.isna(road_width):
