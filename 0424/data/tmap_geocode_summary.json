@@ -1,0 +1,7 @@
+{
+  "status": "need_app_key",
+  "message": "환경변수 TMAP_APP_KEY 또는 SK_OPENAPI_APP_KEY/TMAP_API_KEY에 appKey를 넣은 뒤 다시 실행하세요.",
+  "address_matched": 4246,
+  "address_missing": 0,
+  "input_file": "0424\\data\\tmap_geocode_input_addresses.csv"
+}

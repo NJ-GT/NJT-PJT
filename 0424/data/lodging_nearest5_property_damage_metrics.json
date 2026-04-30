@@ -1,0 +1,41 @@
+{
+  "analysis_path": "NJT-PJT\\0424\\data\\분석변수_최종테이블0423.csv",
+  "fire_path": "NJT-PJT\\data\\화재출동\\화재출동_2021_2024.csv",
+  "fire_year_filter": "2021-2024",
+  "n_lodging_points": 4246,
+  "n_fire_points_used": 9873,
+  "nearest_k": 5,
+  "target": "mean property damage of 5 nearest fire incidents, thousand KRW",
+  "features": [
+    "주변건물수",
+    "집중도",
+    "단속위험도",
+    "구조노후도",
+    "도로폭위험도",
+    "총층수",
+    "시설규모/연면적"
+  ],
+  "linear_regression_in_sample_r2": 0.027880860575443367,
+  "linear_regression_holdout_r2_random_state_42": 0.031722664241234155,
+  "linear_regression_5fold_cv_r2_mean": 0.008232604667766253,
+  "linear_regression_5fold_cv_r2_scores": [
+    0.03172266424123438,
+    0.03574915390472566,
+    -0.040245194941601836,
+    -0.018472625867208103,
+    0.03240902600168116
+  ],
+  "target_summary_thousand_krw": {
+    "mean": 3062.1581723975505,
+    "median": 626.2,
+    "min": 6.2,
+    "max": 109508.2,
+    "std": 7610.738678841805
+  },
+  "distance_summary_km": {
+    "nearest_min": 0.0006961194380181382,
+    "nearest_median": 0.061756440065366826,
+    "nearest_max": 0.4028702437810685,
+    "mean5_median": 0.1100249430494111
+  }
+}

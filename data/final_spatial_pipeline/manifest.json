@@ -1,0 +1,40 @@
+{
+  "target": "log1p_반경100m",
+  "risk_variables": [
+    "소방위험도_점수",
+    "주변건물수",
+    "집중도",
+    "단속위험도",
+    "구조노후도",
+    "도로폭위험도"
+  ],
+  "groups": [
+    "관광숙박업",
+    "숙박업",
+    "외국인관광도시민박업"
+  ],
+  "rows": {
+    "analysis_dataset": 4246,
+    "clustered": 4246,
+    "cluster_summary": 12,
+    "ridge_lasso": 24,
+    "ols_moran": 28,
+    "spatial_lag_error": 8,
+    "gwr_summary": 16,
+    "final_rank": 4246
+  },
+  "files": [
+    "analysis_dataset.csv",
+    "analysis_dataset_주변건물수보정.csv",
+    "blindspot_risk_score_team_formula.csv",
+    "nearby_building_count_all_candidates.csv",
+    "nearby_building_count_source_inventory.csv",
+    "step1_cluster_summary.csv",
+    "step1_industry_clusters.csv",
+    "step2_ridge_lasso_coefficients.csv",
+    "step3_ols_moran.csv",
+    "step4_spatial_lag_error.csv",
+    "step5_gwr_mgwr_summary.csv",
+    "step6_final_facility_rank.csv"
+  ]
+}

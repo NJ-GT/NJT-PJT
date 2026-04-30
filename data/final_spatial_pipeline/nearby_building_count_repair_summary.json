@@ -1,0 +1,34 @@
+{
+  "inventory_files": 61,
+  "candidate_rows": 156875,
+  "candidate_files": 40,
+  "repairs": [
+    {
+      "target": "0424\\분석\\tables\\분석변수_최종테이블0423_AHP3등급비교.csv",
+      "output": "0424\\분석\\tables\\분석변수_최종테이블0423_AHP3등급비교_주변건물수보정.csv",
+      "rows": 4246,
+      "suspect_rows": 916,
+      "filled_rows": 671,
+      "estimated_rows": 245,
+      "still_review_needed": 0
+    },
+    {
+      "target": "data\\clustering_result_all.csv",
+      "output": "data\\clustering_result_all_주변건물수보정.csv",
+      "rows": 4246,
+      "suspect_rows": 916,
+      "filled_rows": 671,
+      "estimated_rows": 245,
+      "still_review_needed": 0
+    },
+    {
+      "target": "data\\final_spatial_pipeline\\analysis_dataset.csv",
+      "output": "data\\final_spatial_pipeline\\analysis_dataset_주변건물수보정.csv",
+      "rows": 4246,
+      "suspect_rows": 0,
+      "filled_rows": 0,
+      "estimated_rows": 0,
+      "still_review_needed": 0
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "analysis_path": "NJT-PJT\\0424\\data\\분석변수_최종테이블0423.csv",
+  "fire_path": "NJT-PJT\\data\\화재출동\\화재출동_2021_2024.csv",
+  "matching_rule": "Each fire record matched to nearest lodging; keep records within 44m",
+  "n_fire_total": 20350,
+  "n_lodging_total": 4246,
+  "n_model_rows": 2533,
+  "n_train": 2026,
+  "n_test": 507,
+  "best_knn_k": 10,
+  "feature_cols": [
+    "lodging_승인연도",
+    "lodging_주변건물수",
+    "lodging_집중도",
+    "lodging_단속위험도",
+    "lodging_구조노후도",
+    "lodging_도로폭위험도",
+    "lodging_총층수",
+    "lodging_시설규모/연면적",
+    "nearest_lodging_distance_m"
+  ]
+}

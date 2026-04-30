@@ -1,0 +1,69 @@
+{
+  "target": "fire_count_150m",
+  "cluster_column": "cluster_k2",
+  "best_cluster_feature_set": "risk_score_plus_5",
+  "cluster_feature_sets": {
+    "all_10_original": [
+      "승인연도",
+      "소방위험도_점수",
+      "주변건물수",
+      "집중도",
+      "단속위험도",
+      "구조노후도",
+      "도로폭위험도",
+      "최근접_소화용수_거리등급",
+      "총층수",
+      "연면적"
+    ],
+    "discriminative_6": [
+      "단속위험도",
+      "도로폭위험도",
+      "집중도",
+      "주변건물수",
+      "최근접_소화용수_거리등급",
+      "소방위험도_점수"
+    ],
+    "policy_5": [
+      "도로폭위험도",
+      "집중도",
+      "주변건물수",
+      "최근접_소화용수_거리등급",
+      "소방위험도_점수"
+    ],
+    "risk_score_plus_5": [
+      "최종_화재위험점수",
+      "도로폭위험도",
+      "집중도",
+      "주변건물수",
+      "최근접_소화용수_거리등급"
+    ]
+  },
+  "regression_features": [
+    "승인연도",
+    "소방위험도_점수",
+    "주변건물수",
+    "집중도",
+    "단속위험도",
+    "구조노후도",
+    "도로폭위험도",
+    "최근접_소화용수_거리등급",
+    "총층수",
+    "연면적"
+  ],
+  "coordinates": [
+    "x_5181",
+    "y_5181"
+  ],
+  "knn_candidates": [
+    6,
+    8,
+    10,
+    12,
+    15,
+    20
+  ],
+  "moran_permutations": 199,
+  "gwr_sample_cap": 700,
+  "mgwr_sample_cap": 220,
+  "note": "K=2 is fixed. Feature-set tuning selects the highest silhouette score. SLM/SEM keep the lowest-AIC KNN candidate per cluster/model."
+}

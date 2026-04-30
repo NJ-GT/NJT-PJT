@@ -1,0 +1,74 @@
+{
+  "rows": 4246,
+  "fire_rows_2021_2024": 9873,
+  "facilities_with_fire_150m": 3794,
+  "mean_fire_count_150m": 5.633537447008949,
+  "max_fire_count_150m": 30,
+  "train_rows_fire_matched": 3794,
+  "lasso_cv_alpha": 0.00033372300073356806,
+  "gwr_rows_sampled": 650,
+  "gwr_bandwidth": 460.0,
+  "gwr_aicc": 2612.0338706655357,
+  "gwr_r2": 0.951219898035279,
+  "gwr_adj_r2": 0.9500861887756566,
+  "rf_metrics": [
+    {
+      "검증": "순환검증_A: 위험도점수를 구성변수로 다시 예측",
+      "target": "위험도점수",
+      "features": "구조노후도, 도로폭위험도, 주변건물수, 집중도",
+      "rows": 4246,
+      "r2": 0.9309598061203486,
+      "mae": 1.5353572216280875
+    },
+    {
+      "검증": "순환검증_B: 위험도점수 + GWR계수 사용",
+      "target": "위험도점수",
+      "features": "구조노후도, 도로폭위험도, 주변건물수, 집중도, C_구조노후도, C_도로폭위험도, C_주변건물수, C_집중도",
+      "rows": 650,
+      "r2": 0.8889804543259417,
+      "mae": 2.0011236546020017
+    },
+    {
+      "검증": "진짜검증_C: 실제 화재수 예측",
+      "target": "log1p_fire_count_150m",
+      "features": "승인연도, 주변건물수, 집중도, 단속위험도, 구조노후도, 도로폭위험도",
+      "rows": 4246,
+      "r2": 0.3475861036996062,
+      "mae": 0.4882846575686464
+    },
+    {
+      "검증": "진짜검증_D: 실제 재산피해액 예측",
+      "target": "log1p_damage_sum_천원",
+      "features": "승인연도, 주변건물수, 집중도, 단속위험도, 구조노후도, 도로폭위험도",
+      "rows": 4246,
+      "r2": 0.23713521638389778,
+      "mae": 2.0812838736065737
+    }
+  ],
+  "moran": [
+    {
+      "좌표": "위경도_그대로",
+      "moran_I": 0.3739044722468773,
+      "p_value": 0.001
+    },
+    {
+      "좌표": "EPSG5181_평면좌표",
+      "moran_I": 0.3763365625783459,
+      "p_value": 0.001
+    }
+  ],
+  "outputs": [
+    "01_cluster_fire_boxplot.png",
+    "01_cluster_fire_summary.csv",
+    "01_elbow_inertia.csv",
+    "01_elbow_method.png",
+    "02_lasso_coefficients.csv",
+    "03_team_risk_top30.csv",
+    "04_moran_results.csv",
+    "05_gwr_sample_params.csv",
+    "06_rf_circular_feature_importance.csv",
+    "06_rf_validation_metrics.csv",
+    "07_ols_sanity.csv",
+    "team_pipeline_scored_dataset.csv"
+  ]
+}

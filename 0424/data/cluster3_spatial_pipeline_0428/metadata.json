@@ -1,0 +1,26 @@
+{
+  "input": "C:\\Users\\USER\\Documents\\GitHub\\기말공모전\\NJT-PJT\\0424\\data\\cluster3_spatial_pipeline_fire_count_150m_0428\\최최최종0428변수테이블.csv",
+  "target": "fire_count_150m",
+  "cluster_column": "cluster",
+  "features": [
+    "승인연도",
+    "소방위험도_점수",
+    "주변건물수",
+    "집중도",
+    "단속위험도",
+    "구조노후도",
+    "도로폭위험도",
+    "최근접_소화용수_거리등급",
+    "총층수",
+    "연면적"
+  ],
+  "coordinates": [
+    "x_5181",
+    "y_5181"
+  ],
+  "weights": "KNN k=min(12, n-1), row-standardized",
+  "moran_permutations": 199,
+  "gwr_sample_cap": 700,
+  "mgwr_sample_cap": 220,
+  "note": "GWR/MGWR use adaptive bisquare bandwidth search. Large clusters are sampled for local models to keep the run reproducible on a laptop."
+}

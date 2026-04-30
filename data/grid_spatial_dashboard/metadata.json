@@ -1,0 +1,24 @@
+{
+  "boundary": "data\\seoul_neighborhoods_geo_simple.json",
+  "facility_source": "data\\data_with_fire_targets.csv",
+  "crs_meter": "EPSG:5179",
+  "target": "log1p_fire_sum",
+  "features": [
+    "facility_count",
+    "mean_fire_risk",
+    "mean_building_age",
+    "mean_nearby_buildings",
+    "mean_density",
+    "mean_enforcement",
+    "mean_road_risk",
+    "mean_structure_age"
+  ],
+  "workflow": [
+    "250m grid 생성",
+    "spatial join으로 변수 집계",
+    "Moran's I 확인",
+    "W = Queen 인접, DistanceBand(500m) 보조 확인",
+    "OLS -> SLM/SEM 비교",
+    "500m grid robustness check"
+  ]
+}

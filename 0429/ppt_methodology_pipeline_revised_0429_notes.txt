@@ -1,0 +1,6 @@
+수정 슬라이드 핵심 문구
+- 사용 테이블: 최최최종0428변수테이블.csv (4,246개 숙박시설) + team_pipeline_scored_dataset.csv의 fire_count_150m 결합
+- VIF: 10개 설명변수 기준 최대 VIF 1.86, 기준 5 미만으로 다중공선성 문제 낮음
+- 군집화: 표준화한 위험요인 조합 기준 K-Means K=3, 위치 기반 군집이 아님
+- 공간통계: KNN k=12 행표준화 공간가중치, OLS 잔차 Moran, SLM/SEM, GWR/MGWR 사용
+- GWR/MGWR: 계산량 때문에 군집별 표본상한 GWR 700, MGWR 220 적용

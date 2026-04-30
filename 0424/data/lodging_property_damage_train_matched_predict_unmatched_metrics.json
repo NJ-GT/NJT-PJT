@@ -1,0 +1,97 @@
+{
+  "analysis_path": "NJT-PJT\\0424\\data\\분석변수_최종테이블0423.csv",
+  "fire_path": "NJT-PJT\\data\\화재출동\\화재출동_2021_2024.csv",
+  "fire_year_filter": "none; all fire records in file",
+  "fire_year_min": 2017,
+  "fire_year_max": 2024,
+  "fire_count_used": 20350,
+  "lodging_count": 4246,
+  "match_definition": "lodging has at least one fire point within selected radius",
+  "selected_radius_m_closest_to_50pct": 44,
+  "matched_train_count": 2114,
+  "unmatched_test_count": 2132,
+  "matched_rate": 0.49788035798398494,
+  "nearest_k_for_damage_target": 5,
+  "target_definition": "mean property damage of 5 nearest fire records, thousand KRW",
+  "features": [
+    "승인연도",
+    "주변건물수",
+    "집중도",
+    "단속위험도",
+    "구조노후도",
+    "도로폭위험도",
+    "총층수",
+    "시설규모/연면적",
+    "구",
+    "동",
+    "업종",
+    "건물용도명"
+  ],
+  "model_selected_by_train_cv_r2": "random_forest_log1p",
+  "metrics_by_model": {
+    "linear_raw": {
+      "target_scale": "raw_thousand_krw",
+      "train_r2_on_model_target": 0.4753707146504639,
+      "test_r2_against_nearest5_target_for_diagnostic_on_model_target": 0.1464581013756292,
+      "train_raw_r2": 0.4753707146504639,
+      "test_raw_r2_against_nearest5_target_for_diagnostic": 0.1464581013756292,
+      "test_mae_thousand_krw": 136129.68769706806,
+      "test_rmse_thousand_krw": 903995.6891175814,
+      "train_cv_r2_mean": -42.954975238432525,
+      "train_cv_r2_scores": [
+        0.0034898857546731277,
+        0.10694421393512665,
+        0.12451052089561065,
+        -215.0944852114394,
+        0.08466439869134734
+      ]
+    },
+    "ridge_log1p": {
+      "target_scale": "log1p_thousand_krw",
+      "train_r2_on_model_target": 0.20496383683422348,
+      "test_r2_against_nearest5_target_for_diagnostic_on_model_target": 0.04491795184207181,
+      "train_raw_r2": -0.0028069968338715334,
+      "test_raw_r2_against_nearest5_target_for_diagnostic": -0.005278211206957151,
+      "test_mae_thousand_krw": 70021.95219658919,
+      "test_rmse_thousand_krw": 981063.3953197299,
+      "train_cv_r2_mean": 0.07354329331174655,
+      "train_cv_r2_scores": [
+        0.11034653760647051,
+        0.08512161077569513,
+        0.08458386836935683,
+        0.06881698767409594,
+        0.01884746213311439
+      ]
+    },
+    "random_forest_log1p": {
+      "target_scale": "log1p_thousand_krw",
+      "train_r2_on_model_target": 0.4781443009593309,
+      "test_r2_against_nearest5_target_for_diagnostic_on_model_target": 0.05938404876974568,
+      "train_raw_r2": -0.0015802097265351644,
+      "test_raw_r2_against_nearest5_target_for_diagnostic": -0.004273578542262069,
+      "test_mae_thousand_krw": 69544.25129105616,
+      "test_rmse_thousand_krw": 980573.0560837559,
+      "train_cv_r2_mean": 0.10631743806596383,
+      "train_cv_r2_scores": [
+        0.1345629948036693,
+        0.08471836433116886,
+        0.1224951137682958,
+        0.08357779325119774,
+        0.10623292417548746
+      ]
+    }
+  },
+  "target_summary_all_thousand_krw": {
+    "mean": 56814.516627414036,
+    "median": 590.2,
+    "min": 6.2,
+    "max": 14324281.4,
+    "std": 877572.6680637401
+  },
+  "prediction_summary_unmatched_test_thousand_krw": {
+    "mean": 891.7490259170448,
+    "median": 746.0003686159744,
+    "min": 154.74928771165324,
+    "max": 10261.317840577463
+  }
+}

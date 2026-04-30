@@ -1,0 +1,95 @@
+﻿file,replacements
+"data\osm_seoul_10gu_named_highways.json",61
+"NJT-PJT\0424\서울시 소화용수 위치정보 (좌표계_ ITRF2000).csv",26
+"NJT-PJT\0429\cluster3_fire_count_150m_area_counts_summary.csv",3
+"NJT-PJT\0429\cluster3_fire_count_150m_spatial_distribution_top_areas.csv",2
+"NJT-PJT\data\clustering_result_all.csv",505
+"NJT-PJT\data\clustering_result_all_주변건물수보정.csv",505
+"NJT-PJT\data\clustering_result_A_기존숙박군.csv",298
+"NJT-PJT\data\clustering_result_B_외국인민박.csv",207
+"NJT-PJT\data\data_with_fire_targets.csv",502
+"NJT-PJT\data\lisa_result.csv",502
+"NJT-PJT\data\map_data.json",34
+"NJT-PJT\data\분석변수_최종테이블.csv",502
+"NJT-PJT\data\분석변수_최종테이블428.csv",504
+"NJT-PJT\data\서울10구_숙소_소방거리_유클리드.csv",503
+"NJT-PJT\data\숙박시설_wgs84.json",34
+"NJT-PJT\data\통합숙박시설_최종안0421.csv",505
+"NJT-PJT\data\통합숙박시설최종안0415.csv",44
+"NJT-PJT\data\통합숙박시설표제부0415_피처선정본.csv",38
+"NJT-PJT\data\핵심서울0424.csv",502
+"NJT-PJT\scripts\build_total_building_commercial_density_map_0417.py",1
+"NJT-PJT\scripts\mapo_license_viz.py",1
+"NJT-PJT\scripts\ols_improved.py",1
+"NJT-PJT\scripts\visualize_combined.py",5
+"NJT-PJT\원본데이터\03. 표제부_강서구.csv",27514
+"NJT-PJT\원본데이터\03. 표제부_성동구.csv",15972
+"NJT-PJT\원본데이터\03. 표제부_영등포구.csv",21619
+"NJT-PJT\원본데이터\등기부등본_표제부_강남.csv",29781
+"NJT-PJT\원본데이터\등기부등본_표제부_마포구.csv",24626
+"NJT-PJT\원본데이터\등기부등본_표제부_서초구.csv",19476
+"NJT-PJT\원본데이터\등기부등본_표제부_송파구.csv",27816
+"NJT-PJT\원본데이터\등기부등본_표제부_용산구.csv",18243
+"NJT-PJT\원본데이터\등기부등본_표제부_종로구.csv",17292
+"NJT-PJT\원본데이터\등기부등본_표제부_중구.csv",11714
+"NJT-PJT\원본데이터\서울시 관광숙박업 인허가 정보.csv",31
+"NJT-PJT\원본데이터\서울시 숙박업 인허가 정보.csv",53
+"NJT-PJT\원본데이터\서울시 외국인관광도시민박업 인허가 정보.csv",1
+"NJT-PJT\원본데이터\서울시 통합 숙박시설 0414.csv",36
+"NJT-PJT\원본데이터\통합숙박시설표제부0414.csv",4615
+"NJT-PJT\scripts\0421기준안쓰는스크립트\merge_fire.py",2
+"NJT-PJT\data\0421기준안쓰는파일들\등기부등본_소방청병합_결과.csv",6
+"NJT-PJT\data\0421기준안쓰는파일들\등기부등본_통합숙박업_수선내역.csv",3
+"NJT-PJT\data\0421기준안쓰는파일들\분석_변수_정의서.csv",1
+"NJT-PJT\data\0421기준안쓰는파일들\서울10구_숙소_도로폭_공간매칭.csv",501
+"NJT-PJT\data\0421기준안쓰는파일들\소방청_특정소방대상물소방시설정보서비스.csv",18
+"NJT-PJT\data\0421기준안쓰는파일들\소방청_특정소방대상물정보서비스.csv",25
+"NJT-PJT\data\0421기준안쓰는파일들\통합숙박시설최종안0415_주변노후도_50m100m.csv",44
+"NJT-PJT\data\0421기준안쓰는파일들\통합숙박시설최종안0415_주변노후도_50m100m_사용승인일유효.csv",39
+"NJT-PJT\data\0421기준안쓰는파일들\통합숙박시설최종안0415_주변노후도_50m100m_연면적유효.csv",39
+"NJT-PJT\data\AL_D010_11_20260409\건물데이터_마포구_연남동.csv",2
+"NJT-PJT\data\AL_D010_11_20260409\건물데이터_전체.csv",877
+"NJT-PJT\data\final_spatial_pipeline\analysis_dataset.csv",505
+"NJT-PJT\data\final_spatial_pipeline\analysis_dataset_주변건물수보정.csv",505
+"NJT-PJT\data\final_spatial_pipeline\blindspot_risk_score_team_formula.csv",504
+"NJT-PJT\data\final_spatial_pipeline\step1_industry_clusters.csv",505
+"NJT-PJT\data\final_spatial_pipeline\step6_final_facility_rank.csv",504
+"NJT-PJT\data\team_pipeline_validation\03_team_risk_top30.csv",4
+"NJT-PJT\data\team_pipeline_validation\05_gwr_sample_params.csv",88
+"NJT-PJT\data\team_pipeline_validation\team_pipeline_scored_dataset.csv",505
+"NJT-PJT\data\건물상가밀집도_10개구_0417\서울10개구_건물상가_시각화컬럼정의.csv",1
+"NJT-PJT\data\최종_상가숙박_개수밀도_구현자료_0417\02_최종산출테이블\서울10개구_건물상가_시각화컬럼정의.csv",1
+"NJT-PJT\data\최종_상가숙박_개수밀도_구현자료_0417\01_입력테이블\상가숙소_격자자료\서울10개구_상가숙소_시각화컬럼정의.csv",1
+"NJT-PJT\0427\data\clustering_result_all.csv",505
+"NJT-PJT\0427\data\clustering_result_A_기존숙박군.csv",298
+"NJT-PJT\0427\data\clustering_result_B_외국인민박.csv",207
+"NJT-PJT\0424\data\data_with_fire_targets.csv",502
+"NJT-PJT\0424\data\facility_expected_property_damage_two_stage.csv",498
+"NJT-PJT\0424\data\facility_expected_property_damage_two_stage_summary.json",2
+"NJT-PJT\0424\data\lisa_result.csv",502
+"NJT-PJT\0424\data\lodging_nearest5_property_damage.csv",504
+"NJT-PJT\0424\data\lodging_nearest5_property_damage_all_years.csv",504
+"NJT-PJT\0424\data\lodging_property_damage_knn_median_target_predict_unmatched.csv",505
+"NJT-PJT\0424\data\lodging_property_damage_knn_test_predictions.csv",319
+"NJT-PJT\0424\data\lodging_property_damage_knn_train_matched_predict_unmatched.csv",505
+"NJT-PJT\0424\data\lodging_property_damage_train_matched_predict_unmatched.csv",505
+"NJT-PJT\0424\data\polynomial_regression_2_3_4_5_predictions.csv",504
+"NJT-PJT\0424\data\tmap_geocode_input_addresses.csv",1009
+"NJT-PJT\0424\data\true_fire_split_test_predictions.csv",24
+"NJT-PJT\0424\data\분석변수_최종테이블0428.csv",35
+"NJT-PJT\0424\data\분석변수_최종테이블0428_AHP_EWM_전체변수비교.csv",505
+"NJT-PJT\0424\data\최최최종0428변수테이블.csv",505
+"NJT-PJT\0424\data\핵심서울0424.csv",502
+"NJT-PJT\0424\scripts\mapo_license_viz.py",1
+"NJT-PJT\0424\scripts\ols_improved.py",1
+"NJT-PJT\0424\분석\tables\AHP_3등급_최우수모델_예측결과.csv",213
+"NJT-PJT\0424\분석\tables\common_grade_ensemble_test_predictions.csv",120
+"NJT-PJT\0424\분석\tables\common_grade_extended_model_test_predictions.csv",120
+"NJT-PJT\0424\분석\tables\common_grade_stacking_meta_predictions.csv",120
+"NJT-PJT\0424\분석\tables\lodging_targets_injury_fire_top3.csv",504
+"NJT-PJT\0424\분석\tables\lodging_targets_property_damage_50m.csv",505
+"NJT-PJT\0424\분석\tables\property_damage_hurdle_predictions.csv",206
+"NJT-PJT\0424\분석\tables\분석변수_최종테이블0423_AHP3등급비교.csv",505
+"NJT-PJT\0424\분석\tables\분석변수_최종테이블0423_AHP3등급비교_주변건물수보정.csv",505
+"NJT-PJT\0424\분석\tables\분석변수_최종테이블0423_건물특성_probe.csv",540
+"NJT-PJT\0424\data\cluster3_spatial_pipeline_fire_count_150m_0428\최최최종0428변수테이블.csv",505

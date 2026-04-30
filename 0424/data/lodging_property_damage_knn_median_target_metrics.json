@@ -1,0 +1,55 @@
+{
+  "analysis_path": "NJT-PJT\\0424\\data\\분석변수_최종테이블0423.csv",
+  "fire_path": "NJT-PJT\\data\\화재출동\\화재출동_2021_2024.csv",
+  "fire_year_filter": "none; all fire records in file",
+  "fire_count_used": 20350,
+  "lodging_count": 4246,
+  "selected_radius_m_closest_to_50pct": 44,
+  "matched_train_count": 2114,
+  "unmatched_test_count": 2132,
+  "matched_rate": 0.49788035798398494,
+  "fire_nearest_k_for_target": 5,
+  "target_definition": "median property damage of 5 nearest fire records, thousand KRW; model trained on log1p(target)",
+  "features": [
+    "승인연도",
+    "주변건물수",
+    "집중도",
+    "단속위험도",
+    "구조노후도",
+    "도로폭위험도",
+    "총층수",
+    "시설규모/연면적",
+    "구",
+    "동",
+    "업종",
+    "건물용도명"
+  ],
+  "k_search": "5-10",
+  "weights_tested": [
+    "distance",
+    "uniform"
+  ],
+  "best_k": 10,
+  "best_weights": "distance",
+  "train_cv_r2_mean_log1p": 0.0554813691114459,
+  "train_cv_r2_std_log1p": 0.03587867780164495,
+  "train_r2_log1p": 1.0,
+  "test_diagnostic_r2_log1p_against_nearest5_median_target": -0.06554663508397418,
+  "train_raw_r2": 1.0,
+  "test_diagnostic_raw_r2_against_nearest5_median_target": -0.04500190951292171,
+  "test_mae_thousand_krw": 277.47778918356516,
+  "test_rmse_thousand_krw": 761.3831263790032,
+  "median_target_summary_all_thousand_krw": {
+    "mean": 317.4795101271785,
+    "median": 122.0,
+    "min": 0.0,
+    "max": 27918.0,
+    "std": 891.8600453935952
+  },
+  "prediction_summary_unmatched_test_thousand_krw": {
+    "mean": 161.77234369409246,
+    "median": 145.8270958298598,
+    "min": 22.293301218388244,
+    "max": 677.6926229121628
+  }
+}
