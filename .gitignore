@@ -1,0 +1,19 @@
+# Local secrets
+.env
+.env.*
+!.streamlit/config.toml
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Runtime logs
+*.log
+streamlit_*_stdout.log
+streamlit_*_stderr.log
+
+# Local notebooks / scratch
+*.ipynb
+_final_verify/
+_final_verify.zip
