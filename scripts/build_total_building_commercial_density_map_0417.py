@@ -1054,7 +1054,7 @@ const METRICS = {{
     field: "상가숙박_개수_per_ha",
     decimals: 1,
     zeroDecimals: 0,
-    method: "(상가수 + 숙박시설수) / 5ha",
+    method: "상가수 + 숙박시설수) / 5ha",
     subtitle: "상가와 숙박시설을 합친 개수를 ha 기준으로 밀도화한 최종값입니다. 호버와 팝업에서 면적·층수 기반 규모도 함께 확인할 수 있습니다."
   }}
 }};

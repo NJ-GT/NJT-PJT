@@ -21,10 +21,10 @@ def prepare_output_table(df: pd.DataFrame) -> pd.DataFrame:
 
     out["건물용도명"] = df["건물용도명_통합"].fillna("미상").astype(str)
     out["총층수"] = pd.to_numeric(df["총층수_0층만보정"], errors="coerce").fillna(1).round().astype(int)
-    out["시설규모/연면적"] = pd.to_numeric(df["연면적_통합"], errors="coerce").fillna(0.0)
+    out["연면적"] = pd.to_numeric(df["연면적_통합"], errors="coerce").fillna(0.0)
 
     # Sanity-check columns that must be fully populated for downstream models.
-    required_non_null = ["건물용도명", "총층수", "시설규모/연면적"]
+    required_non_null = ["건물용도명", "총층수", "연면적"]
     for col in required_non_null:
         if out[col].isna().any():
             raise ValueError(f"Required column still has nulls: {col}")
@@ -47,7 +47,7 @@ def main() -> None:
         {
             "건물용도명_nulls": int(final_df["건물용도명"].isna().sum()),
             "총층수_nulls": int(final_df["총층수"].isna().sum()),
-            "시설규모/연면적_nulls": int(final_df["시설규모/연면적"].isna().sum()),
+            "연면적_nulls": int(final_df["연면적"].isna().sum()),
         }
     )
 

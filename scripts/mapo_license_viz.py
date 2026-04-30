@@ -149,7 +149,7 @@ x = np.arange(len(labels))
 w = 0.32
 ax6.bar(x-w/2, v2020, width=w, color='#94A3B8', alpha=0.85, label='2020년', zorder=3)
 ax6.bar(x+w/2, v2024, width=w, color=C_MAIN,   alpha=0.85, label='2024년', zorder=3)
-for i,(a,b) in enumerate(zip(v2020, v2024)):
+for i,a,b) in enumerate(zip(v2020, v2024)):
     ax6.text(i-w/2, a+1, str(a), ha='center', va='bottom', fontsize=9, color='#64748B', fontweight='bold')
     ax6.text(i+w/2, b+1, str(b), ha='center', va='bottom', fontsize=9, color=C_MAIN,   fontweight='bold')
 ax6.set_title('2020 vs 2024\n업종별 신규 인허가 비교', fontsize=11, fontweight='bold', pad=8)

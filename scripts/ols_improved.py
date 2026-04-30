@@ -131,7 +131,7 @@ fig.suptitle(
 )
 
 ax = axes[0]
-for i,(v,c,lo,hi,p,col,al) in enumerate(zip(key_vars_plot,coefs,ci_lo,ci_hi,pvals,colors,alphas)):
+for i,v,c,lo,hi,p,col,al) in enumerate(zip(key_vars_plot,coefs,ci_lo,ci_hi,pvals,colors,alphas)):
     ax.barh(i, c, color=col, alpha=al, height=0.55)
     ax.plot([lo,hi],[i,i], color='black', lw=1.5)
     sig = '***' if p<0.001 else ('**' if p<0.01 else ('*' if p<0.05 else 'n.s.'))

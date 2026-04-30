@@ -65,7 +65,7 @@ NUMERIC_FEATURES = [
     "위도",
     "경도",
     "총층수",
-    "시설규모/연면적",
+    "연면적",
 ]
 CATEGORICAL_FEATURES = [
     "구",
