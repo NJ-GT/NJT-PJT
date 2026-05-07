@@ -65,7 +65,11 @@ def set_korean_font() -> str:
 
 def make_card(df: pd.DataFrame, dong: str) -> Path:
     part = df[df["동"].eq(dong)].copy()
-    desc = part[DESCRIBE_COLS].describe().T[["count", "mean", "std", "min", "25%", "50%", "75%", "max"]]
+    desc = (
+        part[DESCRIBE_COLS]
+        .describe()
+        .T[["count", "mean", "std", "min", "25%", "50%", "75%", "max"]]
+    )
     desc = desc.rename(index=DISPLAY_NAMES)
     table_df = desc.copy()
     table_df["count"] = table_df["count"].map(lambda v: f"{int(v):,}")
@@ -78,11 +82,21 @@ def make_card(df: pd.DataFrame, dong: str) -> Path:
 
     fig = plt.figure(figsize=(14.8, 10.2), dpi=180)
     fig.patch.set_facecolor("#f6f8fb")
-    gs = fig.add_gridspec(3, 4, height_ratios=[0.55, 1.1, 1.85], hspace=0.42, wspace=0.35)
+    gs = fig.add_gridspec(
+        3, 4, height_ratios=[0.55, 1.1, 1.85], hspace=0.42, wspace=0.35
+    )
 
     ax_title = fig.add_subplot(gs[0, :])
     ax_title.axis("off")
-    ax_title.text(0.01, 0.84, f"마포구 {dong} describe", fontsize=25, fontweight="bold", color="#101828", va="top")
+    ax_title.text(
+        0.01,
+        0.84,
+        f"마포구 {dong} describe",
+        fontsize=25,
+        fontweight="bold",
+        color="#101828",
+        va="top",
+    )
     ax_title.text(
         0.01,
         0.40,
@@ -98,7 +112,11 @@ def make_card(df: pd.DataFrame, dong: str) -> Path:
         fontsize=12.2,
         color="#1d2939",
         va="top",
-        bbox=dict(boxstyle="round,pad=0.55,rounding_size=0.12", facecolor="#ffffff", edgecolor="#d0d5dd"),
+        bbox=dict(
+            boxstyle="round,pad=0.55,rounding_size=0.12",
+            facecolor="#ffffff",
+            edgecolor="#d0d5dd",
+        ),
     )
 
     ax_pie = fig.add_subplot(gs[1, 0])
@@ -111,12 +129,39 @@ def make_card(df: pd.DataFrame, dong: str) -> Path:
         textprops=dict(color="#111827", fontsize=10, fontweight="bold"),
     )
     ax_pie.set_title("위험군 비율", fontsize=14, fontweight="bold")
-    ax_pie.legend(wedges, [f"{k} {int(risk_counts[k])}개" for k in RISK_ORDER], loc="lower center", bbox_to_anchor=(0.5, -0.25), ncol=1, fontsize=9)
+    ax_pie.legend(
+        wedges,
+        [f"{k} {int(risk_counts[k])}개" for k in RISK_ORDER],
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.25),
+        ncol=1,
+        fontsize=9,
+    )
 
     ax_hist = fig.add_subplot(gs[1, 1:3])
-    sns.histplot(part["최종위험점수_new"], bins=18, kde=True, color=color, edgecolor="white", alpha=0.82, ax=ax_hist)
-    ax_hist.axvline(score.mean(), color="#111827", linewidth=1.5, linestyle="--", label=f"평균 {score.mean():.2f}")
-    ax_hist.axvline(score.median(), color="#475467", linewidth=1.5, linestyle=":", label=f"중앙 {score.median():.2f}")
+    sns.histplot(
+        part["최종위험점수_new"],
+        bins=18,
+        kde=True,
+        color=color,
+        edgecolor="white",
+        alpha=0.82,
+        ax=ax_hist,
+    )
+    ax_hist.axvline(
+        score.mean(),
+        color="#111827",
+        linewidth=1.5,
+        linestyle="--",
+        label=f"평균 {score.mean():.2f}",
+    )
+    ax_hist.axvline(
+        score.median(),
+        color="#475467",
+        linewidth=1.5,
+        linestyle=":",
+        label=f"중앙 {score.median():.2f}",
+    )
     ax_hist.set_title("최종위험점수 분포", fontsize=14, fontweight="bold")
     ax_hist.set_xlabel("최종위험점수_new")
     ax_hist.set_ylabel("시설 수")
@@ -124,7 +169,9 @@ def make_card(df: pd.DataFrame, dong: str) -> Path:
     ax_hist.set_facecolor("#ffffff")
 
     ax_bar = fig.add_subplot(gs[1, 3])
-    top_means = part[["구조노후도", "단속위험도", "도로폭위험도", "소방위험도_점수"]].mean()
+    top_means = part[
+        ["구조노후도", "단속위험도", "도로폭위험도", "소방위험도_점수"]
+    ].mean()
     bars = ax_bar.barh(
         [DISPLAY_NAMES[i] for i in top_means.index],
         top_means.values,
@@ -132,7 +179,13 @@ def make_card(df: pd.DataFrame, dong: str) -> Path:
         edgecolor="white",
     )
     for bar, val in zip(bars, top_means.values):
-        ax_bar.text(val + 0.01, bar.get_y() + bar.get_height() / 2, f"{val:.2f}", va="center", fontsize=9.5)
+        ax_bar.text(
+            val + 0.01,
+            bar.get_y() + bar.get_height() / 2,
+            f"{val:.2f}",
+            va="center",
+            fontsize=9.5,
+        )
     ax_bar.set_title("핵심 위험 변수 평균", fontsize=14, fontweight="bold")
     ax_bar.set_xlabel("평균")
     ax_bar.set_facecolor("#ffffff")

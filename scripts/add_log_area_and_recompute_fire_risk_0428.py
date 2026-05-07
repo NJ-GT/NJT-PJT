@@ -43,16 +43,24 @@ def main() -> None:
 
     features = list(WEIGHTS.keys())
     x = df[features].apply(pd.to_numeric, errors="coerce").fillna(0)
-    scaled = pd.DataFrame(MinMaxScaler().fit_transform(x), columns=features, index=df.index)
+    scaled = pd.DataFrame(
+        MinMaxScaler().fit_transform(x), columns=features, index=df.index
+    )
 
-    df["최종_화재위험점수_로그연면적"] = (scaled[features] * pd.Series(WEIGHTS)).sum(axis=1) * 100
+    df["최종_화재위험점수_로그연면적"] = (scaled[features] * pd.Series(WEIGHTS)).sum(
+        axis=1
+    ) * 100
 
     kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
     df["cluster_k3_로그연면적"] = kmeans.fit_predict(scaled[features])
 
     df.to_csv(OUTPUT_PATH, index=False, encoding="utf-8-sig")
     print(f"saved={OUTPUT_PATH}")
-    print(df[[LOG_AREA_COL, "최종_화재위험점수_로그연면적", "cluster_k3_로그연면적"]].describe().to_string())
+    print(
+        df[[LOG_AREA_COL, "최종_화재위험점수_로그연면적", "cluster_k3_로그연면적"]]
+        .describe()
+        .to_string()
+    )
 
 
 if __name__ == "__main__":

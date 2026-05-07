@@ -8,7 +8,13 @@ import pandas as pd
 
 BASE = Path(__file__).resolve().parents[1]
 MGWR_PATH = BASE / "data" / "mgwr_local_params_low_high.csv"
-GWR_PATH = BASE / "0424" / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428" / "gwr_local_diagnostics_by_cluster.csv"
+GWR_PATH = (
+    BASE
+    / "0424"
+    / "data"
+    / "cluster3_spatial_pipeline_fire_count_150m_0428"
+    / "gwr_local_diagnostics_by_cluster.csv"
+)
 OUT_PATH = BASE / "0430" / "군집별_대표모형_params_평균계수.csv"
 
 RISK_LABELS = {0: "저위험군", 1: "중위험군", 2: "고위험군"}
@@ -28,7 +34,9 @@ FEATURE_ORDER = [
 DISPLAY_ORDER = ["Intercept" if f == "intercept" else f for f in FEATURE_ORDER]
 
 
-def append_param_rows(rows: list[dict], df: pd.DataFrame, cluster_id: int, model_name: str) -> None:
+def append_param_rows(
+    rows: list[dict], df: pd.DataFrame, cluster_id: int, model_name: str
+) -> None:
     sub = df[df["cluster"].astype(int).eq(cluster_id)].copy()
     for feature in FEATURE_ORDER:
         col = f"coef_{feature}"
@@ -66,7 +74,9 @@ def main() -> None:
     append_param_rows(rows, gwr, 1, "GWR")
 
     result = pd.DataFrame(rows)
-    result["변수"] = pd.Categorical(result["변수"], categories=DISPLAY_ORDER, ordered=True)
+    result["변수"] = pd.Categorical(
+        result["변수"], categories=DISPLAY_ORDER, ordered=True
+    )
     result = result.sort_values(["cluster", "변수"]).reset_index(drop=True)
     result["변수"] = result["변수"].astype(str)
     result.to_csv(OUT_PATH, index=False, encoding="utf-8-sig")

@@ -16,28 +16,44 @@
 출력: 집계구_숙박밀집도.html       (Leaflet 집계구 대시보드 맵)
 """
 
-import sys, json, os
-sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
+import sys
+import json
+import os
+
+sys.stdout.reconfigure(encoding="utf-8")  # 한글 출력 설정
 
 # ─── 1. 집계구 데이터 로드 및 분리 ─────────────────────────────
-with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/oa_density.json', encoding='utf-8') as f:
+with open(
+    "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/oa_density.json",
+    encoding="utf-8",
+) as f:
     raw = json.load(f)
 
 # 숙박시설이 있는 집계구(filled)와 없는 집계구(empty)로 분리
 # filled: 색상과 클릭 이벤트 적용, empty: 회색 경계선만 표시
-filled = [f for f in raw['features'] if f['properties']['count'] > 0]
-empty  = [f for f in raw['features'] if f['properties']['count'] == 0]
+filled = [f for f in raw["features"] if f["properties"]["count"] > 0]
+empty = [f for f in raw["features"] if f["properties"]["count"] == 0]
 
 # JavaScript에 직접 삽입할 GeoJSON 문자열로 변환
-filled_json = json.dumps({'type':'FeatureCollection','features':filled}, ensure_ascii=False)
-empty_json  = json.dumps({'type':'FeatureCollection','features':empty},  ensure_ascii=False)
+filled_json = json.dumps(
+    {"type": "FeatureCollection", "features": filled}, ensure_ascii=False
+)
+empty_json = json.dumps(
+    {"type": "FeatureCollection", "features": empty}, ensure_ascii=False
+)
 
 # ─── 2. 개별 숙박시설 위치 로드 ─────────────────────────────────
-with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/map_data.json', encoding='utf-8') as f:
-    places_json = json.dumps(json.load(f)['places'], ensure_ascii=False)
+with open(
+    "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/map_data.json",
+    encoding="utf-8",
+) as f:
+    places_json = json.dumps(json.load(f)["places"], ensure_ascii=False)
 
 # ─── 3. 소방서/안전센터 데이터 로드 ─────────────────────────────
-with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/firestation_data.json', encoding='utf-8') as f:
+with open(
+    "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/firestation_data.json",
+    encoding="utf-8",
+) as f:
     stations_json = json.dumps(json.load(f), ensure_ascii=False)
 
 print(f"채워진 집계구: {len(filled)}, 빈 집계구: {len(empty)}")
@@ -201,12 +217,21 @@ html,body{width:100%;height:100%;background:#0e0e1a;font-family:'Segoe UI',sans-
 </div>
 """
 
-script_part = """
+script_part = (
+    """
 <script>
-const FILLED   = """ + filled_json + """;
-const EMPTY    = """ + empty_json  + """;
-const PLACES   = """ + places_json + """;
-const STATIONS = """ + stations_json + """;
+const FILLED   = """
+    + filled_json
+    + """;
+const EMPTY    = """
+    + empty_json
+    + """;
+const PLACES   = """
+    + places_json
+    + """;
+const STATIONS = """
+    + stations_json
+    + """;
 
 const map = L.map('map', {center:[37.5530,126.9740], zoom:12,
   preferCanvas:true, renderer:L.canvas()});
@@ -464,12 +489,17 @@ document.getElementById('chk-station').addEventListener('change', function(){
 });
 </script></body></html>
 """
+)
 
 # ─── 4. HTML 파일 저장 ───────────────────────────────────────────
 # out_html: HTML 구조(head, body, 스타일, 패널, 범례 등)
 # script_part: JavaScript 데이터와 지도 로직
-with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/집계구_숙박밀집도.html', 'w', encoding='utf-8') as f:
+with open(
+    "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/집계구_숙박밀집도.html",
+    "w",
+    encoding="utf-8",
+) as f:
     f.write(out_html + script_part)
 
-out = 'c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/집계구_숙박밀집도.html'
-print(f"Done: {os.path.getsize(out)//1024} KB")
+out = "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/집계구_숙박밀집도.html"
+print(f"Done: {os.path.getsize(out) // 1024} KB")

@@ -27,7 +27,9 @@ warnings.filterwarnings("ignore")
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "0424" / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428"
-FIRE_TARGET_PATH = ROOT / "data" / "team_pipeline_validation" / "team_pipeline_scored_dataset.csv"
+FIRE_TARGET_PATH = (
+    ROOT / "data" / "team_pipeline_validation" / "team_pipeline_scored_dataset.csv"
+)
 OUT_DIR = ROOT / "0429" / "cluster2_spatial_pipeline_fire_count_150m_0429"
 
 TARGET = "fire_count_150m"
@@ -85,7 +87,9 @@ def set_korean_font() -> None:
 
 
 def read_main_csv() -> pd.DataFrame:
-    csv_files = sorted(DATA_DIR.glob("*.csv"), key=lambda p: p.stat().st_size, reverse=True)
+    csv_files = sorted(
+        DATA_DIR.glob("*.csv"), key=lambda p: p.stat().st_size, reverse=True
+    )
     if not csv_files:
         raise FileNotFoundError(DATA_DIR)
     return pd.read_csv(csv_files[0], encoding="utf-8-sig")
@@ -117,7 +121,17 @@ def attach_fire_count(df: pd.DataFrame) -> pd.DataFrame:
 
 def prepare_data() -> pd.DataFrame:
     df = attach_fire_count(read_main_csv())
-    needed = ["구", "동", "숙소명", "경도", "위도", TARGET, *COORD_COLS, *REG_FEATURES, "최종_화재위험점수"]
+    needed = [
+        "구",
+        "동",
+        "숙소명",
+        "경도",
+        "위도",
+        TARGET,
+        *COORD_COLS,
+        *REG_FEATURES,
+        "최종_화재위험점수",
+    ]
     df = df[[c for c in needed if c in df.columns]].copy()
     for col in [TARGET, *COORD_COLS, *REG_FEATURES, "최종_화재위험점수"]:
         if col in df.columns:
@@ -146,7 +160,9 @@ def build_k2_clusters(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, str
             }
         )
         fitted[name] = labels
-    tuning = pd.DataFrame(rows).sort_values(["silhouette", "calinski_harabasz"], ascending=False)
+    tuning = pd.DataFrame(rows).sort_values(
+        ["silhouette", "calinski_harabasz"], ascending=False
+    )
     best_name = str(tuning.iloc[0]["feature_set"])
     out = df.copy()
     out[CLUSTER_COL] = fitted[best_name]
@@ -239,7 +255,9 @@ def run_spatial_family(df: pd.DataFrame, cluster_id: int) -> pd.DataFrame:
                         "model": model_name,
                         "knn_k": k,
                         "n": len(df),
-                        "fit": float(getattr(model, "pr2", getattr(model, "r2", np.nan))),
+                        "fit": float(
+                            getattr(model, "pr2", getattr(model, "r2", np.nan))
+                        ),
                         "adj_fit": np.nan,
                         "aic": float(getattr(model, "aic", np.nan)),
                         "rho_or_lambda": rho_or_lambda,
@@ -284,7 +302,9 @@ def select_gwr_bw(coords: np.ndarray, y: np.ndarray, x: np.ndarray) -> float:
     bw_min = max(30, x.shape[1] + 3)
     bw_max = max(bw_min + 2, min(len(y) - 1, 420))
     selector = Sel_BW(coords, y, x, fixed=False, kernel="bisquare", n_jobs=1)
-    return float(selector.search(search_method="golden_section", bw_min=bw_min, bw_max=bw_max))
+    return float(
+        selector.search(search_method="golden_section", bw_min=bw_min, bw_max=bw_max)
+    )
 
 
 def run_gwr(df: pd.DataFrame, cluster_id: int) -> tuple[dict, pd.DataFrame]:
@@ -295,7 +315,9 @@ def run_gwr(df: pd.DataFrame, cluster_id: int) -> tuple[dict, pd.DataFrame]:
     t0 = time.time()
     try:
         bw = select_gwr_bw(coords, y, x)
-        result = GWR(coords, y, x, bw=bw, fixed=False, kernel="bisquare", n_jobs=1).fit()
+        result = GWR(
+            coords, y, x, bw=bw, fixed=False, kernel="bisquare", n_jobs=1
+        ).fit()
         resid = np.asarray(result.resid_response).flatten()
         w = build_weights(coords, 12)
         moran = Moran(resid, w, permutations=MORAN_PERMUTATIONS)
@@ -351,14 +373,18 @@ def run_mgwr(df: pd.DataFrame, cluster_id: int) -> tuple[dict, pd.DataFrame]:
     x = standardize_x(work)
     t0 = time.time()
     try:
-        selector = Sel_BW(coords, y, x, multi=True, fixed=False, kernel="bisquare", n_jobs=1)
+        selector = Sel_BW(
+            coords, y, x, multi=True, fixed=False, kernel="bisquare", n_jobs=1
+        )
         selector.search(
             multi_bw_min=[max(30, x.shape[1] + 3)],
             multi_bw_max=[min(len(work) - 1, 180)],
             max_iter_multi=15,
             verbose=False,
         )
-        result = MGWR(coords, y, x, selector, fixed=False, kernel="bisquare", n_jobs=1).fit()
+        result = MGWR(
+            coords, y, x, selector, fixed=False, kernel="bisquare", n_jobs=1
+        ).fit()
         bw_values = np.asarray(selector.bw[0]).flatten()
         resid = np.asarray(result.resid_response).flatten()
         w = build_weights(coords, 12)
@@ -482,19 +508,30 @@ def save_model_png(model_summary: pd.DataFrame, out_path: Path) -> None:
     plot = model_summary.copy()
     plot["cluster"] = plot["cluster"].astype(str)
 
-    sns.barplot(data=plot, x="model", y="fit", hue="cluster", palette="Set2", ax=axes[0])
+    sns.barplot(
+        data=plot, x="model", y="fit", hue="cluster", palette="Set2", ax=axes[0]
+    )
     axes[0].set_title("모델 설명력")
     axes[0].set_ylabel("R2 / pseudo R2")
     axes[0].set_xlabel("")
     axes[0].grid(axis="y", alpha=0.25)
 
-    sns.barplot(data=plot, x="model", y="aic", hue="cluster", palette="Set2", ax=axes[1])
+    sns.barplot(
+        data=plot, x="model", y="aic", hue="cluster", palette="Set2", ax=axes[1]
+    )
     axes[1].set_title("AIC")
     axes[1].set_ylabel("낮을수록 유리")
     axes[1].set_xlabel("")
     axes[1].grid(axis="y", alpha=0.25)
 
-    sns.barplot(data=plot, x="model", y="resid_moran_I", hue="cluster", palette="Set2", ax=axes[2])
+    sns.barplot(
+        data=plot,
+        x="model",
+        y="resid_moran_I",
+        hue="cluster",
+        palette="Set2",
+        ax=axes[2],
+    )
     axes[2].axhline(0, color="#333333", linewidth=1)
     axes[2].set_title("잔차 Moran's I")
     axes[2].set_ylabel("0에 가까울수록 공간잔차 작음")
@@ -516,12 +553,22 @@ def main() -> None:
     df = prepare_data()
     df, cluster_tuning, best_feature_set = build_k2_clusters(df)
 
-    df.to_csv(OUT_DIR / "최최최종0428변수테이블_cluster_k2.csv", index=False, encoding="utf-8-sig")
-    cluster_tuning.to_csv(OUT_DIR / "k2_cluster_feature_set_tuning.csv", index=False, encoding="utf-8-sig")
+    df.to_csv(
+        OUT_DIR / "최최최종0428변수테이블_cluster_k2.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    cluster_tuning.to_csv(
+        OUT_DIR / "k2_cluster_feature_set_tuning.csv", index=False, encoding="utf-8-sig"
+    )
 
     cluster_summary = summarize_clusters(df)
-    cluster_summary.to_csv(OUT_DIR / "cluster_k2_feature_summary.csv", index=False, encoding="utf-8-sig")
-    save_cluster_profile_png(cluster_summary, OUT_DIR / "cluster_k2_feature_profile.png")
+    cluster_summary.to_csv(
+        OUT_DIR / "cluster_k2_feature_summary.csv", index=False, encoding="utf-8-sig"
+    )
+    save_cluster_profile_png(
+        cluster_summary, OUT_DIR / "cluster_k2_feature_profile.png"
+    )
 
     model_rows = []
     coef_tables = []
@@ -553,14 +600,40 @@ def main() -> None:
     model_summary = pd.DataFrame(model_rows)
     spatial_tuning = pd.concat(all_spatial_tuning, ignore_index=True)
     coef_df = pd.concat(coef_tables, ignore_index=True)
-    gwr_local_df = pd.concat(gwr_local_tables, ignore_index=True) if gwr_local_tables else pd.DataFrame()
-    mgwr_bw_df = pd.concat(mgwr_bw_tables, ignore_index=True) if mgwr_bw_tables else pd.DataFrame()
+    gwr_local_df = (
+        pd.concat(gwr_local_tables, ignore_index=True)
+        if gwr_local_tables
+        else pd.DataFrame()
+    )
+    mgwr_bw_df = (
+        pd.concat(mgwr_bw_tables, ignore_index=True)
+        if mgwr_bw_tables
+        else pd.DataFrame()
+    )
 
-    model_summary.to_csv(OUT_DIR / "spatial_model_summary_by_cluster_k2.csv", index=False, encoding="utf-8-sig")
-    spatial_tuning.to_csv(OUT_DIR / "slm_sem_knn_tuning_by_cluster_k2.csv", index=False, encoding="utf-8-sig")
-    coef_df.to_csv(OUT_DIR / "ols_coefficients_by_cluster_k2.csv", index=False, encoding="utf-8-sig")
-    gwr_local_df.to_csv(OUT_DIR / "gwr_local_diagnostics_by_cluster_k2.csv", index=False, encoding="utf-8-sig")
-    mgwr_bw_df.to_csv(OUT_DIR / "mgwr_bandwidth_by_variable_k2.csv", index=False, encoding="utf-8-sig")
+    model_summary.to_csv(
+        OUT_DIR / "spatial_model_summary_by_cluster_k2.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    spatial_tuning.to_csv(
+        OUT_DIR / "slm_sem_knn_tuning_by_cluster_k2.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    coef_df.to_csv(
+        OUT_DIR / "ols_coefficients_by_cluster_k2.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    gwr_local_df.to_csv(
+        OUT_DIR / "gwr_local_diagnostics_by_cluster_k2.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    mgwr_bw_df.to_csv(
+        OUT_DIR / "mgwr_bandwidth_by_variable_k2.csv", index=False, encoding="utf-8-sig"
+    )
     save_model_png(model_summary, OUT_DIR / "cluster_k2_model_performance.png")
 
     metadata = {
@@ -576,7 +649,9 @@ def main() -> None:
         "mgwr_sample_cap": MGWR_SAMPLE_CAP,
         "note": "K=2 is fixed. Feature-set tuning selects the highest silhouette score. SLM/SEM keep the lowest-AIC KNN candidate per cluster/model.",
     }
-    (OUT_DIR / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+    (OUT_DIR / "metadata.json").write_text(
+        json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     print(f"best_feature_set={best_feature_set}")
     print(model_summary.to_string(index=False))

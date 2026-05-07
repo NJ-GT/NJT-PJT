@@ -12,10 +12,14 @@ from shapely.geometry import LineString, MultiLineString
 BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = BASE_DIR / "data"
 INPUT_CSV = next(DATA_DIR.glob("seoul_road_width_viRoutDt_10*.csv"))
-OFFICIAL_SHP = DATA_DIR / "official_road_shape_202603_seoul" / "11000" / "TL_SPRD_MANAGE.shp"
+OFFICIAL_SHP = (
+    DATA_DIR / "official_road_shape_202603_seoul" / "11000" / "TL_SPRD_MANAGE.shp"
+)
 OUTPUT_HTML = DATA_DIR / "seoul_road_width_10gu_official_complete_map.html"
 OUTPUT_GEOJSON = DATA_DIR / "seoul_road_width_10gu_official_complete_lines.geojson"
-UNMATCHED_API_CSV = DATA_DIR / "seoul_road_width_10gu_official_complete_api_unmatched.csv"
+UNMATCHED_API_CSV = (
+    DATA_DIR / "seoul_road_width_10gu_official_complete_api_unmatched.csv"
+)
 OFFICIAL_ONLY_CSV = DATA_DIR / "seoul_road_width_10gu_official_only_roads.csv"
 
 SRC_CRS = "EPSG:5179"
@@ -33,7 +37,18 @@ SIG_TO_GU = {
     "11710": "송파구",
 }
 
-GU_ORDER = ["강남구", "강서구", "마포구", "서초구", "성동구", "송파구", "영등포구", "용산구", "종로구", "중구"]
+GU_ORDER = [
+    "강남구",
+    "강서구",
+    "마포구",
+    "서초구",
+    "성동구",
+    "송파구",
+    "영등포구",
+    "용산구",
+    "종로구",
+    "중구",
+]
 WIDTH_ORDER = [
     "6m미만",
     "폭6-8m",
@@ -122,7 +137,9 @@ def distance_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return math.hypot(dx, dy)
 
 
-def perpendicular_distance_m(point: list[float], start: list[float], end: list[float]) -> float:
+def perpendicular_distance_m(
+    point: list[float], start: list[float], end: list[float]
+) -> float:
     lat0, lng0 = point[1], point[0]
     lat1, lng1 = start[1], start[0]
     lat2, lng2 = end[1], end[0]
@@ -141,7 +158,9 @@ def perpendicular_distance_m(point: list[float], start: list[float], end: list[f
     return abs(dy * px - dx * py + x2 * y1 - y2 * x1) / math.hypot(dx, dy)
 
 
-def simplify_line(coords: list[list[float]], tolerance_m: float = 1.2) -> list[list[float]]:
+def simplify_line(
+    coords: list[list[float]], tolerance_m: float = 1.2
+) -> list[list[float]]:
     if len(coords) <= 2:
         return coords
     start = coords[0]
@@ -199,7 +218,9 @@ def line_length_m(lines: list[list[list[float]]]) -> float:
 
 def load_input() -> pd.DataFrame:
     df = pd.read_csv(INPUT_CSV, encoding="utf-8-sig", dtype=str).fillna("")
-    seq_col, gu_col, road_col, kind_col, function_col, scale_col, width_col = df.columns[:7]
+    seq_col, gu_col, road_col, kind_col, function_col, scale_col, width_col = (
+        df.columns[:7]
+    )
     df = df.rename(
         columns={
             seq_col: "순번",
@@ -223,7 +244,9 @@ def load_official() -> gpd.GeoDataFrame:
     return gdf.set_crs(SRC_CRS, allow_override=True).to_crs("EPSG:4326")
 
 
-def build_features(input_df: pd.DataFrame, official: gpd.GeoDataFrame) -> tuple[list[dict], pd.DataFrame, pd.DataFrame]:
+def build_features(
+    input_df: pd.DataFrame, official: gpd.GeoDataFrame
+) -> tuple[list[dict], pd.DataFrame, pd.DataFrame]:
     meta_by_key = {row["_key"]: row for _, row in input_df.iterrows()}
     official_keys = set(official["_key"])
     api_only = input_df[~input_df["_key"].isin(official_keys)].copy()
@@ -234,7 +257,9 @@ def build_features(input_df: pd.DataFrame, official: gpd.GeoDataFrame) -> tuple[
     for key, group in official.groupby("_key", sort=False):
         official_widths = pd.to_numeric(group["ROAD_BT"], errors="coerce").dropna()
         official_lengths = pd.to_numeric(group["ROAD_LT"], errors="coerce").dropna()
-        official_avg_width = float(official_widths.mean()) if not official_widths.empty else None
+        official_avg_width = (
+            float(official_widths.mean()) if not official_widths.empty else None
+        )
         fallback_width = official_width_bucket(official_avg_width)
 
         if key in meta_by_key:
@@ -276,8 +301,12 @@ def build_features(input_df: pd.DataFrame, official: gpd.GeoDataFrame) -> tuple[
         if not lines:
             continue
         start, end = choose_endpoints(lines)
-        official_min_width = float(official_widths.min()) if not official_widths.empty else None
-        official_max_width = float(official_widths.max()) if not official_widths.empty else None
+        official_min_width = (
+            float(official_widths.min()) if not official_widths.empty else None
+        )
+        official_max_width = (
+            float(official_widths.max()) if not official_widths.empty else None
+        )
         props = {
             "순번": seq,
             "구": str(group.iloc[0]["구"]),
@@ -293,11 +322,21 @@ def build_features(input_df: pd.DataFrame, official: gpd.GeoDataFrame) -> tuple[
             "끝위도": end[1],
             "끝경도": end[0],
             "공식선형길이m": round(line_length_m(lines), 1),
-            "공식도로폭평균m": round(official_avg_width, 2) if official_avg_width is not None else None,
-            "공식도로폭최소m": round(official_min_width, 2) if official_min_width is not None else None,
-            "공식도로폭최대m": round(official_max_width, 2) if official_max_width is not None else None,
-            "공식도로길이합m": round(float(official_lengths.sum()), 1) if not official_lengths.empty else None,
-            "RN_CD": "|".join(sorted({str(v) for v in group["RN_CD"].dropna().unique()})),
+            "공식도로폭평균m": round(official_avg_width, 2)
+            if official_avg_width is not None
+            else None,
+            "공식도로폭최소m": round(official_min_width, 2)
+            if official_min_width is not None
+            else None,
+            "공식도로폭최대m": round(official_max_width, 2)
+            if official_max_width is not None
+            else None,
+            "공식도로길이합m": round(float(official_lengths.sum()), 1)
+            if not official_lengths.empty
+            else None,
+            "RN_CD": "|".join(
+                sorted({str(v) for v in group["RN_CD"].dropna().unique()})
+            ),
             "공식구간수": int(len(group)),
             "색상": WIDTH_COLORS.get(display_width, WIDTH_COLORS["불가"]),
             "두께": WIDTH_WEIGHTS.get(display_width, WIDTH_WEIGHTS["불가"]),
@@ -312,16 +351,22 @@ def build_features(input_df: pd.DataFrame, official: gpd.GeoDataFrame) -> tuple[
 
     official_only = pd.DataFrame(official_only_rows)
     if not official_only_keys and official_only.empty:
-        official_only = pd.DataFrame(columns=["구", "도로명", "표시도로폭", "공식도로폭평균m", "공식구간수"])
+        official_only = pd.DataFrame(
+            columns=["구", "도로명", "표시도로폭", "공식도로폭평균m", "공식구간수"]
+        )
     return features, api_only, official_only
 
 
-def count_by(features: list[dict], prop: str, order: list[str]) -> list[dict[str, object]]:
+def count_by(
+    features: list[dict], prop: str, order: list[str]
+) -> list[dict[str, object]]:
     counts = {name: 0 for name in order}
     for feature in features:
         value = str(feature["properties"].get(prop, ""))
         counts[value] = counts.get(value, 0) + 1
-    return [{"name": name, "count": counts[name]} for name in order if counts.get(name, 0)]
+    return [
+        {"name": name, "count": counts[name]} for name in order if counts.get(name, 0)
+    ]
 
 
 def source_counts(features: list[dict]) -> dict[str, int]:
@@ -366,14 +411,22 @@ def leaflet_rows(features: list[dict]) -> list[dict[str, object]]:
     return rows
 
 
-def build_html(features: list[dict], api_only_count: int, official_only_count: int) -> str:
+def build_html(
+    features: list[dict], api_only_count: int, official_only_count: int
+) -> str:
     rows = leaflet_rows(features)
     center_lat = sum((row["start"][0] + row["end"][0]) / 2 for row in rows) / len(rows)
     center_lng = sum((row["start"][1] + row["end"][1]) / 2 for row in rows) / len(rows)
     counts = source_counts(features)
     data_json = json.dumps(rows, ensure_ascii=False, separators=(",", ":"))
-    gu_counts_json = json.dumps(count_by(features, "구", GU_ORDER), ensure_ascii=False, separators=(",", ":"))
-    width_counts_json = json.dumps(count_by(features, "표시도로폭", WIDTH_ORDER), ensure_ascii=False, separators=(",", ":"))
+    gu_counts_json = json.dumps(
+        count_by(features, "구", GU_ORDER), ensure_ascii=False, separators=(",", ":")
+    )
+    width_counts_json = json.dumps(
+        count_by(features, "표시도로폭", WIDTH_ORDER),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
     gu_json = json.dumps(GU_ORDER, ensure_ascii=False)
     colors_json = json.dumps(WIDTH_COLORS, ensure_ascii=False)
 
@@ -682,19 +735,25 @@ def main() -> int:
     official = load_official()
     features, api_only, official_only = build_features(input_df, official)
     OUTPUT_GEOJSON.write_text(
-        json.dumps({"type": "FeatureCollection", "features": features}, ensure_ascii=False),
+        json.dumps(
+            {"type": "FeatureCollection", "features": features}, ensure_ascii=False
+        ),
         encoding="utf-8",
     )
     api_only.drop(columns=[col for col in ["_key"] if col in api_only.columns]).to_csv(
         UNMATCHED_API_CSV, index=False, encoding="utf-8-sig"
     )
     official_only.to_csv(OFFICIAL_ONLY_CSV, index=False, encoding="utf-8-sig")
-    OUTPUT_HTML.write_text(build_html(features, len(api_only), len(official_only)), encoding="utf-8")
+    OUTPUT_HTML.write_text(
+        build_html(features, len(api_only), len(official_only)), encoding="utf-8"
+    )
 
     counts = source_counts(features)
     print(f"API roads: {len(input_df)}")
     print(f"Official roads: {len(features)}")
-    print(f"API matched or supplemented: {counts.get('API', 0) + counts.get('공식폭보완', 0)}")
+    print(
+        f"API matched or supplemented: {counts.get('API', 0) + counts.get('공식폭보완', 0)}"
+    )
     print(f"Official-only supplemented roads: {counts.get('공식만', 0)}")
     print(f"API-only unmatched roads: {len(api_only)}")
     print(f"HTML: {OUTPUT_HTML}")

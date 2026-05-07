@@ -16,6 +16,7 @@
 출력: data/통합숙박시설최종안0415.csv (덮어쓰기)
       reports/통합숙박시설최종안0415_정비보고서_20260415.json
 """
+
 from __future__ import annotations
 
 import csv
@@ -73,7 +74,12 @@ def valid_date(value: object) -> bool:
     text = norm(value)
     if text.endswith(".0"):
         text = text[:-2]
-    return len(text) == 8 and text.isdigit() and text != "00000000" and not text.startswith("0")
+    return (
+        len(text) == 8
+        and text.isdigit()
+        and text != "00000000"
+        and not text.startswith("0")
+    )
 
 
 def normalize_code(value: str, width: int) -> str:
@@ -115,7 +121,9 @@ def clean_road_address(value: object) -> str:
     return base
 
 
-def fetch_bldg_items(sigungu_cd: str, bjdong_cd: str, bun: str, ji: str, session: requests.Session) -> list[dict]:
+def fetch_bldg_items(
+    sigungu_cd: str, bjdong_cd: str, bun: str, ji: str, session: requests.Session
+) -> list[dict]:
     """건축물대장 API에서 해당 필지의 건물 표제부 목록을 반환한다."""
     url = (
         f"{BLDG_URL}?serviceKey={BLDG_KEY}"
@@ -156,7 +164,9 @@ def choose_use_approval_date(row: dict[str, str], items: list[dict]) -> tuple[st
     if len(unique_dates) == 1:
         return unique_dates[0], "single_unique_date"
 
-    main_items = [item for item in valid_items if norm(item.get("mainAtchGbCdNm")) == "주건축물"]
+    main_items = [
+        item for item in valid_items if norm(item.get("mainAtchGbCdNm")) == "주건축물"
+    ]
     main_dates = sorted({norm(item.get("useAprDay")) for item in main_items})
     if len(main_dates) == 1:
         return main_dates[0], "main_building_unique_date"
@@ -191,7 +201,9 @@ def build_local_candidates() -> tuple[dict[str, list[dict]], dict[str, list[dict
                 "source": raw_path.name,
                 "pk": "",
                 "name": norm(row.get("사업장명")),
-                "road": clean_road_address(row.get("도로명주소") or row.get("도로명대지위치")),
+                "road": clean_road_address(
+                    row.get("도로명주소") or row.get("도로명대지위치")
+                ),
                 "x": norm(row.get("좌표정보(X)") or row.get("X좌표")),
                 "y": norm(row.get("좌표정보(Y)") or row.get("Y좌표")),
             }
@@ -201,7 +213,9 @@ def build_local_candidates() -> tuple[dict[str, list[dict]], dict[str, list[dict
     return dict(by_pk), dict(by_name)
 
 
-def choose_local_road(row: dict[str, str], by_pk: dict[str, list[dict]], by_name: dict[str, list[dict]]) -> tuple[str, str]:
+def choose_local_road(
+    row: dict[str, str], by_pk: dict[str, list[dict]], by_name: dict[str, list[dict]]
+) -> tuple[str, str]:
     pk = norm(row.get("관리건축물대장PK"))
     name = norm(row.get("사업장명"))
 
@@ -213,19 +227,25 @@ def choose_local_road(row: dict[str, str], by_pk: dict[str, list[dict]], by_name
     if fire_road:
         return fire_road, "fire_match"
 
-    name_roads = sorted({cand["road"] for cand in by_name.get(name, []) if cand["road"]})
+    name_roads = sorted(
+        {cand["road"] for cand in by_name.get(name, []) if cand["road"]}
+    )
     if len(name_roads) == 1:
         return name_roads[0], "name_local"
 
     return "", "unresolved"
 
 
-def choose_local_xy(row: dict[str, str], by_pk: dict[str, list[dict]], by_name: dict[str, list[dict]]) -> tuple[str, str, str]:
+def choose_local_xy(
+    row: dict[str, str], by_pk: dict[str, list[dict]], by_name: dict[str, list[dict]]
+) -> tuple[str, str, str]:
     pk = norm(row.get("관리건축물대장PK"))
     name = norm(row.get("사업장명"))
 
     def pairs(cands: list[dict]) -> list[tuple[str, str]]:
-        return sorted({(cand["x"], cand["y"]) for cand in cands if cand["x"] and cand["y"]})
+        return sorted(
+            {(cand["x"], cand["y"]) for cand in cands if cand["x"] and cand["y"]}
+        )
 
     pk_pairs = pairs(by_pk.get(pk, []))
     if len(pk_pairs) == 1:
@@ -238,7 +258,9 @@ def choose_local_xy(row: dict[str, str], by_pk: dict[str, list[dict]], by_name: 
     return "", "", "unresolved"
 
 
-def kakao_address_doc(query: str, session: requests.Session, cache: dict[str, dict]) -> dict:
+def kakao_address_doc(
+    query: str, session: requests.Session, cache: dict[str, dict]
+) -> dict:
     query = norm(query)
     if not query:
         return {}
@@ -246,7 +268,9 @@ def kakao_address_doc(query: str, session: requests.Session, cache: dict[str, di
         return cache[query]
 
     try:
-        resp = session.get(KAKAO_ADDRESS_URL, params={"query": query, "size": 1}, timeout=10)
+        resp = session.get(
+            KAKAO_ADDRESS_URL, params={"query": query, "size": 1}, timeout=10
+        )
         resp.raise_for_status()
         docs = resp.json().get("documents", [])
         cache[query] = docs[0] if docs else {}
@@ -256,13 +280,17 @@ def kakao_address_doc(query: str, session: requests.Session, cache: dict[str, di
         return {}
 
 
-def kakao_road_from_query(query: str, session: requests.Session, cache: dict[str, dict]) -> str:
+def kakao_road_from_query(
+    query: str, session: requests.Session, cache: dict[str, dict]
+) -> str:
     doc = kakao_address_doc(query, session, cache)
     road = (doc.get("road_address") or {}).get("address_name") or ""
     return norm(road)
 
 
-def kakao_xy_from_query(query: str, session: requests.Session, cache: dict[str, dict]) -> tuple[str, str]:
+def kakao_xy_from_query(
+    query: str, session: requests.Session, cache: dict[str, dict]
+) -> tuple[str, str]:
     doc = kakao_address_doc(query, session, cache)
     if not doc:
         return "", ""
@@ -344,7 +372,11 @@ def main() -> None:
         if not norm(row.get("도로명대지위치")):
             road, strategy = choose_local_road(row, by_pk, by_name)
             if not road:
-                road = kakao_road_from_query(norm(row.get("대지위치")) or norm(row.get("소방청_지번주소_매칭")), kakao_session, kakao_cache)
+                road = kakao_road_from_query(
+                    norm(row.get("대지위치")) or norm(row.get("소방청_지번주소_매칭")),
+                    kakao_session,
+                    kakao_cache,
+                )
                 strategy = "kakao_jibun" if road else "unresolved"
             if road:
                 row["도로명대지위치"] = road
@@ -384,7 +416,9 @@ def main() -> None:
     report["deleted_rows_after_use_approval_fill"] = deleted_count
     report["xy_road_fill"] = dict(fill_stats)
     report["after"] = after_counts
-    REPORT_PATH.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8-sig")
+    REPORT_PATH.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8-sig"
+    )
 
     print(json.dumps(report, ensure_ascii=False, indent=2))
 

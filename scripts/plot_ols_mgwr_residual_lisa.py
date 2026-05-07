@@ -6,6 +6,7 @@ OLS residuals are refit from 0430/최종테이블0429.csv using the same six
 variables used for the full GWR/MGWR run. MGWR residuals are read from
 data/full_gwr_mgwr/mgwr_results_full.csv.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -151,11 +152,17 @@ def classify_lisa(values: np.ndarray, p: np.ndarray, q: np.ndarray) -> np.ndarra
     return cats
 
 
-def run_lisa(boundary: gpd.GeoDataFrame, dong_values: pd.DataFrame, model_name: str) -> tuple[gpd.GeoDataFrame, dict]:
-    gdf = boundary.merge(dong_values, left_on=["구_매칭", "동_매칭"], right_on=["구", "동"], how="left")
+def run_lisa(
+    boundary: gpd.GeoDataFrame, dong_values: pd.DataFrame, model_name: str
+) -> tuple[gpd.GeoDataFrame, dict]:
+    gdf = boundary.merge(
+        dong_values, left_on=["구_매칭", "동_매칭"], right_on=["구", "동"], how="left"
+    )
     data = gdf[gdf["residual"].notna()].copy().reset_index(drop=True)
     if len(data) < 5:
-        raise ValueError(f"Too few legal dongs with residuals for {model_name}: {len(data)}")
+        raise ValueError(
+            f"Too few legal dongs with residuals for {model_name}: {len(data)}"
+        )
 
     weights = Queen.from_dataframe(data, use_index=False)
     weights.transform = "r"
@@ -168,7 +175,18 @@ def run_lisa(boundary: gpd.GeoDataFrame, dong_values: pd.DataFrame, model_name: 
     data["quadrant"] = local.q
 
     result = gdf.merge(
-        data[["구_매칭", "동_매칭", "lisa_cat", "local_i", "p_sim", "quadrant", "residual", "sample_count"]],
+        data[
+            [
+                "구_매칭",
+                "동_매칭",
+                "lisa_cat",
+                "local_i",
+                "p_sim",
+                "quadrant",
+                "residual",
+                "sample_count",
+            ]
+        ],
         on=["구_매칭", "동_매칭"],
         how="left",
         suffixes=("", "_lisa"),
@@ -195,19 +213,31 @@ def plot_maps(model_maps: dict[str, gpd.GeoDataFrame], metrics: list[dict]) -> P
     fig, axes = plt.subplots(1, 2, figsize=(20, 9.8), dpi=180)
     fig.patch.set_facecolor("#f7f9fc")
 
-    gu_boundary = next(iter(model_maps.values())).dissolve(by="구_매칭", as_index=False, method="unary", grid_size=0.05)
+    gu_boundary = next(iter(model_maps.values())).dissolve(
+        by="구_매칭", as_index=False, method="unary", grid_size=0.05
+    )
     metric_by_model = {m["model"]: m for m in metrics}
 
     for ax, (model_name, gdf) in zip(axes, model_maps.items()):
         ax.set_facecolor("#f7f9fc")
-        gdf["plot_color"] = gdf["lisa_cat"].map(LISA_COLORS).fillna(LISA_COLORS["No Data"])
+        gdf["plot_color"] = (
+            gdf["lisa_cat"].map(LISA_COLORS).fillna(LISA_COLORS["No Data"])
+        )
         gdf.plot(ax=ax, color=gdf["plot_color"], edgecolor="#c9d1dc", linewidth=0.18)
         gu_boundary.boundary.plot(ax=ax, color="#303744", linewidth=0.75, alpha=0.9)
         for _, row in gu_boundary.iterrows():
             if row.geometry.is_empty:
                 continue
             point = row.geometry.representative_point()
-            ax.text(point.x, point.y, row["구_매칭"], ha="center", va="center", fontsize=5.8, weight="bold")
+            ax.text(
+                point.x,
+                point.y,
+                row["구_매칭"],
+                ha="center",
+                va="center",
+                fontsize=5.8,
+                weight="bold",
+            )
 
         m = metric_by_model[model_name]
         ax.set_title(
@@ -222,8 +252,17 @@ def plot_maps(model_maps: dict[str, gpd.GeoDataFrame], metrics: list[dict]) -> P
         mpatches.Patch(color=LISA_COLORS[key], label=LISA_LABELS[key])
         for key in ["HH", "LL", "HL", "LH", "Not Sig", "No Data"]
     ]
-    fig.legend(handles=handles, loc="lower center", ncol=3, frameon=True, framealpha=0.96, fontsize=9)
-    fig.suptitle("OLS 잔차 LISA vs MGWR 잔차 LISA", fontsize=23, weight="bold", x=0.03, ha="left")
+    fig.legend(
+        handles=handles,
+        loc="lower center",
+        ncol=3,
+        frameon=True,
+        framealpha=0.96,
+        fontsize=9,
+    )
+    fig.suptitle(
+        "OLS 잔차 LISA vs MGWR 잔차 LISA", fontsize=23, weight="bold", x=0.03, ha="left"
+    )
     fig.text(
         0.03,
         0.04,
@@ -265,10 +304,16 @@ def main() -> None:
             "p_sim",
             "quadrant",
         ]
-        gdf[export_cols].to_csv(OUT_DIR / f"{model_name.lower()}_residual_lisa_by_dong.csv", index=False, encoding="utf-8-sig")
+        gdf[export_cols].to_csv(
+            OUT_DIR / f"{model_name.lower()}_residual_lisa_by_dong.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
 
     metrics_df = pd.DataFrame(metrics)
-    metrics_df.to_csv(OUT_DIR / "residual_lisa_summary.csv", index=False, encoding="utf-8-sig")
+    metrics_df.to_csv(
+        OUT_DIR / "residual_lisa_summary.csv", index=False, encoding="utf-8-sig"
+    )
     out_path = plot_maps(model_maps, metrics)
     print(f"Saved: {out_path}")
     print(metrics_df.to_string(index=False))

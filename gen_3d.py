@@ -14,8 +14,10 @@
 출력: 숙박시설_3D.html            (MapLibre-GL 기반 3D 인터랙티브 맵)
 """
 
-import sys, os
-sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
+import sys
+import os
+
+sys.stdout.reconfigure(encoding="utf-8")  # 한글 출력 설정
 
 # ─── HTML 문자열 정의 ────────────────────────────────────────────
 # 아래는 완성된 HTML/JavaScript 코드 전체. Python 실행 시 이 문자열을 파일로 저장한다.
@@ -288,6 +290,6 @@ rLeg();
 </html>"""
 
 # ─── HTML 파일 저장 ──────────────────────────────────────────────
-with open('숙박시설_3D.html','w',encoding='utf-8') as f:
+with open("숙박시설_3D.html", "w", encoding="utf-8") as f:
     f.write(NEW)
-print('Done:', os.path.getsize('숙박시설_3D.html')//1024, 'KB')
+print("Done:", os.path.getsize("숙박시설_3D.html") // 1024, "KB")

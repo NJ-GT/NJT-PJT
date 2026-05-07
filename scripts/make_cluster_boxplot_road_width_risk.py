@@ -49,7 +49,9 @@ def main() -> None:
     df.columns = df.columns.str.strip()
 
     use = df[["cluster_label", "도로폭위험도"]].copy()
-    use["cluster_label"] = pd.Categorical(use["cluster_label"], categories=ORDER, ordered=True)
+    use["cluster_label"] = pd.Categorical(
+        use["cluster_label"], categories=ORDER, ordered=True
+    )
     use["도로폭위험도"] = pd.to_numeric(use["도로폭위험도"], errors="coerce")
     use = use.dropna()
 
@@ -99,10 +101,21 @@ def main() -> None:
             va="top",
             fontsize=10.4,
             color="#1f2937",
-            bbox=dict(boxstyle="round,pad=0.32", facecolor="#ffffff", edgecolor="#e5e7eb", alpha=0.9),
+            bbox=dict(
+                boxstyle="round,pad=0.32",
+                facecolor="#ffffff",
+                edgecolor="#e5e7eb",
+                alpha=0.9,
+            ),
         )
 
-    ax.set_title("군집별 도로폭위험도 분포", fontsize=24, fontweight="bold", color="#101828", pad=25)
+    ax.set_title(
+        "군집별 도로폭위험도 분포",
+        fontsize=24,
+        fontweight="bold",
+        color="#101828",
+        pad=25,
+    )
     ax.text(
         0.5,
         1.015,

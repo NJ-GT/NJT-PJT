@@ -10,6 +10,7 @@ It overwrites:
     data/full_gwr_mgwr/gwr_results_full.csv
     data/full_gwr_mgwr/mgwr_results_full.csv
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -89,7 +90,9 @@ def main() -> None:
             )
         filtered = df[keep_cols]
         filtered.to_csv(path, index=False, encoding="utf-8-sig")
-        print(f"{path}: {len(df.columns)} -> {len(filtered.columns)} columns, rows={len(filtered):,}")
+        print(
+            f"{path}: {len(df.columns)} -> {len(filtered.columns)} columns, rows={len(filtered):,}"
+        )
         print(filtered.columns.tolist())
 
 

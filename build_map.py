@@ -13,17 +13,24 @@
 출력: 숙박밀집도_grid.html  (15m 그리드 밀집도 인터랙티브 지도)
 """
 
-import sys, json, math, os
-sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
+import sys
+import json
+import math
+import os
+
+sys.stdout.reconfigure(encoding="utf-8")  # 한글 출력 설정
 
 # ─── 1. 지도 데이터 로드 ────────────────────────────────────────
-with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/map_data.json', encoding='utf-8') as f:
+with open(
+    "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/map_data.json",
+    encoding="utf-8",
+) as f:
     d = json.load(f)
 
 # places: 개별 숙박시설 위치/정보 목록
 # grid: 15m 셀별 숙박시설 개수 집계 결과 [{lat, lng, count}, ...]
-places_json = json.dumps(d['places'], ensure_ascii=False)
-grid_json   = json.dumps(d['grid'],   ensure_ascii=False)
+places_json = json.dumps(d["places"], ensure_ascii=False)
+grid_json = json.dumps(d["grid"], ensure_ascii=False)
 
 # ─── 2. 15m 그리드 셀 크기 계산 ────────────────────────────────
 # 위도 1도 = 약 111,320m, 15m를 도(degree) 단위로 변환
@@ -98,7 +105,7 @@ html,body{width:100%;height:100%;background:#0e0e1a;font-family:'Segoe UI',sans-
 
 parts.append("<script>\n")
 parts.append("const PLACES   = " + places_json + ";\n")
-parts.append("const GRID_OCC = " + grid_json   + ";\n")
+parts.append("const GRID_OCC = " + grid_json + ";\n")
 parts.append("const LAT_STEP = " + repr(LAT_STEP) + ";\n")
 parts.append("const LNG_STEP = " + repr(LNG_STEP) + ";\n")
 
@@ -281,8 +288,8 @@ document.getElementById('chk-dot').addEventListener('change', function() {
 
 # ─── 4. HTML 파일 저장 ───────────────────────────────────────────
 # parts 리스트를 하나의 문자열로 합쳐 저장 (메모리 효율을 위해 리스트로 나눠 구성했음)
-out = 'c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/숙박밀집도_grid.html'
-with open(out, 'w', encoding='utf-8') as fout:
-    fout.write(''.join(parts))
+out = "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/숙박밀집도_grid.html"
+with open(out, "w", encoding="utf-8") as fout:
+    fout.write("".join(parts))
 
-print('Done:', os.path.getsize(out)//1024, 'KB')
+print("Done:", os.path.getsize(out) // 1024, "KB")

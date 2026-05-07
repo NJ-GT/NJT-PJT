@@ -46,7 +46,9 @@ def main() -> None:
     df_scaled[features] = df[features].apply(pd.to_numeric, errors="coerce").fillna(0)
     df_scaled[features] = scaler.fit_transform(df_scaled[features])
 
-    df["최종_화재위험점수"] = (df_scaled[features] * pd.Series(WEIGHTS)).sum(axis=1) * 100
+    df["최종_화재위험점수"] = (df_scaled[features] * pd.Series(WEIGHTS)).sum(
+        axis=1
+    ) * 100
 
     kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
     df["cluster_k3"] = kmeans.fit_predict(df_scaled[features])
@@ -54,7 +56,16 @@ def main() -> None:
 
     cluster_summary = df.groupby("cluster_k3")[["최종_화재위험점수"] + features].mean()
     top_20 = (
-        df[["구", "동", "숙소명", "최종_화재위험점수", "cluster_k3", "최근접_소화용수_거리등급"]]
+        df[
+            [
+                "구",
+                "동",
+                "숙소명",
+                "최종_화재위험점수",
+                "cluster_k3",
+                "최근접_소화용수_거리등급",
+            ]
+        ]
         .sort_values(by="최종_화재위험점수", ascending=False)
         .head(20)
     )
@@ -69,7 +80,9 @@ def main() -> None:
     for cluster_id in sorted(df["cluster_k3"].unique()):
         print(f"\n[Cluster {cluster_id} - 고위험 TOP 10]")
         top_10 = (
-            df[df["cluster_k3"] == cluster_id][["구", "동", "숙소명", "최종_화재위험점수"]]
+            df[df["cluster_k3"] == cluster_id][
+                ["구", "동", "숙소명", "최종_화재위험점수"]
+            ]
             .sort_values(by="최종_화재위험점수", ascending=False)
             .head(10)
         )

@@ -71,21 +71,39 @@ def main() -> None:
     for col in numeric_cols:
         subset[col] = pd.to_numeric(subset[col], errors="coerce")
 
-    score_summary = subset.groupby("동")["최종위험점수_new"].agg(["count", "mean", "median", "max"]).reindex(TARGET_DONGS)
-    risk_counts = pd.crosstab(subset["동"], subset["cluster_label"]).reindex(index=TARGET_DONGS, columns=RISK_ORDER, fill_value=0)
+    score_summary = (
+        subset.groupby("동")["최종위험점수_new"]
+        .agg(["count", "mean", "median", "max"])
+        .reindex(TARGET_DONGS)
+    )
+    risk_counts = pd.crosstab(subset["동"], subset["cluster_label"]).reindex(
+        index=TARGET_DONGS, columns=RISK_ORDER, fill_value=0
+    )
     mean_features = subset.groupby("동")[FEATURES].mean().reindex(TARGET_DONGS)
 
     scaler = MinMaxScaler()
-    scaled = pd.DataFrame(scaler.fit_transform(mean_features.T), index=FEATURES, columns=TARGET_DONGS)
+    scaled = pd.DataFrame(
+        scaler.fit_transform(mean_features.T), index=FEATURES, columns=TARGET_DONGS
+    )
     # Scaling across the two dongs makes relative differences explicit for the heatmap.
 
     fig = plt.figure(figsize=(17.2, 10.4), dpi=180)
     fig.patch.set_facecolor("#f6f8fb")
-    gs = fig.add_gridspec(3, 4, height_ratios=[0.52, 1.18, 1.36], hspace=0.48, wspace=0.38)
+    gs = fig.add_gridspec(
+        3, 4, height_ratios=[0.52, 1.18, 1.36], hspace=0.48, wspace=0.38
+    )
 
     ax_title = fig.add_subplot(gs[0, :])
     ax_title.axis("off")
-    ax_title.text(0.01, 0.86, "마포구 연남동 · 서교동 위험 특성 비교", fontsize=25, fontweight="bold", color="#101828", va="top")
+    ax_title.text(
+        0.01,
+        0.86,
+        "마포구 연남동 · 서교동 위험 특성 비교",
+        fontsize=25,
+        fontweight="bold",
+        color="#101828",
+        va="top",
+    )
     ax_title.text(
         0.01,
         0.43,
@@ -108,7 +126,11 @@ def main() -> None:
         fontsize=12.3,
         color="#7a2e0e",
         va="top",
-        bbox=dict(boxstyle="round,pad=0.55,rounding_size=0.12", facecolor="#fff4e5", edgecolor="#ffd8a8"),
+        bbox=dict(
+            boxstyle="round,pad=0.55,rounding_size=0.12",
+            facecolor="#fff4e5",
+            edgecolor="#ffd8a8",
+        ),
     )
 
     ax_counts = fig.add_subplot(gs[1, 0])
@@ -116,10 +138,27 @@ def main() -> None:
     x = np.arange(len(TARGET_DONGS))
     for risk in RISK_ORDER:
         vals = risk_counts[risk].to_numpy()
-        ax_counts.bar(x, vals, bottom=bottom, color=RISK_COLORS[risk], edgecolor="white", linewidth=1.2, label=risk)
+        ax_counts.bar(
+            x,
+            vals,
+            bottom=bottom,
+            color=RISK_COLORS[risk],
+            edgecolor="white",
+            linewidth=1.2,
+            label=risk,
+        )
         for xi, val, bot in zip(x, vals, bottom):
             if val > 18:
-                ax_counts.text(xi, bot + val / 2, f"{int(val)}", ha="center", va="center", fontsize=10.5, fontweight="bold", color="#111827")
+                ax_counts.text(
+                    xi,
+                    bot + val / 2,
+                    f"{int(val)}",
+                    ha="center",
+                    va="center",
+                    fontsize=10.5,
+                    fontweight="bold",
+                    color="#111827",
+                )
         bottom += vals
     ax_counts.set_xticks(x, TARGET_DONGS)
     ax_counts.set_title("위험군 구성", fontsize=15, fontweight="bold")
@@ -129,7 +168,13 @@ def main() -> None:
     ax_counts.grid(axis="y", alpha=0.25)
 
     ax_score = fig.add_subplot(gs[1, 1])
-    bars = ax_score.bar(TARGET_DONGS, score_summary["mean"], color=[MAIN_COLORS[d] for d in TARGET_DONGS], edgecolor="white", linewidth=1.2)
+    bars = ax_score.bar(
+        TARGET_DONGS,
+        score_summary["mean"],
+        color=[MAIN_COLORS[d] for d in TARGET_DONGS],
+        edgecolor="white",
+        linewidth=1.2,
+    )
     for bar, dong in zip(bars, TARGET_DONGS):
         ax_score.text(
             bar.get_x() + bar.get_width() / 2,
@@ -196,11 +241,25 @@ def main() -> None:
     ax_delta = fig.add_subplot(gs[2, 2:])
     delta = (mean_features.loc["연남동"] - mean_features.loc["서교동"]).sort_values()
     colors = ["#F97316" if v < 0 else "#2563EB" for v in delta]
-    ax_delta.barh([FEATURE_LABELS[i].replace("\n", " ") for i in delta.index], delta.values, color=colors, edgecolor="white")
+    ax_delta.barh(
+        [FEATURE_LABELS[i].replace("\n", " ") for i in delta.index],
+        delta.values,
+        color=colors,
+        edgecolor="white",
+    )
     ax_delta.axvline(0, color="#344054", linewidth=1.1)
     for y, (idx, val) in enumerate(delta.items()):
-        ax_delta.text(val + (0.015 if val >= 0 else -0.015), y, f"{val:+.2f}", va="center", ha="left" if val >= 0 else "right", fontsize=10.5)
-    ax_delta.set_title("연남동 - 서교동 평균 차이", fontsize=15, fontweight="bold", pad=12)
+        ax_delta.text(
+            val + (0.015 if val >= 0 else -0.015),
+            y,
+            f"{val:+.2f}",
+            va="center",
+            ha="left" if val >= 0 else "right",
+            fontsize=10.5,
+        )
+    ax_delta.set_title(
+        "연남동 - 서교동 평균 차이", fontsize=15, fontweight="bold", pad=12
+    )
     ax_delta.set_xlabel("양수면 연남동이 더 높음")
     ax_delta.set_facecolor("#ffffff")
     ax_delta.grid(axis="x", alpha=0.25)

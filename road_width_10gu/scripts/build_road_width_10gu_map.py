@@ -10,7 +10,18 @@ BASE_DIR = Path(__file__).resolve().parents[1]
 INPUT_PATH = BASE_DIR / "data" / "seoul_road_width_viRoutDt_10개구_대표좌표.csv"
 OUTPUT_PATH = BASE_DIR / "data" / "seoul_road_width_10gu_map.html"
 
-GU_ORDER = ["강남구", "강서구", "마포구", "서초구", "성동구", "송파구", "영등포구", "용산구", "종로구", "중구"]
+GU_ORDER = [
+    "강남구",
+    "강서구",
+    "마포구",
+    "서초구",
+    "성동구",
+    "송파구",
+    "영등포구",
+    "용산구",
+    "종로구",
+    "중구",
+]
 WIDTH_ORDER = [
     "6m미만",
     "폭6-8m",
@@ -94,12 +105,16 @@ def load_points() -> list[dict[str, object]]:
     return points
 
 
-def count_by(points: list[dict[str, object]], key: str, order: list[str]) -> list[dict[str, object]]:
+def count_by(
+    points: list[dict[str, object]], key: str, order: list[str]
+) -> list[dict[str, object]]:
     counts = {name: 0 for name in order}
     for point in points:
         value = str(point.get(key, ""))
         counts[value] = counts.get(value, 0) + 1
-    return [{"name": name, "count": counts[name]} for name in order if counts.get(name, 0)]
+    return [
+        {"name": name, "count": counts[name]} for name in order if counts.get(name, 0)
+    ]
 
 
 def build_html(points: list[dict[str, object]]) -> str:
@@ -113,7 +128,9 @@ def build_html(points: list[dict[str, object]]) -> str:
     width_json = json.dumps(WIDTH_ORDER, ensure_ascii=False)
     colors_json = json.dumps(WIDTH_COLORS, ensure_ascii=False)
     gu_counts_json = json.dumps(gu_counts, ensure_ascii=False, separators=(",", ":"))
-    width_counts_json = json.dumps(width_counts, ensure_ascii=False, separators=(",", ":"))
+    width_counts_json = json.dumps(
+        width_counts, ensure_ascii=False, separators=(",", ":")
+    )
 
     return f"""<!doctype html>
 <html lang="ko">

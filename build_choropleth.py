@@ -16,18 +16,29 @@
 출력: 법정동_숙박밀집도.html    (Leaflet 단계구분도 인터랙티브 맵)
 """
 
-import sys, json, os
-sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
+import sys
+import json
+import os
+
+sys.stdout.reconfigure(encoding="utf-8")  # 한글 출력 설정
 
 # ─── 1. 법정동 GeoJSON 로드 ─────────────────────────────────────
 # dong_density.json : 법정동 경계 + 밀집도 속성(count, per_ha, fa_ha, ratio)
-with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/dong_density.json', encoding='utf-8') as f:
+with open(
+    "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/dong_density.json",
+    encoding="utf-8",
+) as f:
     geojson_str = f.read()  # 문자열 그대로 저장 (JavaScript에 직접 삽입)
 
 # ─── 2. 개별 숙박시설 위치 로드 ─────────────────────────────────
-with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/map_data.json', encoding='utf-8') as f:
+with open(
+    "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/map_data.json",
+    encoding="utf-8",
+) as f:
     map_data = json.load(f)
-places_json = json.dumps(map_data['places'], ensure_ascii=False)  # JavaScript에 삽입할 JSON 문자열
+places_json = json.dumps(
+    map_data["places"], ensure_ascii=False
+)  # JavaScript에 삽입할 JSON 문자열
 
 parts = []
 parts.append("""<!DOCTYPE html>
@@ -297,7 +308,7 @@ map.on('overlayadd', function() {
 """)
 
 # ─── 3. HTML 파일 저장 ───────────────────────────────────────────
-out = 'c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/법정동_숙박밀집도.html'
-with open(out, 'w', encoding='utf-8') as f:
-    f.write(''.join(parts))
-print('Done:', os.path.getsize(out)//1024, 'KB')
+out = "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/법정동_숙박밀집도.html"
+with open(out, "w", encoding="utf-8") as f:
+    f.write("".join(parts))
+print("Done:", os.path.getsize(out) // 1024, "KB")

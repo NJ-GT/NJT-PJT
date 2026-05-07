@@ -31,7 +31,9 @@ def main() -> None:
     df = pd.read_csv(SRC, encoding="utf-8-sig")
     cluster_col = "cluster_k3" if "cluster_k3" in df.columns else "cluster"
 
-    cluster_order = df.groupby(cluster_col)["최종_화재위험점수"].mean().sort_values().index.tolist()
+    cluster_order = (
+        df.groupby(cluster_col)["최종_화재위험점수"].mean().sort_values().index.tolist()
+    )
     label_map = {cluster: label for cluster, label in zip(cluster_order, RISK_LABELS)}
     df["위험군"] = df[cluster_col].map(label_map)
 

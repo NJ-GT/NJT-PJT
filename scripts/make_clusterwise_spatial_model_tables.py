@@ -105,7 +105,9 @@ def safe_attr(model, *names: str):
     return None
 
 
-def model_terms(model, term_names: list[str], stat_attr: str) -> dict[str, tuple[float, float | None]]:
+def model_terms(
+    model, term_names: list[str], stat_attr: str
+) -> dict[str, tuple[float, float | None]]:
     betas = [float(x) for x in model.betas.flatten()]
     pvals = pvals_from_stats(getattr(model, stat_attr, []))
     out: dict[str, tuple[float, float | None]] = {}
@@ -114,7 +116,11 @@ def model_terms(model, term_names: list[str], stat_attr: str) -> dict[str, tuple
     return out
 
 
-def load_representative_values() -> tuple[dict[tuple[str, str], float], dict[tuple[str, str], float], dict[str, dict[str, str]]]:
+def load_representative_values() -> tuple[
+    dict[tuple[str, str], float],
+    dict[tuple[str, str], float],
+    dict[str, dict[str, str]],
+]:
     params = read_csv(REP_PARAMS)
     summary = read_csv(REP_SUMMARY)
 
@@ -194,7 +200,14 @@ def build_cluster_table(
         key = "승인연도" if variable.startswith("승인연도") else variable
         return fmt_coef_bw(coef_map.get((risk, key)), bw_map.get((risk, key)))
 
-    def make_row(model_group: str, category: str, variable: str, ols_val: str, slm_val: str, sem_val: str) -> dict[str, str]:
+    def make_row(
+        model_group: str,
+        category: str,
+        variable: str,
+        ols_val: str,
+        slm_val: str,
+        sem_val: str,
+    ) -> dict[str, str]:
         return {
             "Model": model_group,
             "구분": category,
@@ -243,8 +256,20 @@ def build_cluster_table(
         ("n", f"{len(work):,}", f"{len(work):,}", f"{len(work):,}", f"{len(work):,}"),
         ("Rho", "", fmt_coef(rho, rho_p), "", ""),
         ("Lambda", "", "", fmt_coef(lam, lam_p), ""),
-        ("R²", metric_value(ols, "r2"), metric_value(slm, "pr2", "r2"), metric_value(sem, "pr2", "r2"), metric_map[risk]["R²"]),
-        ("AIC/AICc", metric_value(ols, "aic"), metric_value(slm, "aic"), metric_value(sem, "aic"), metric_map[risk]["AICc"]),
+        (
+            "R²",
+            metric_value(ols, "r2"),
+            metric_value(slm, "pr2", "r2"),
+            metric_value(sem, "pr2", "r2"),
+            metric_map[risk]["R²"],
+        ),
+        (
+            "AIC/AICc",
+            metric_value(ols, "aic"),
+            metric_value(slm, "aic"),
+            metric_value(sem, "aic"),
+            metric_map[risk]["AICc"],
+        ),
         ("Residual Moran's I", "", "", "", metric_map[risk]["Residual Moran's I"]),
         ("Moran p", "", "", "", metric_map[risk]["Moran p"]),
     ]
@@ -271,7 +296,9 @@ def draw_png(table_df: pd.DataFrame, out_png: Path, risk: str) -> None:
         plt.rcParams["font.family"] = "Malgun Gothic"
     plt.rcParams["axes.unicode_minus"] = False
 
-    fig, ax = plt.subplots(figsize=(15.5, max(8.8, 0.42 * len(table_df) + 1.25)), dpi=180)
+    fig, ax = plt.subplots(
+        figsize=(15.5, max(8.8, 0.42 * len(table_df) + 1.25)), dpi=180
+    )
     fig.patch.set_facecolor("#FFFFFF")
     ax.axis("off")
 
@@ -326,7 +353,14 @@ def draw_png(table_df: pd.DataFrame, out_png: Path, risk: str) -> None:
             cell.get_text().set_ha("left")
             cell.PAD = 0.02
 
-    ax.text(0, 0.005, "*** p<0.01, **p<0.05, *p<0.1", transform=ax.transAxes, fontsize=10, color="#343A46")
+    ax.text(
+        0,
+        0.005,
+        "*** p<0.01, **p<0.05, *p<0.1",
+        transform=ax.transAxes,
+        fontsize=10,
+        color="#343A46",
+    )
     fig.savefig(out_png, bbox_inches="tight", facecolor=fig.get_facecolor())
     plt.close(fig)
 

@@ -99,7 +99,9 @@ def pvals_from_stats(stats) -> list[float | None]:
     return vals
 
 
-def model_terms(model, term_names: list[str], stat_attr: str) -> dict[str, tuple[float, float | None]]:
+def model_terms(
+    model, term_names: list[str], stat_attr: str
+) -> dict[str, tuple[float, float | None]]:
     betas = [float(x) for x in model.betas.flatten()]
     pvals = pvals_from_stats(getattr(model, stat_attr, []))
     out: dict[str, tuple[float, float | None]] = {}
@@ -115,7 +117,11 @@ def safe_attr(model, *names: str):
     return None
 
 
-def load_representative_model_values() -> tuple[dict[tuple[str, str], float], dict[tuple[str, str], float], dict[str, dict[str, str]]]:
+def load_representative_model_values() -> tuple[
+    dict[tuple[str, str], float],
+    dict[tuple[str, str], float],
+    dict[str, dict[str, str]],
+]:
     params = read_csv(REP_PARAMS)
     summary = read_csv(REP_SUMMARY)
 
@@ -181,7 +187,14 @@ def build_table() -> pd.DataFrame:
     def rep_cell(risk: str, variable: str) -> str:
         return fmt_coef_bw(coef_map.get((risk, variable)), bw_map.get((risk, variable)))
 
-    def make_row(model: str, category: str, variable: str, ols_val: str, slm_val: str, sem_val: str) -> dict[str, str]:
+    def make_row(
+        model: str,
+        category: str,
+        variable: str,
+        ols_val: str,
+        slm_val: str,
+        sem_val: str,
+    ) -> dict[str, str]:
         variable_key = "승인연도" if variable.startswith("승인연도") else variable
         return {
             "Model": model,
@@ -270,7 +283,15 @@ def build_table() -> pd.DataFrame:
             metric_map["고위험군"]["Moran p"],
         ),
     ]
-    for idx, (label, ols_val, slm_val, sem_val, low_val, mid_val, high_val) in enumerate(metric_rows):
+    for idx, (
+        label,
+        ols_val,
+        slm_val,
+        sem_val,
+        low_val,
+        mid_val,
+        high_val,
+    ) in enumerate(metric_rows):
         rows.append(
             {
                 "Model": "모형" if idx == 0 else "",
@@ -347,7 +368,11 @@ def draw_png(table_df: pd.DataFrame, out_png: Path = OUT_PNG) -> None:
             cell.get_text().set_color("#172033")
         else:
             model_label = table_df.iloc[r - 1]["Model"]
-            if model_label == "모형" or (r > 1 and table_df.iloc[r - 2]["Model"] == "모형") or r > 12:
+            if (
+                model_label == "모형"
+                or (r > 1 and table_df.iloc[r - 2]["Model"] == "모형")
+                or r > 12
+            ):
                 cell.set_facecolor("#FAFBFD")
             elif r % 2 == 0:
                 cell.set_facecolor("#F7F9FC")

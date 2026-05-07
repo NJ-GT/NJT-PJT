@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import math
-from collections import defaultdict
 from pathlib import Path
 
 import geopandas as gpd
@@ -12,7 +11,13 @@ from shapely.geometry import LineString, MultiLineString
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 INPUT_CSV = BASE_DIR / "data" / "seoul_road_width_viRoutDt_10개구_대표좌표.csv"
-OFFICIAL_SHP = BASE_DIR / "data" / "official_road_shape_202603_seoul" / "11000" / "TL_SPRD_MANAGE.shp"
+OFFICIAL_SHP = (
+    BASE_DIR
+    / "data"
+    / "official_road_shape_202603_seoul"
+    / "11000"
+    / "TL_SPRD_MANAGE.shp"
+)
 OUTPUT_HTML = BASE_DIR / "data" / "seoul_road_width_10gu_official_line_map.html"
 OUTPUT_GEOJSON = BASE_DIR / "data" / "seoul_road_width_10gu_official_lines.geojson"
 UNMATCHED_CSV = BASE_DIR / "data" / "seoul_road_width_10gu_official_line_unmatched.csv"
@@ -31,7 +36,18 @@ SIG_TO_GU = {
     "11680": "강남구",
     "11710": "송파구",
 }
-GU_ORDER = ["강남구", "강서구", "마포구", "서초구", "성동구", "송파구", "영등포구", "용산구", "종로구", "중구"]
+GU_ORDER = [
+    "강남구",
+    "강서구",
+    "마포구",
+    "서초구",
+    "성동구",
+    "송파구",
+    "영등포구",
+    "용산구",
+    "종로구",
+    "중구",
+]
 WIDTH_ORDER = [
     "6m미만",
     "폭6-8m",
@@ -87,7 +103,9 @@ def distance_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return math.hypot(dx, dy)
 
 
-def perpendicular_distance_m(point: list[float], start: list[float], end: list[float]) -> float:
+def perpendicular_distance_m(
+    point: list[float], start: list[float], end: list[float]
+) -> float:
     lat0 = point[1]
     lng0 = point[0]
     lat1 = start[1]
@@ -109,7 +127,9 @@ def perpendicular_distance_m(point: list[float], start: list[float], end: list[f
     return abs(dy * px - dx * py + x2 * y1 - y2 * x1) / math.hypot(dx, dy)
 
 
-def simplify_line(coords: list[list[float]], tolerance_m: float = 2.0) -> list[list[float]]:
+def simplify_line(
+    coords: list[list[float]], tolerance_m: float = 2.0
+) -> list[list[float]]:
     if len(coords) <= 2:
         return coords
     start = coords[0]
@@ -185,7 +205,9 @@ def load_official() -> gpd.GeoDataFrame:
     return gdf
 
 
-def build_features(input_df: pd.DataFrame, official: gpd.GeoDataFrame) -> tuple[list[dict], pd.DataFrame]:
+def build_features(
+    input_df: pd.DataFrame, official: gpd.GeoDataFrame
+) -> tuple[list[dict], pd.DataFrame]:
     official_keys = set(official["_key"])
     matched_input = input_df[input_df["_key"].isin(official_keys)].copy()
     unmatched = input_df[~input_df["_key"].isin(official_keys)].copy()
@@ -198,7 +220,9 @@ def build_features(input_df: pd.DataFrame, official: gpd.GeoDataFrame) -> tuple[
         raw_lines: list[list[list[float]]] = []
         for geom in group.geometry:
             raw_lines.extend(geometry_to_lines(geom))
-        lines = [simplify_line(line, tolerance_m=2.0) for line in raw_lines if len(line) >= 2]
+        lines = [
+            simplify_line(line, tolerance_m=2.0) for line in raw_lines if len(line) >= 2
+        ]
         if not lines:
             unmatched = pd.concat([unmatched, meta.to_frame().T], ignore_index=True)
             continue
@@ -222,11 +246,21 @@ def build_features(input_df: pd.DataFrame, official: gpd.GeoDataFrame) -> tuple[
             "끝위도": end[1],
             "끝경도": end[0],
             "공식선형길이m": round(line_length_m(lines), 1),
-            "공식도로폭평균m": round(float(official_widths.mean()), 2) if not official_widths.empty else None,
-            "공식도로폭최소m": round(float(official_widths.min()), 2) if not official_widths.empty else None,
-            "공식도로폭최대m": round(float(official_widths.max()), 2) if not official_widths.empty else None,
-            "공식도로길이합m": round(float(official_lengths.sum()), 1) if not official_lengths.empty else None,
-            "RN_CD": "|".join(sorted({str(v) for v in group["RN_CD"].dropna().unique()})),
+            "공식도로폭평균m": round(float(official_widths.mean()), 2)
+            if not official_widths.empty
+            else None,
+            "공식도로폭최소m": round(float(official_widths.min()), 2)
+            if not official_widths.empty
+            else None,
+            "공식도로폭최대m": round(float(official_widths.max()), 2)
+            if not official_widths.empty
+            else None,
+            "공식도로길이합m": round(float(official_lengths.sum()), 1)
+            if not official_lengths.empty
+            else None,
+            "RN_CD": "|".join(
+                sorted({str(v) for v in group["RN_CD"].dropna().unique()})
+            ),
             "RDS_MAN_NO_count": int(group["RDS_MAN_NO"].nunique()),
             "공식구간수": int(len(group)),
             "색상": WIDTH_COLORS.get(road_width, WIDTH_COLORS["불가"]),
@@ -242,12 +276,16 @@ def build_features(input_df: pd.DataFrame, official: gpd.GeoDataFrame) -> tuple[
     return features, unmatched
 
 
-def count_by(features: list[dict], prop: str, order: list[str]) -> list[dict[str, object]]:
+def count_by(
+    features: list[dict], prop: str, order: list[str]
+) -> list[dict[str, object]]:
     counts = {name: 0 for name in order}
     for feature in features:
         value = str(feature["properties"].get(prop, ""))
         counts[value] = counts.get(value, 0) + 1
-    return [{"name": name, "count": counts[name]} for name in order if counts.get(name, 0)]
+    return [
+        {"name": name, "count": counts[name]} for name in order if counts.get(name, 0)
+    ]
 
 
 def leaflet_rows(features: list[dict]) -> list[dict[str, object]]:
@@ -290,8 +328,14 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
     gu_json = json.dumps(GU_ORDER, ensure_ascii=False)
     width_json = json.dumps(WIDTH_ORDER, ensure_ascii=False)
     colors_json = json.dumps(WIDTH_COLORS, ensure_ascii=False)
-    gu_counts_json = json.dumps(count_by(features, "구", GU_ORDER), ensure_ascii=False, separators=(",", ":"))
-    width_counts_json = json.dumps(count_by(features, "도로폭", WIDTH_ORDER), ensure_ascii=False, separators=(",", ":"))
+    gu_counts_json = json.dumps(
+        count_by(features, "구", GU_ORDER), ensure_ascii=False, separators=(",", ":")
+    )
+    width_counts_json = json.dumps(
+        count_by(features, "도로폭", WIDTH_ORDER),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
 
     return f"""<!doctype html>
 <html lang="ko">
@@ -621,12 +665,14 @@ def main() -> int:
         raise RuntimeError("No official road geometries matched.")
 
     OUTPUT_GEOJSON.write_text(
-        json.dumps({"type": "FeatureCollection", "features": features}, ensure_ascii=False),
+        json.dumps(
+            {"type": "FeatureCollection", "features": features}, ensure_ascii=False
+        ),
         encoding="utf-8",
     )
-    unmatched.drop(columns=[col for col in ["_key"] if col in unmatched.columns]).to_csv(
-        UNMATCHED_CSV, index=False, encoding="utf-8-sig"
-    )
+    unmatched.drop(
+        columns=[col for col in ["_key"] if col in unmatched.columns]
+    ).to_csv(UNMATCHED_CSV, index=False, encoding="utf-8-sig")
     OUTPUT_HTML.write_text(build_html(features, len(unmatched)), encoding="utf-8")
 
     print(f"Input roads: {len(input_df)}")

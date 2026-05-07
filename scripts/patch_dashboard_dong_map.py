@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / "dashboard.py"
 
 
-NEW_DONG_FOCUS_MAP = r'''def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
+NEW_DONG_FOCUS_MAP = r"""def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
     scoped = df[(df["구"] == gu) & (df["cluster_label"].isin(clusters))].dropna(subset=["위도", "경도"]).copy()
     if scoped.empty:
         return go.Figure()
@@ -201,7 +201,7 @@ NEW_DONG_FOCUS_MAP = r'''def dong_focus_map(df: pd.DataFrame, gu: str, clusters:
         ),
     )
     return fig
-'''
+"""
 
 
 def main() -> None:

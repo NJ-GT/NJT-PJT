@@ -23,7 +23,18 @@ OVERPASS_URLS = [
     "https://overpass.openstreetmap.ru/api/interpreter",
 ]
 
-GU_ORDER = ["강남구", "강서구", "마포구", "서초구", "성동구", "송파구", "영등포구", "용산구", "종로구", "중구"]
+GU_ORDER = [
+    "강남구",
+    "강서구",
+    "마포구",
+    "서초구",
+    "성동구",
+    "송파구",
+    "영등포구",
+    "용산구",
+    "종로구",
+    "중구",
+]
 WIDTH_ORDER = [
     "6m미만",
     "폭6-8m",
@@ -79,7 +90,9 @@ def distance_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     return math.hypot(dx, dy)
 
 
-def simplify_line(coords: list[list[float]], tolerance_m: float = 3.0) -> list[list[float]]:
+def simplify_line(
+    coords: list[list[float]], tolerance_m: float = 3.0
+) -> list[list[float]]:
     if len(coords) <= 2:
         return coords
 
@@ -105,7 +118,9 @@ def simplify_line(coords: list[list[float]], tolerance_m: float = 3.0) -> list[l
     return [start, end]
 
 
-def perpendicular_distance_m(point: list[float], start: list[float], end: list[float]) -> float:
+def perpendicular_distance_m(
+    point: list[float], start: list[float], end: list[float]
+) -> float:
     lat0 = point[1]
     lng0 = point[0]
     lat1 = start[1]
@@ -182,7 +197,9 @@ out geom tags;
                 )
                 response.raise_for_status()
                 data = response.json()
-                OSM_CACHE_PATH.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+                OSM_CACHE_PATH.write_text(
+                    json.dumps(data, ensure_ascii=False), encoding="utf-8"
+                )
                 return data
             except Exception as exc:
                 last_error = exc
@@ -199,7 +216,11 @@ def index_ways(osm: dict) -> dict[str, list[dict]]:
         if len(geometry) < 2:
             continue
         tags = element.get("tags") or {}
-        names = {tags.get("name", ""), tags.get("name:ko", ""), tags.get("addr:street", "")}
+        names = {
+            tags.get("name", ""),
+            tags.get("name:ko", ""),
+            tags.get("addr:street", ""),
+        }
         way = {
             "id": element.get("id"),
             "nodes": element.get("nodes") or [],
@@ -229,7 +250,9 @@ def component_for_row(ways: list[dict], lat: float, lng: float) -> list[dict]:
             else:
                 node_to_way[node_id] = way_idx
 
-    nearest_idx = min(range(len(ways)), key=lambda idx: way_distance_to_point(ways[idx], lat, lng))
+    nearest_idx = min(
+        range(len(ways)), key=lambda idx: way_distance_to_point(ways[idx], lat, lng)
+    )
     nearest_root = dsu.find(nearest_idx)
     component = [way for idx, way in enumerate(ways) if dsu.find(idx) == nearest_root]
     return component or [ways[nearest_idx]]
@@ -250,7 +273,11 @@ def endpoint_pair(ways: list[dict]) -> tuple[list[float], list[float]]:
             node_degree[a] += 1
             node_degree[b] += 1
 
-    candidates = [node_coord[node_id] for node_id, degree in node_degree.items() if degree == 1 and node_id in node_coord]
+    candidates = [
+        node_coord[node_id]
+        for node_id, degree in node_degree.items()
+        if degree == 1 and node_id in node_coord
+    ]
     if len(candidates) < 2:
         candidates = all_coords
     if len(candidates) < 2:
@@ -278,7 +305,9 @@ def line_length_m(ways: list[dict]) -> float:
     return total
 
 
-def matched_features(df: pd.DataFrame, index: dict[str, list[dict]]) -> tuple[list[dict], pd.DataFrame]:
+def matched_features(
+    df: pd.DataFrame, index: dict[str, list[dict]]
+) -> tuple[list[dict], pd.DataFrame]:
     features: list[dict] = []
     unmatched: list[dict] = []
     seen: set[tuple[str, str]] = set()
@@ -330,12 +359,16 @@ def matched_features(df: pd.DataFrame, index: dict[str, list[dict]]) -> tuple[li
     return features, pd.DataFrame(unmatched)
 
 
-def count_by(features: list[dict], prop: str, order: list[str]) -> list[dict[str, object]]:
+def count_by(
+    features: list[dict], prop: str, order: list[str]
+) -> list[dict[str, object]]:
     counts = {name: 0 for name in order}
     for feature in features:
         value = str(feature["properties"].get(prop, ""))
         counts[value] = counts.get(value, 0) + 1
-    return [{"name": name, "count": counts[name]} for name in order if counts.get(name, 0)]
+    return [
+        {"name": name, "count": counts[name]} for name in order if counts.get(name, 0)
+    ]
 
 
 def to_leaflet_features(features: list[dict]) -> list[dict[str, object]]:
@@ -375,8 +408,14 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
     gu_json = json.dumps(GU_ORDER, ensure_ascii=False)
     width_json = json.dumps(WIDTH_ORDER, ensure_ascii=False)
     colors_json = json.dumps(WIDTH_COLORS, ensure_ascii=False)
-    gu_counts_json = json.dumps(count_by(features, "구", GU_ORDER), ensure_ascii=False, separators=(",", ":"))
-    width_counts_json = json.dumps(count_by(features, "도로폭", WIDTH_ORDER), ensure_ascii=False, separators=(",", ":"))
+    gu_counts_json = json.dumps(
+        count_by(features, "구", GU_ORDER), ensure_ascii=False, separators=(",", ":")
+    )
+    width_counts_json = json.dumps(
+        count_by(features, "도로폭", WIDTH_ORDER),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
 
     return f"""<!doctype html>
 <html lang="ko">
@@ -699,12 +738,14 @@ def main() -> int:
     index = index_ways(osm)
     features, unmatched = matched_features(df, index)
     geojson = {"type": "FeatureCollection", "features": features}
-    MATCHED_GEOJSON_PATH.write_text(json.dumps(geojson, ensure_ascii=False), encoding="utf-8")
+    MATCHED_GEOJSON_PATH.write_text(
+        json.dumps(geojson, ensure_ascii=False), encoding="utf-8"
+    )
     if unmatched.empty:
         unmatched = pd.DataFrame(columns=df.columns)
-    unmatched.drop(columns=[col for col in ["_road_key"] if col in unmatched.columns]).to_csv(
-        UNMATCHED_PATH, index=False, encoding="utf-8-sig"
-    )
+    unmatched.drop(
+        columns=[col for col in ["_road_key"] if col in unmatched.columns]
+    ).to_csv(UNMATCHED_PATH, index=False, encoding="utf-8-sig")
     if not features:
         raise RuntimeError("No road line geometries matched.")
     OUTPUT_PATH.write_text(build_html(features, len(unmatched)), encoding="utf-8")

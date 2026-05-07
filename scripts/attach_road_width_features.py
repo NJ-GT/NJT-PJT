@@ -14,7 +14,9 @@ sys.stdout.reconfigure(encoding="utf-8")
 BASE_DIR = Path(__file__).resolve().parents[1]
 
 LODGING_CSV = BASE_DIR / "data" / "서울10구_숙소_소방거리_유클리드.csv"
-ROAD_GEOJSON = BASE_DIR / "road_width_10gu" / "data" / "seoul_road_width_10gu_rw_polygons.geojson"
+ROAD_GEOJSON = (
+    BASE_DIR / "road_width_10gu" / "data" / "seoul_road_width_10gu_rw_polygons.geojson"
+)
 
 OUT_FEATURES = BASE_DIR / "data" / "서울10구_숙소_도로폭_공간매칭.csv"
 OUT_JOINED = BASE_DIR / "data" / "서울10구_숙소_소방거리_유클리드_도로폭추가.csv"
@@ -116,7 +118,9 @@ def load_roads() -> gpd.GeoDataFrame:
         usable["공식도로폭등급"] == "불가", "width"
     ]
     usable["도로폭_위험도"] = usable["공식도로폭등급"].map(WIDTH_RISK)
-    usable["도로폭_속도계수"] = usable["공식도로폭등급"].map(WIDTH_SPEED_FACTOR).fillna(1.0)
+    usable["도로폭_속도계수"] = (
+        usable["공식도로폭등급"].map(WIDTH_SPEED_FACTOR).fillna(1.0)
+    )
     return usable
 
 
@@ -158,7 +162,9 @@ def attach_features(df: pd.DataFrame, roads: gpd.GeoDataFrame) -> pd.DataFrame:
         distance_col="도로폭_거리m",
     ).drop(columns=["index_right"], errors="ignore")
     matched = (
-        matched.sort_values(["숙소ID", "도로폭_거리m", "도로폭_위험도"], ascending=[True, True, False])
+        matched.sort_values(
+            ["숙소ID", "도로폭_거리m", "도로폭_위험도"], ascending=[True, True, False]
+        )
         .drop_duplicates("숙소ID", keep="first")
         .copy()
     )
@@ -178,9 +184,15 @@ def attach_features(df: pd.DataFrame, roads: gpd.GeoDataFrame) -> pd.DataFrame:
             "도로폭_출처": matched["widthSource"],
             "도로폭_도로구간매칭": matched["matchMethod"],
             "도로폭_거리m": matched["도로폭_거리m"].round(2),
-            "공식도로폭m": pd.to_numeric(matched["officialWidthM"], errors="coerce").round(2),
-            "도로폭_위험도": pd.to_numeric(matched["도로폭_위험도"], errors="coerce").round(4),
-            "도로폭_속도계수": pd.to_numeric(matched["도로폭_속도계수"], errors="coerce").round(4),
+            "공식도로폭m": pd.to_numeric(
+                matched["officialWidthM"], errors="coerce"
+            ).round(2),
+            "도로폭_위험도": pd.to_numeric(
+                matched["도로폭_위험도"], errors="coerce"
+            ).round(4),
+            "도로폭_속도계수": pd.to_numeric(
+                matched["도로폭_속도계수"], errors="coerce"
+            ).round(4),
             "도로폭_보정이동시간초": np.nan,
             "도로폭_보정예상도착초": np.nan,
             "실폭도로ID": matched["id"],
@@ -192,12 +204,20 @@ def attach_features(df: pd.DataFrame, roads: gpd.GeoDataFrame) -> pd.DataFrame:
 
     indexed = df.set_index("숙소ID")
     if "이동시간초" in df.columns:
-        move_sec = pd.to_numeric(indexed.loc[features["숙소ID"], "이동시간초"].to_numpy(), errors="coerce")
-        features["도로폭_보정이동시간초"] = np.rint(move_sec * features["도로폭_속도계수"]).astype("Int64")
+        move_sec = pd.to_numeric(
+            indexed.loc[features["숙소ID"], "이동시간초"].to_numpy(), errors="coerce"
+        )
+        features["도로폭_보정이동시간초"] = np.rint(
+            move_sec * features["도로폭_속도계수"]
+        ).astype("Int64")
     if "이동시간초" in df.columns:
         # 기존 예상도착분은 출동준비 60초 + 이동시간 기준이므로 같은 기준으로 초 단위를 산출한다.
-        move_sec = pd.to_numeric(indexed.loc[features["숙소ID"], "이동시간초"].to_numpy(), errors="coerce")
-        features["도로폭_보정예상도착초"] = np.rint(60 + move_sec * features["도로폭_속도계수"]).astype("Int64")
+        move_sec = pd.to_numeric(
+            indexed.loc[features["숙소ID"], "이동시간초"].to_numpy(), errors="coerce"
+        )
+        features["도로폭_보정예상도착초"] = np.rint(
+            60 + move_sec * features["도로폭_속도계수"]
+        ).astype("Int64")
 
     joined = df.merge(
         features[
@@ -229,18 +249,40 @@ def attach_features(df: pd.DataFrame, roads: gpd.GeoDataFrame) -> pd.DataFrame:
 def save_summary(features: pd.DataFrame) -> None:
     rows = []
     rows.append({"구분": "전체 숙소", "값": len(features)})
-    rows.append({"구분": "도로폭 매칭 숙소", "값": int(features["인접도로폭"].notna().sum())})
-    rows.append({"구분": "평균 도로까지 거리m", "값": round(float(features["도로폭_거리m"].mean()), 2)})
-    rows.append({"구분": "중앙 도로까지 거리m", "값": round(float(features["도로폭_거리m"].median()), 2)})
-    rows.append({"구분": "50m 초과 숙소", "값": int((features["도로폭_거리m"] > 50).sum())})
-    rows.append({"구분": "100m 초과 숙소", "값": int((features["도로폭_거리m"] > 100).sum())})
+    rows.append(
+        {"구분": "도로폭 매칭 숙소", "값": int(features["인접도로폭"].notna().sum())}
+    )
+    rows.append(
+        {
+            "구분": "평균 도로까지 거리m",
+            "값": round(float(features["도로폭_거리m"].mean()), 2),
+        }
+    )
+    rows.append(
+        {
+            "구분": "중앙 도로까지 거리m",
+            "값": round(float(features["도로폭_거리m"].median()), 2),
+        }
+    )
+    rows.append(
+        {"구분": "50m 초과 숙소", "값": int((features["도로폭_거리m"] > 50).sum())}
+    )
+    rows.append(
+        {"구분": "100m 초과 숙소", "값": int((features["도로폭_거리m"] > 100).sum())}
+    )
 
     width_counts = features["인접도로폭"].value_counts(dropna=False).reset_index()
     width_counts.columns = ["구분", "값"]
     width_counts["구분"] = "인접도로폭: " + width_counts["구분"].astype(str)
 
     gu_width = (
-        features.pivot_table(index="구", columns="인접도로폭", values="숙소ID", aggfunc="count", fill_value=0)
+        features.pivot_table(
+            index="구",
+            columns="인접도로폭",
+            values="숙소ID",
+            aggfunc="count",
+            fill_value=0,
+        )
         .reset_index()
         .rename_axis(None, axis=1)
     )

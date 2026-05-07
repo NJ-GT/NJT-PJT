@@ -28,7 +28,9 @@ COLORS = {
 
 def main() -> None:
     df = pd.read_csv(SRC, encoding="utf-8-sig")
-    df["최근접_소화용수_거리등급"] = pd.to_numeric(df["최근접_소화용수_거리등급"], errors="coerce")
+    df["최근접_소화용수_거리등급"] = pd.to_numeric(
+        df["최근접_소화용수_거리등급"], errors="coerce"
+    )
     df = df.dropna(subset=["구", "최근접_소화용수_거리등급"]).copy()
     df["최근접_소화용수_거리등급"] = df["최근접_소화용수_거리등급"].astype(int)
 
@@ -54,7 +56,10 @@ def main() -> None:
         .agg(
             평균등급=("최근접_소화용수_거리등급", "mean"),
             시설수=("숙소명", "size"),
-            사십미터이내비율=("최근접_소화용수_거리등급", lambda s: s.le(1).mean() * 100),
+            사십미터이내비율=(
+                "최근접_소화용수_거리등급",
+                lambda s: s.le(1).mean() * 100,
+            ),
         )
         .reindex(gu_order)
     )
@@ -99,7 +104,9 @@ def main() -> None:
     ax.invert_yaxis()
     ax.set_xlim(0, 100)
     ax.set_xlabel("구성비 (%)", fontsize=11, color="#475569")
-    ax.set_title("구별 거리등급 구성", loc="left", fontsize=16, fontweight="bold", pad=22)
+    ax.set_title(
+        "구별 거리등급 구성", loc="left", fontsize=16, fontweight="bold", pad=22
+    )
     ax.grid(axis="x", color="#E2E8F0", linewidth=0.8)
     ax.set_axisbelow(True)
     ax.spines[["top", "right", "left"]].set_visible(False)
@@ -115,8 +122,12 @@ def main() -> None:
     )
 
     avg = summary["평균등급"].to_list()
-    bar_colors = ["#16A34A" if v < 1.0 else "#F59E0B" if v < 1.2 else "#DC2626" for v in avg]
-    bars2 = ax2.barh(y, avg, color=bar_colors, edgecolor="white", linewidth=1.2, height=0.72)
+    bar_colors = [
+        "#16A34A" if v < 1.0 else "#F59E0B" if v < 1.2 else "#DC2626" for v in avg
+    ]
+    bars2 = ax2.barh(
+        y, avg, color=bar_colors, edgecolor="white", linewidth=1.2, height=0.72
+    )
     for bar, val, within40 in zip(bars2, avg, summary["사십미터이내비율"]):
         ax2.text(
             val + 0.035,
@@ -149,7 +160,15 @@ def main() -> None:
     ax2.spines[["top", "right", "left"]].set_visible(False)
     ax2.spines["bottom"].set_color("#CBD5E1")
 
-    fig.suptitle("구별 소화용수 접근성 등급", x=0.055, y=0.975, ha="left", fontsize=21, fontweight="bold", color="#0F172A")
+    fig.suptitle(
+        "구별 소화용수 접근성 등급",
+        x=0.055,
+        y=0.975,
+        ha="left",
+        fontsize=21,
+        fontweight="bold",
+        color="#0F172A",
+    )
     fig.text(
         0.055,
         0.935,

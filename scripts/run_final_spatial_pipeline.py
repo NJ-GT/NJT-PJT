@@ -25,11 +25,21 @@ BASE = Path(__file__).resolve().parents[1]
 OUT = BASE / "data" / "final_spatial_pipeline"
 OUT.mkdir(parents=True, exist_ok=True)
 
-CLUSTER_SOURCE_REPAIRED = BASE / "0424" / "분석" / "tables" / "분석변수_최종테이블0423_AHP3등급비교_주변건물수보정.csv"
-CLUSTER_SOURCE = BASE / "0424" / "분석" / "tables" / "분석변수_최종테이블0423_AHP3등급비교.csv"
+CLUSTER_SOURCE_REPAIRED = (
+    BASE
+    / "0424"
+    / "분석"
+    / "tables"
+    / "분석변수_최종테이블0423_AHP3등급비교_주변건물수보정.csv"
+)
+CLUSTER_SOURCE = (
+    BASE / "0424" / "분석" / "tables" / "분석변수_최종테이블0423_AHP3등급비교.csv"
+)
 CLUSTER_FALLBACK_SOURCE = BASE / "data" / "clustering_result_all.csv"
 FIRE_SOURCE = BASE / "data" / "data_with_fire_targets.csv"
-EXPECTED_DAMAGE = BASE / "0424" / "data" / "facility_expected_property_damage_two_stage.csv"
+EXPECTED_DAMAGE = (
+    BASE / "0424" / "data" / "facility_expected_property_damage_two_stage.csv"
+)
 GWR_SOURCE = BASE / "data" / "gwr_results.csv"
 
 GROUP_COL = "업종"
@@ -58,7 +68,9 @@ def merge_sources() -> pd.DataFrame:
     if CLUSTER_SOURCE_REPAIRED.exists():
         cluster_source = CLUSTER_SOURCE_REPAIRED
     else:
-        cluster_source = CLUSTER_SOURCE if CLUSTER_SOURCE.exists() else CLUSTER_FALLBACK_SOURCE
+        cluster_source = (
+            CLUSTER_SOURCE if CLUSTER_SOURCE.exists() else CLUSTER_FALLBACK_SOURCE
+        )
     cluster = read_csv(cluster_source)
     fire = read_csv(FIRE_SOURCE)
 
@@ -78,7 +90,9 @@ def merge_sources() -> pd.DataFrame:
     cluster["_lat_key"] = cluster["위도"].round(6)
     cluster["_lon_key"] = cluster["경도"].round(6)
 
-    merged = cluster.merge(fire_map, on=["_name_key", "_lat_key", "_lon_key"], how="left")
+    merged = cluster.merge(
+        fire_map, on=["_name_key", "_lat_key", "_lon_key"], how="left"
+    )
 
     if EXPECTED_DAMAGE.exists():
         damage = read_csv(EXPECTED_DAMAGE)
@@ -93,7 +107,9 @@ def merge_sources() -> pd.DataFrame:
                 "기대피해액_순위": damage["기대피해액_순위"],
             }
         ).drop_duplicates(["_name_key", "_lat_key", "_lon_key"])
-        merged = merged.merge(damage_map, on=["_name_key", "_lat_key", "_lon_key"], how="left")
+        merged = merged.merge(
+            damage_map, on=["_name_key", "_lat_key", "_lon_key"], how="left"
+        )
 
     merged["집중도"] = pd.to_numeric(merged["집중도"], errors="coerce")
     merged["단속위험도"] = pd.to_numeric(merged["단속위험도"], errors="coerce")
@@ -118,7 +134,9 @@ def add_team_blindspot_score(df: pd.DataFrame) -> pd.DataFrame:
         scored["주변건물수_검증상태"] = scored["주변건물수_보정여부"].fillna("사용")
         scored.loc[suspicious_zero, "주변건물수_검증상태"] = "주변건물/집중도_검토필요"
     else:
-        scored["주변건물수_검증상태"] = np.where(suspicious_zero, "주변건물/집중도_검토필요", "사용")
+        scored["주변건물수_검증상태"] = np.where(
+            suspicious_zero, "주변건물/집중도_검토필요", "사용"
+        )
 
     score_input = scored[TEAM_SCORE_VARS].mask(suspicious_zero, np.nan)
     scaled = MinMaxScaler().fit_transform(score_input)
@@ -136,9 +154,11 @@ def add_team_blindspot_score(df: pd.DataFrame) -> pd.DataFrame:
         + scored["구조노후도_정규화"] * 0.15
         + scored["단속위험도_정규화"] * 0.15
     ) * 100
-    scored["사각지대_위험순위"] = scored["사각지대_위험도점수"].rank(
-        ascending=False, method="min"
-    ).astype("Int64")
+    scored["사각지대_위험순위"] = (
+        scored["사각지대_위험도점수"]
+        .rank(ascending=False, method="min")
+        .astype("Int64")
+    )
 
     score_cols = [
         "사각지대_위험순위",
@@ -185,10 +205,14 @@ def run_clustering(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         best_k = k_candidates[int(np.argmax(scores))]
         model = KMeans(n_clusters=best_k, random_state=42, n_init=20)
         sub["업종별_군집"] = model.fit_predict(X)
-        sub["업종별_군집명"] = sub[GROUP_COL] + " 군집 " + sub["업종별_군집"].astype(str)
+        sub["업종별_군집명"] = (
+            sub[GROUP_COL] + " 군집 " + sub["업종별_군집"].astype(str)
+        )
         frames.append(sub)
 
-        summary = sub.groupby("업종별_군집")[RISK_VARS + ["위험점수_AHP"]].mean().round(4)
+        summary = (
+            sub.groupby("업종별_군집")[RISK_VARS + ["위험점수_AHP"]].mean().round(4)
+        )
         summary["시설수"] = sub.groupby("업종별_군집").size()
         summary["업종"] = group
         summary["선택_K"] = best_k
@@ -197,8 +221,12 @@ def run_clustering(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
 
     clustered = pd.concat(frames, ignore_index=True)
     cluster_summary = pd.concat(rows, ignore_index=True)
-    clustered.to_csv(OUT / "step1_industry_clusters.csv", index=False, encoding="utf-8-sig")
-    cluster_summary.to_csv(OUT / "step1_cluster_summary.csv", index=False, encoding="utf-8-sig")
+    clustered.to_csv(
+        OUT / "step1_industry_clusters.csv", index=False, encoding="utf-8-sig"
+    )
+    cluster_summary.to_csv(
+        OUT / "step1_cluster_summary.csv", index=False, encoding="utf-8-sig"
+    )
     return clustered, cluster_summary
 
 
@@ -231,7 +259,9 @@ def run_ridge_lasso(df: pd.DataFrame) -> pd.DataFrame:
             )
 
     result = pd.DataFrame(rows)
-    result.to_csv(OUT / "step2_ridge_lasso_coefficients.csv", index=False, encoding="utf-8-sig")
+    result.to_csv(
+        OUT / "step2_ridge_lasso_coefficients.csv", index=False, encoding="utf-8-sig"
+    )
     return result
 
 
@@ -287,7 +317,9 @@ def run_spatial_lag_error(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     if ML_Lag is None or ML_Error is None:
         result = pd.DataFrame([{"업종": "전체", "model": "spreg unavailable"}])
-        result.to_csv(OUT / "step4_spatial_lag_error.csv", index=False, encoding="utf-8-sig")
+        result.to_csv(
+            OUT / "step4_spatial_lag_error.csv", index=False, encoding="utf-8-sig"
+        )
         return result
 
     for group in ["전체"] + GROUP_ORDER:
@@ -309,23 +341,45 @@ def run_spatial_lag_error(df: pd.DataFrame) -> pd.DataFrame:
             lag = ML_Lag(y, X, w=w, name_y=TARGET_COL, name_x=RISK_VARS)
             rows.append(_spatial_row(lag, "Spatial Lag", group, len(sub)))
         except Exception as exc:
-            rows.append({"업종": group, "model": "Spatial Lag", "error": str(exc), "표본수": len(sub)})
+            rows.append(
+                {
+                    "업종": group,
+                    "model": "Spatial Lag",
+                    "error": str(exc),
+                    "표본수": len(sub),
+                }
+            )
 
         try:
             err = ML_Error(y, X, w=w, name_y=TARGET_COL, name_x=RISK_VARS)
             rows.append(_spatial_row(err, "Spatial Error", group, len(sub)))
         except Exception as exc:
-            rows.append({"업종": group, "model": "Spatial Error", "error": str(exc), "표본수": len(sub)})
+            rows.append(
+                {
+                    "업종": group,
+                    "model": "Spatial Error",
+                    "error": str(exc),
+                    "표본수": len(sub),
+                }
+            )
 
     result = pd.DataFrame(rows)
-    result.to_csv(OUT / "step4_spatial_lag_error.csv", index=False, encoding="utf-8-sig")
+    result.to_csv(
+        OUT / "step4_spatial_lag_error.csv", index=False, encoding="utf-8-sig"
+    )
     return result
 
 
 def summarize_gwr() -> pd.DataFrame:
     if not GWR_SOURCE.exists():
         result = pd.DataFrame(
-            [{"source": "gwr_results.csv", "status": "not_found", "note": "GWR 결과 파일 없음"}]
+            [
+                {
+                    "source": "gwr_results.csv",
+                    "status": "not_found",
+                    "note": "GWR 결과 파일 없음",
+                }
+            ]
         )
     else:
         gwr = read_csv(GWR_SOURCE)
@@ -366,8 +420,12 @@ def build_final_rank(df: pd.DataFrame) -> pd.DataFrame:
     ranked = df.copy()
     if "기대피해액_백만원" not in ranked.columns:
         ranked["기대피해액_백만원"] = np.nan
-    ranked["AHP위험순위"] = ranked["위험점수_AHP"].rank(ascending=False, method="min").astype(int)
-    ranked["기대피해액순위"] = ranked["기대피해액_백만원"].rank(ascending=False, method="min")
+    ranked["AHP위험순위"] = (
+        ranked["위험점수_AHP"].rank(ascending=False, method="min").astype(int)
+    )
+    ranked["기대피해액순위"] = ranked["기대피해액_백만원"].rank(
+        ascending=False, method="min"
+    )
     ranked["기대피해액순위"] = ranked["기대피해액순위"].fillna(len(ranked)).astype(int)
     # 최종위험순위는 발표용 주 위험도인 AHP를 기준으로 둔다.
     # 기대피해액은 금액 예측력이 낮으므로 보조 비교 지표로만 사용한다.
@@ -380,7 +438,9 @@ def build_final_rank(df: pd.DataFrame) -> pd.DataFrame:
     ] + [c for c in rank_cols if c in ranked.columns]
     rank_cols = list(dict.fromkeys(rank_cols))
     ranked = ranked.sort_values(["최종위험순위", "기대피해액순위"])[rank_cols]
-    ranked.to_csv(OUT / "step6_final_facility_rank.csv", index=False, encoding="utf-8-sig")
+    ranked.to_csv(
+        OUT / "step6_final_facility_rank.csv", index=False, encoding="utf-8-sig"
+    )
     return ranked
 
 
@@ -411,7 +471,9 @@ def main() -> None:
         },
         "files": sorted(p.name for p in OUT.glob("*.csv")),
     }
-    (OUT / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    (OUT / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
 
 

@@ -15,6 +15,7 @@
 출력: data/소방청_특정소방대상물_주소피처.csv (매핑 결과)
       data/소방청_특정소방대상물_주소피처_미매칭.csv (미매핑 행)
 """
+
 import csv
 import re
 import time
@@ -157,7 +158,9 @@ def load_registry(files):
     frames = []
     for path in files:
         frame = pd.read_csv(path, encoding="utf-8-sig", low_memory=False)
-        frame = frame[["대지위치", "도로명대지위치", "건물명", "관리건축물대장PK"]].copy()
+        frame = frame[
+            ["대지위치", "도로명대지위치", "건물명", "관리건축물대장PK"]
+        ].copy()
         frame["source_file"] = path.name
         frames.append(frame)
 
@@ -174,7 +177,9 @@ def load_registry(files):
     registry["road_key"] = registry["도로명대지위치"].map(compact_korean)
     registry["name_variants"] = registry["건물명"].map(name_variants)
     registry = registry[
-        registry["gu"].ne("") & registry["dong"].ne("") & registry["name_variants"].map(bool)
+        registry["gu"].ne("")
+        & registry["dong"].ne("")
+        & registry["name_variants"].map(bool)
     ].copy()
     return registry
 
@@ -198,11 +203,15 @@ def load_hospitality_bridge(path):
     ).copy()
 
     frame["대지위치"] = frame["registry_대지위치"].fillna(frame["지번주소"])
-    frame["도로명대지위치"] = frame["registry_도로명대지위치"].fillna(frame["도로명주소"])
+    frame["도로명대지위치"] = frame["registry_도로명대지위치"].fillna(
+        frame["도로명주소"]
+    )
     frame["건물명"] = frame["사업장명"]
     frame["관리건축물대장PK"] = frame["selected_registry_pk"].fillna("")
     frame["source_file"] = path.name
-    frame = frame[["대지위치", "도로명대지위치", "건물명", "관리건축물대장PK", "source_file"]].copy()
+    frame = frame[
+        ["대지위치", "도로명대지위치", "건물명", "관리건축물대장PK", "source_file"]
+    ].copy()
 
     frame["대지위치"] = frame["대지위치"].map(clean_cell)
     frame["도로명대지위치"] = frame["도로명대지위치"].map(clean_cell)
@@ -218,7 +227,9 @@ def load_hospitality_bridge(path):
     frame = frame[
         frame["gu"].ne("") & frame["dong"].ne("") & frame["name_variants"].map(bool)
     ].copy()
-    frame = frame.drop_duplicates(subset=["건물명", "대지위치", "도로명대지위치"]).copy()
+    frame = frame.drop_duplicates(
+        subset=["건물명", "대지위치", "도로명대지위치"]
+    ).copy()
     return frame
 
 
@@ -400,7 +411,9 @@ def fallback_from_kakao(fire_row, session):
             place_name = clean_cell(doc.get("place_name", ""))
             address_name = clean_cell(doc.get("address_name", ""))
             road_name = clean_cell(doc.get("road_address_name", ""))
-            score = best_name_similarity(fire_name_vars, name_variants(place_name)) * 10.0
+            score = (
+                best_name_similarity(fire_name_vars, name_variants(place_name)) * 10.0
+            )
             if fire_gu and fire_gu in f"{address_name} {road_name}":
                 score += 1.5
             if fire_dong and fire_dong in f"{address_name} {road_name}":
@@ -440,8 +453,15 @@ def main():
     exact_gu_dong, exact_gu, by_gu_dong, by_gu = build_registry_indexes(registry)
     print(f"  표제부 행 수: {len(registry):,}")
     hospitality = load_hospitality_bridge(HOSPITALITY_PATH)
-    hospitality_exact_gu_dong, hospitality_exact_gu, hospitality_by_gu_dong, hospitality_by_gu = (
-        build_registry_indexes(hospitality) if not hospitality.empty else ({}, {}, {}, {})
+    (
+        hospitality_exact_gu_dong,
+        hospitality_exact_gu,
+        hospitality_by_gu_dong,
+        hospitality_by_gu,
+    ) = (
+        build_registry_indexes(hospitality)
+        if not hospitality.empty
+        else ({}, {}, {}, {})
     )
     if not hospitality.empty:
         print(f"  숙박업 보조 행 수: {len(hospitality):,}")

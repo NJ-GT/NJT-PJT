@@ -32,11 +32,15 @@ for v in VARS + ["위험점수_AHP"]:
 results = {}
 
 for group_key, group_label in GROUPS.items():
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  {group_label}  ({(df_all['업종그룹'] == group_key).sum()}개)")
     print("=" * 60)
 
-    df = df_all[df_all["업종그룹"] == group_key].dropna(subset=VARS).reset_index(drop=True)
+    df = (
+        df_all[df_all["업종그룹"] == group_key]
+        .dropna(subset=VARS)
+        .reset_index(drop=True)
+    )
     slug = "A_기존숙박군" if group_key == "기존숙박군" else "B_외국인민박"
 
     X = df[VARS].values
@@ -62,7 +66,9 @@ for group_key, group_label in GROUPS.items():
     axes[0].set_title("엘보우 차트")
     axes[0].grid(alpha=0.3)
     axes[1].plot(K_range, silhouettes, "o-", color="#d7191c")
-    axes[1].axvline(best_k, linestyle="--", color="gray", alpha=0.7, label=f"최적 K={best_k}")
+    axes[1].axvline(
+        best_k, linestyle="--", color="gray", alpha=0.7, label=f"최적 K={best_k}"
+    )
     axes[1].set_xlabel("군집 수 (K)")
     axes[1].set_ylabel("실루엣 점수")
     axes[1].set_title("실루엣 점수")
@@ -91,13 +97,19 @@ for group_key, group_label in GROUPS.items():
         cnt = mask.sum()
         avg_risk = df.loc[mask, "위험점수_AHP"].mean()
         axes[0].scatter(
-            df.loc[mask, "구조노후도"], df.loc[mask, "단속위험도"],
-            c=COLORS[c], s=20, alpha=0.6,
+            df.loc[mask, "구조노후도"],
+            df.loc[mask, "단속위험도"],
+            c=COLORS[c],
+            s=20,
+            alpha=0.6,
             label=f"군집{c} ({cnt}개, AHP={avg_risk:.0f})",
         )
         axes[1].scatter(
-            df.loc[mask, "주변건물수"], df.loc[mask, "집중도"],
-            c=COLORS[c], s=20, alpha=0.6,
+            df.loc[mask, "주변건물수"],
+            df.loc[mask, "집중도"],
+            c=COLORS[c],
+            s=20,
+            alpha=0.6,
             label=f"군집{c}",
         )
 
@@ -112,7 +124,9 @@ for group_key, group_label in GROUPS.items():
     axes[1].legend(fontsize=8)
     axes[1].grid(alpha=0.3)
     plt.tight_layout()
-    plt.savefig(f"{OUT_DIR}/clustering_scatter_{slug}.png", dpi=150, bbox_inches="tight")
+    plt.savefig(
+        f"{OUT_DIR}/clustering_scatter_{slug}.png", dpi=150, bbox_inches="tight"
+    )
     plt.close()
 
     # ── 5. 저장 ─────────────────────────────────────────────────────
@@ -124,5 +138,7 @@ for group_key, group_label in GROUPS.items():
 
 # ── 6. 전체 합산 저장 ────────────────────────────────────────────────
 df_merged = pd.concat(results.values(), ignore_index=True)
-df_merged.to_csv(f"{OUT_DIR}/clustering_result_all.csv", index=False, encoding="utf-8-sig")
+df_merged.to_csv(
+    f"{OUT_DIR}/clustering_result_all.csv", index=False, encoding="utf-8-sig"
+)
 print(f"\n\n[전체 저장] {OUT_DIR}/clustering_result_all.csv  ({len(df_merged)}행)")

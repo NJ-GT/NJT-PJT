@@ -50,13 +50,20 @@ COLORS = {
 
 def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     df = pd.read_csv(SRC, encoding="utf-8-sig")
-    cluster_order = df.groupby("cluster_k3")["최종_화재위험점수"].mean().sort_values().index.tolist()
+    cluster_order = (
+        df.groupby("cluster_k3")["최종_화재위험점수"]
+        .mean()
+        .sort_values()
+        .index.tolist()
+    )
     label_map = {cluster: label for cluster, label in zip(cluster_order, RISK_LABELS)}
     df["위험군"] = df["cluster_k3"].map(label_map)
     df["위험군"] = pd.Categorical(df["위험군"], categories=RISK_LABELS, ordered=True)
 
     x = df[FEATURES].apply(pd.to_numeric, errors="coerce").fillna(0)
-    scaled = pd.DataFrame(MinMaxScaler().fit_transform(x), columns=FEATURES, index=df.index)
+    scaled = pd.DataFrame(
+        MinMaxScaler().fit_transform(x), columns=FEATURES, index=df.index
+    )
     scaled["위험군"] = df["위험군"]
     return df, scaled
 
@@ -73,7 +80,9 @@ def main() -> None:
         )
         .reindex(RISK_LABELS)
     )
-    profile = scaled.groupby("위험군", observed=True)[FEATURES].mean().reindex(RISK_LABELS)
+    profile = (
+        scaled.groupby("위험군", observed=True)[FEATURES].mean().reindex(RISK_LABELS)
+    )
     gu_cluster = (
         df.groupby(["구", "위험군"], observed=True)
         .size()
@@ -94,7 +103,14 @@ def main() -> None:
     plt.rcParams["axes.unicode_minus"] = False
 
     fig = plt.figure(figsize=(18, 10.5), facecolor="#F8FAFC")
-    gs = fig.add_gridspec(2, 3, width_ratios=[1.0, 1.08, 1.1], height_ratios=[1.0, 1.08], hspace=0.35, wspace=0.28)
+    gs = fig.add_gridspec(
+        2,
+        3,
+        width_ratios=[1.0, 1.08, 1.1],
+        height_ratios=[1.0, 1.08],
+        hspace=0.35,
+        wspace=0.28,
+    )
     ax_summary = fig.add_subplot(gs[0, 0], facecolor="white")
     ax_box = fig.add_subplot(gs[0, 1], facecolor="white")
     ax_heat = fig.add_subplot(gs[0, 2], facecolor="white")
@@ -104,14 +120,47 @@ def main() -> None:
 
     # Summary cards as bars
     xs = np.arange(len(RISK_LABELS))
-    bars = ax_summary.bar(xs, summary["시설수"], color=[COLORS[l] for l in RISK_LABELS], width=0.56, edgecolor="white", linewidth=1.5)
+    bars = ax_summary.bar(
+        xs,
+        summary["시설수"],
+        color=[COLORS[l] for l in RISK_LABELS],
+        width=0.56,
+        edgecolor="white",
+        linewidth=1.5,
+    )
     ax_summary2 = ax_summary.twinx()
-    ax_summary2.plot(xs, summary["평균점수"], color="#0F172A", linewidth=2.4, marker="o", markersize=7)
+    ax_summary2.plot(
+        xs,
+        summary["평균점수"],
+        color="#0F172A",
+        linewidth=2.4,
+        marker="o",
+        markersize=7,
+    )
     for i, label in enumerate(RISK_LABELS):
-        ax_summary.text(i, summary.loc[label, "시설수"] + 24, f"{summary.loc[label, '시설수']:,}개", ha="center", va="bottom", fontsize=12, fontweight="bold")
-        ax_summary2.text(i, summary.loc[label, "평균점수"] + 0.8, f"{summary.loc[label, '평균점수']:.1f}점", ha="center", va="bottom", fontsize=11, fontweight="bold", color="#0F172A")
+        ax_summary.text(
+            i,
+            summary.loc[label, "시설수"] + 24,
+            f"{summary.loc[label, '시설수']:,}개",
+            ha="center",
+            va="bottom",
+            fontsize=12,
+            fontweight="bold",
+        )
+        ax_summary2.text(
+            i,
+            summary.loc[label, "평균점수"] + 0.8,
+            f"{summary.loc[label, '평균점수']:.1f}점",
+            ha="center",
+            va="bottom",
+            fontsize=11,
+            fontweight="bold",
+            color="#0F172A",
+        )
     ax_summary.set_xticks(xs, RISK_LABELS, fontsize=12, fontweight="bold")
-    ax_summary.set_title("군집 규모와 평균 점수", loc="left", fontsize=15, fontweight="bold", pad=12)
+    ax_summary.set_title(
+        "군집 규모와 평균 점수", loc="left", fontsize=15, fontweight="bold", pad=12
+    )
     ax_summary.set_ylabel("시설수", color="#475569")
     ax_summary2.set_ylabel("평균 점수", color="#475569")
     ax_summary.grid(axis="y", color="#E2E8F0")
@@ -120,8 +169,12 @@ def main() -> None:
     ax_summary2.spines[["top", "left"]].set_visible(False)
 
     # Boxplot
-    box_data = [df.loc[df["위험군"].eq(label), "최종_화재위험점수"] for label in RISK_LABELS]
-    bp = ax_box.boxplot(box_data, patch_artist=True, labels=RISK_LABELS, widths=0.55, showfliers=False)
+    box_data = [
+        df.loc[df["위험군"].eq(label), "최종_화재위험점수"] for label in RISK_LABELS
+    ]
+    bp = ax_box.boxplot(
+        box_data, patch_artist=True, labels=RISK_LABELS, widths=0.55, showfliers=False
+    )
     for patch, label in zip(bp["boxes"], RISK_LABELS):
         patch.set_facecolor(COLORS[label])
         patch.set_alpha(0.82)
@@ -130,31 +183,68 @@ def main() -> None:
         for item in bp[element]:
             item.set_color("#334155")
             item.set_linewidth(1.3)
-    ax_box.set_title("위험점수 분포", loc="left", fontsize=15, fontweight="bold", pad=12)
+    ax_box.set_title(
+        "위험점수 분포", loc="left", fontsize=15, fontweight="bold", pad=12
+    )
     ax_box.set_ylabel("최종 화재위험점수", color="#475569")
     ax_box.grid(axis="y", color="#E2E8F0")
     ax_box.spines[["top", "right"]].set_visible(False)
 
     # Heatmap profile
-    im = ax_heat.imshow(profile.to_numpy(), cmap="YlOrRd", vmin=0, vmax=1, aspect="auto")
-    ax_heat.set_xticks(np.arange(len(FEATURES)), [FEATURE_LABELS[f] for f in FEATURES], fontsize=9)
-    ax_heat.set_yticks(np.arange(len(RISK_LABELS)), RISK_LABELS, fontsize=11, fontweight="bold")
-    ax_heat.set_title("군집별 변수 프로파일", loc="left", fontsize=15, fontweight="bold", pad=12)
+    im = ax_heat.imshow(
+        profile.to_numpy(), cmap="YlOrRd", vmin=0, vmax=1, aspect="auto"
+    )
+    ax_heat.set_xticks(
+        np.arange(len(FEATURES)), [FEATURE_LABELS[f] for f in FEATURES], fontsize=9
+    )
+    ax_heat.set_yticks(
+        np.arange(len(RISK_LABELS)), RISK_LABELS, fontsize=11, fontweight="bold"
+    )
+    ax_heat.set_title(
+        "군집별 변수 프로파일", loc="left", fontsize=15, fontweight="bold", pad=12
+    )
     for y in range(profile.shape[0]):
         for x in range(profile.shape[1]):
             value = profile.iloc[y, x]
-            ax_heat.text(x, y, f"{value:.2f}", ha="center", va="center", fontsize=8.5, fontweight="bold", color="white" if value > 0.52 else "#111827")
+            ax_heat.text(
+                x,
+                y,
+                f"{value:.2f}",
+                ha="center",
+                va="center",
+                fontsize=8.5,
+                fontweight="bold",
+                color="white" if value > 0.52 else "#111827",
+            )
     for spine in ax_heat.spines.values():
         spine.set_visible(False)
     cbar = fig.colorbar(im, ax=ax_heat, fraction=0.04, pad=0.02)
     cbar.set_label("정규화 평균", color="#475569")
 
     # Gu high-risk share
-    colors_gu = ["#F59E0B" if v < high_share.median() else "#DC2626" for v in high_share]
-    ax_gu.barh(high_share.index, high_share.values, color=colors_gu, edgecolor="white", linewidth=1.0)
+    colors_gu = [
+        "#F59E0B" if v < high_share.median() else "#DC2626" for v in high_share
+    ]
+    ax_gu.barh(
+        high_share.index,
+        high_share.values,
+        color=colors_gu,
+        edgecolor="white",
+        linewidth=1.0,
+    )
     for idx, value in enumerate(high_share.values):
-        ax_gu.text(value + 0.8, idx, f"{value:.1f}%", va="center", fontsize=9.5, fontweight="bold", color="#0F172A")
-    ax_gu.set_title("구별 고위험군 비율", loc="left", fontsize=15, fontweight="bold", pad=12)
+        ax_gu.text(
+            value + 0.8,
+            idx,
+            f"{value:.1f}%",
+            va="center",
+            fontsize=9.5,
+            fontweight="bold",
+            color="#0F172A",
+        )
+    ax_gu.set_title(
+        "구별 고위험군 비율", loc="left", fontsize=15, fontweight="bold", pad=12
+    )
     ax_gu.set_xlabel("고위험군 비율 (%)", color="#475569")
     ax_gu.grid(axis="x", color="#E2E8F0")
     ax_gu.set_axisbelow(True)
@@ -180,16 +270,40 @@ def main() -> None:
     ax_map.spines[["top", "right"]].set_visible(False)
 
     # Top 10
-    ax_top.barh(top10["숙소명"].str.slice(0, 18), top10["최종_화재위험점수"], color=top10["위험군"].map(COLORS), edgecolor="white", linewidth=1.0)
+    ax_top.barh(
+        top10["숙소명"].str.slice(0, 18),
+        top10["최종_화재위험점수"],
+        color=top10["위험군"].map(COLORS),
+        edgecolor="white",
+        linewidth=1.0,
+    )
     for idx, (_, row) in enumerate(top10.iterrows()):
-        ax_top.text(row["최종_화재위험점수"] + 0.4, idx, f"{row['최종_화재위험점수']:.1f} | {row['구']}", va="center", fontsize=9.5, fontweight="bold", color="#0F172A")
-    ax_top.set_title("최고 위험 시설 TOP 10", loc="left", fontsize=15, fontweight="bold", pad=12)
+        ax_top.text(
+            row["최종_화재위험점수"] + 0.4,
+            idx,
+            f"{row['최종_화재위험점수']:.1f} | {row['구']}",
+            va="center",
+            fontsize=9.5,
+            fontweight="bold",
+            color="#0F172A",
+        )
+    ax_top.set_title(
+        "최고 위험 시설 TOP 10", loc="left", fontsize=15, fontweight="bold", pad=12
+    )
     ax_top.set_xlabel("최종 화재위험점수", color="#475569")
     ax_top.grid(axis="x", color="#E2E8F0")
     ax_top.spines[["top", "right", "left"]].set_visible(False)
     ax_top.tick_params(axis="y", labelsize=9)
 
-    fig.suptitle("최종 화재위험 군집화 대시보드", x=0.055, y=0.982, ha="left", fontsize=22, fontweight="bold", color="#0F172A")
+    fig.suptitle(
+        "최종 화재위험 군집화 대시보드",
+        x=0.055,
+        y=0.982,
+        ha="left",
+        fontsize=22,
+        fontweight="bold",
+        color="#0F172A",
+    )
     fig.text(
         0.055,
         0.946,

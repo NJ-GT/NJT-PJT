@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
@@ -10,7 +9,9 @@ from sklearn.preprocessing import StandardScaler
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "0424" / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428"
-FIRE_TARGET_PATH = ROOT / "data" / "team_pipeline_validation" / "team_pipeline_scored_dataset.csv"
+FIRE_TARGET_PATH = (
+    ROOT / "data" / "team_pipeline_validation" / "team_pipeline_scored_dataset.csv"
+)
 K2_DIR = ROOT / "0429" / "cluster2_spatial_pipeline_fire_count_150m_0429"
 
 TARGET = "fire_count_150m"
@@ -72,10 +73,24 @@ def main() -> None:
         *REG_FEATURES,
         "최종_화재위험점수",
     ]
-    for col in [TARGET, "경도", "위도", "x_5181", "y_5181", *REG_FEATURES, "최종_화재위험점수"]:
+    for col in [
+        TARGET,
+        "경도",
+        "위도",
+        "x_5181",
+        "y_5181",
+        *REG_FEATURES,
+        "최종_화재위험점수",
+    ]:
         out[col] = pd.to_numeric(out[col], errors="coerce")
-    out = out[keep].dropna(subset=[TARGET, "경도", "위도", "x_5181", "y_5181", *REG_FEATURES]).copy()
-    out = out.drop_duplicates(["숙소명", "경도", "위도", "x_5181", "y_5181"]).reset_index(drop=True)
+    out = (
+        out[keep]
+        .dropna(subset=[TARGET, "경도", "위도", "x_5181", "y_5181", *REG_FEATURES])
+        .copy()
+    )
+    out = out.drop_duplicates(
+        ["숙소명", "경도", "위도", "x_5181", "y_5181"]
+    ).reset_index(drop=True)
 
     x = StandardScaler().fit_transform(out[CLUSTER_FEATURES].to_numpy(dtype=float))
     out["cluster_k2"] = KMeans(n_clusters=2, random_state=42, n_init=50).fit_predict(x)

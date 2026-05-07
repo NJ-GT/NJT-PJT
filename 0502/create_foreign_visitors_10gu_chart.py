@@ -45,9 +45,15 @@ df["\uc678\uad6d\uc778 \ubc29\ubb38\uc790\uc218"] = pd.to_numeric(
 
 plot_df = (
     df[df["\uc9c0\uc5ed"].isin(our_gu)]
-    .groupby(["\ub0a0\uc9dc", "\uc9c0\uc5ed"], as_index=False)["\uc678\uad6d\uc778 \ubc29\ubb38\uc790\uc218"]
+    .groupby(["\ub0a0\uc9dc", "\uc9c0\uc5ed"], as_index=False)[
+        "\uc678\uad6d\uc778 \ubc29\ubb38\uc790\uc218"
+    ]
     .mean()
-    .pivot(index="\ub0a0\uc9dc", columns="\uc9c0\uc5ed", values="\uc678\uad6d\uc778 \ubc29\ubb38\uc790\uc218")
+    .pivot(
+        index="\ub0a0\uc9dc",
+        columns="\uc9c0\uc5ed",
+        values="\uc678\uad6d\uc778 \ubc29\ubb38\uc790\uc218",
+    )
     .reindex(columns=our_gu)
     .sort_index()
 )
@@ -74,7 +80,7 @@ ax.set_facecolor("white")
 
 for index, gu in enumerate(our_gu):
     y = plot_df[gu]
-    line, = ax.plot(
+    (line,) = ax.plot(
         years,
         y,
         label=gu,

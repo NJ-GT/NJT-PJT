@@ -15,7 +15,13 @@ from sklearn.preprocessing import StandardScaler
 
 BASE = Path(__file__).resolve().parents[2]
 OUT_DIR = BASE / "NJT-PJT" / "0429"
-SRC_DIR = BASE / "NJT-PJT" / "0424" / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428"
+SRC_DIR = (
+    BASE
+    / "NJT-PJT"
+    / "0424"
+    / "data"
+    / "cluster3_spatial_pipeline_fire_count_150m_0428"
+)
 
 
 def setup_font() -> None:
@@ -50,7 +56,10 @@ def save_vif_png(vif_df: pd.DataFrame, n_rows: int, out_png: Path) -> None:
     fig.subplots_adjust(top=0.82, left=0.22, right=0.96, bottom=0.12)
 
     plot_df = vif_df.sort_values("vif", ascending=True)
-    colors = ["#2563EB" if v < 5 else "#F97316" if v < 10 else "#DC2626" for v in plot_df["vif"]]
+    colors = [
+        "#2563EB" if v < 5 else "#F97316" if v < 10 else "#DC2626"
+        for v in plot_df["vif"]
+    ]
     ax.barh(plot_df["variable"], plot_df["vif"], color=colors, height=0.62)
     ax.axvline(5, color="#F59E0B", linewidth=1.4, linestyle="--")
     ax.axvline(10, color="#DC2626", linewidth=1.4, linestyle="--")
@@ -58,12 +67,22 @@ def save_vif_png(vif_df: pd.DataFrame, n_rows: int, out_png: Path) -> None:
     ax.text(10.05, len(plot_df) - 0.55, "심각 기준 10", color="#991B1B", fontsize=9)
 
     for y, v in enumerate(plot_df["vif"]):
-        ax.text(v + 0.03, y, f"{v:.2f}", va="center", fontsize=10, color="#111827", weight="bold")
+        ax.text(
+            v + 0.03,
+            y,
+            f"{v:.2f}",
+            va="center",
+            fontsize=10,
+            color="#111827",
+            weight="bold",
+        )
 
     max_vif = float(vif_df["vif"].max())
     ax.set_xlim(0, max(10.8, max_vif + 0.8))
     ax.set_xlabel("VIF", fontsize=11, color="#374151")
-    fig.text(0.22, 0.94, "다중공선성 점검: VIF", fontsize=18, weight="bold", color="#111827")
+    fig.text(
+        0.22, 0.94, "다중공선성 점검: VIF", fontsize=18, weight="bold", color="#111827"
+    )
     fig.text(
         0.22,
         0.905,
@@ -113,14 +132,36 @@ def save_methodology_slide(
         weight="bold",
         color="#111827",
     )
-    ax.add_patch(Rectangle((0.035, 0.79), 0.045, 0.006, color="#2563EB", transform=ax.transAxes))
+    ax.add_patch(
+        Rectangle((0.035, 0.79), 0.045, 0.006, color="#2563EB", transform=ax.transAxes)
+    )
 
     cards = [
-        ("STEP 1", "분석 테이블 확정", "최최최종0428변수테이블.csv\n4,246개 숙박시설 · 10개 설명변수\n외부 매칭: fire_count_150m"),
-        ("STEP 2", "타깃/반경 선택", "100m 3,209개 / 150m 3,794개 / 200m 4,049개\n150m = 매칭률 89.4% + 변별력 균형"),
-        ("STEP 3", "VIF 다중공선성 점검", f"승인연도·소방위험도·주변건물수 등 10변수\n최대 VIF {max_vif:.2f} · 기준 5 미만"),
-        ("STEP 4", "K-Means 군집화", "표준화 후 K=3 군집 사용\ncluster 0/1/2 = 시설 위험요인 조합별 유형"),
-        ("STEP 5", "공간통계·공간회귀", "KNN k=12 row-standardized\nOLS+Moran → SLM/SEM → GWR/MGWR"),
+        (
+            "STEP 1",
+            "분석 테이블 확정",
+            "최최최종0428변수테이블.csv\n4,246개 숙박시설 · 10개 설명변수\n외부 매칭: fire_count_150m",
+        ),
+        (
+            "STEP 2",
+            "타깃/반경 선택",
+            "100m 3,209개 / 150m 3,794개 / 200m 4,049개\n150m = 매칭률 89.4% + 변별력 균형",
+        ),
+        (
+            "STEP 3",
+            "VIF 다중공선성 점검",
+            f"승인연도·소방위험도·주변건물수 등 10변수\n최대 VIF {max_vif:.2f} · 기준 5 미만",
+        ),
+        (
+            "STEP 4",
+            "K-Means 군집화",
+            "표준화 후 K=3 군집 사용\ncluster 0/1/2 = 시설 위험요인 조합별 유형",
+        ),
+        (
+            "STEP 5",
+            "공간통계·공간회귀",
+            "KNN k=12 row-standardized\nOLS+Moran → SLM/SEM → GWR/MGWR",
+        ),
     ]
     card_x = [0.035, 0.225, 0.415, 0.605, 0.795]
     for x, (step, title, body) in zip(card_x, cards):
@@ -135,11 +176,43 @@ def save_methodology_slide(
             transform=ax.transAxes,
         )
         ax.add_patch(box)
-        ax.text(x + 0.012, 0.705, step, fontsize=8.5, color="#2563EB", weight="bold", transform=ax.transAxes)
-        ax.text(x + 0.012, 0.675, title, fontsize=11.5, color="#111827", weight="bold", transform=ax.transAxes)
-        ax.text(x + 0.012, 0.635, body, fontsize=8.7, color="#475569", linespacing=1.35, transform=ax.transAxes, va="top")
+        ax.text(
+            x + 0.012,
+            0.705,
+            step,
+            fontsize=8.5,
+            color="#2563EB",
+            weight="bold",
+            transform=ax.transAxes,
+        )
+        ax.text(
+            x + 0.012,
+            0.675,
+            title,
+            fontsize=11.5,
+            color="#111827",
+            weight="bold",
+            transform=ax.transAxes,
+        )
+        ax.text(
+            x + 0.012,
+            0.635,
+            body,
+            fontsize=8.7,
+            color="#475569",
+            linespacing=1.35,
+            transform=ax.transAxes,
+            va="top",
+        )
         if x != card_x[-1]:
-            ax.text(x + 0.178, 0.635, "→", fontsize=20, color="#CBD5E1", transform=ax.transAxes)
+            ax.text(
+                x + 0.178,
+                0.635,
+                "→",
+                fontsize=20,
+                color="#CBD5E1",
+                transform=ax.transAxes,
+            )
 
     band = FancyBboxPatch(
         (0.035, 0.40),
@@ -164,8 +237,25 @@ def save_methodology_slide(
         (f"{best_mgwr:.3f}", "MGWR 최고 R²"),
     ]
     for x, (num, label) in zip(np.linspace(0.065, 0.91, len(metrics)), metrics):
-        ax.text(x, 0.462, num, fontsize=18, color="white", weight="bold", ha="center", transform=ax.transAxes)
-        ax.text(x, 0.426, label, fontsize=8.5, color="#DBEAFE", ha="center", transform=ax.transAxes)
+        ax.text(
+            x,
+            0.462,
+            num,
+            fontsize=18,
+            color="white",
+            weight="bold",
+            ha="center",
+            transform=ax.transAxes,
+        )
+        ax.text(
+            x,
+            0.426,
+            label,
+            fontsize=8.5,
+            color="#DBEAFE",
+            ha="center",
+            transform=ax.transAxes,
+        )
 
     sections = [
         (
@@ -194,11 +284,29 @@ def save_methodology_slide(
         ),
     ]
     for x, (title, bullets) in zip([0.045, 0.36, 0.675], sections):
-        ax.text(x, 0.325, title, fontsize=13, color="#111827", weight="bold", transform=ax.transAxes)
-        ax.add_patch(Rectangle((x, 0.305), 0.055, 0.004, color="#2563EB", transform=ax.transAxes))
+        ax.text(
+            x,
+            0.325,
+            title,
+            fontsize=13,
+            color="#111827",
+            weight="bold",
+            transform=ax.transAxes,
+        )
+        ax.add_patch(
+            Rectangle((x, 0.305), 0.055, 0.004, color="#2563EB", transform=ax.transAxes)
+        )
         y = 0.275
         for bullet in bullets:
-            ax.text(x, y, "• " + bullet, fontsize=8.9, color="#334155", transform=ax.transAxes, va="top")
+            ax.text(
+                x,
+                y,
+                "• " + bullet,
+                fontsize=8.9,
+                color="#334155",
+                transform=ax.transAxes,
+                va="top",
+            )
             y -= 0.055
 
     ax.text(
@@ -217,7 +325,10 @@ def save_methodology_slide(
 def main() -> None:
     setup_font()
 
-    data_path = max([p for p in SRC_DIR.glob("*.csv") if p.stat().st_size > 100000], key=lambda p: p.stat().st_size)
+    data_path = max(
+        [p for p in SRC_DIR.glob("*.csv") if p.stat().st_size > 100000],
+        key=lambda p: p.stat().st_size,
+    )
     df = pd.read_csv(data_path, encoding="utf-8-sig", low_memory=False)
     cols = list(df.columns)
     features = [cols[i] for i in [3, 4, 5, 6, 7, 8, 9, 14, 17, 18]]
@@ -228,7 +339,9 @@ def main() -> None:
     vif_df.to_csv(vif_csv, index=False, encoding="utf-8-sig")
     save_vif_png(vif_df, len(df), vif_png)
 
-    summary = pd.read_csv(SRC_DIR / "spatial_model_summary_by_cluster.csv", encoding="utf-8-sig")
+    summary = pd.read_csv(
+        SRC_DIR / "spatial_model_summary_by_cluster.csv", encoding="utf-8-sig"
+    )
     ols = summary[summary["model"].eq("OLS")]
     slm = summary[summary["model"].eq("SLM")]
     gwr = summary[summary["model"].eq("GWR")]
@@ -238,7 +351,9 @@ def main() -> None:
     matched_150 = 3794
     if radius_csv.exists():
         radius_df = pd.read_csv(radius_csv, encoding="utf-8-sig")
-        matched_150 = int(radius_df.loc[radius_df["radius_m"].eq(150), "matched_count"].iloc[0])
+        matched_150 = int(
+            radius_df.loc[radius_df["radius_m"].eq(150), "matched_count"].iloc[0]
+        )
 
     slide_png = OUT_DIR / "ppt_methodology_pipeline_revised_0429.png"
     save_methodology_slide(

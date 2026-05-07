@@ -89,7 +89,9 @@ def infer_gu_name(props: dict) -> str | None:
     gu = props.get("구")
     if isinstance(gu, str) and gu.endswith("구"):
         return gu
-    code = str(props.get("법정동코드") or props.get("EMD_CD") or props.get("join_code") or "")
+    code = str(
+        props.get("법정동코드") or props.get("EMD_CD") or props.get("join_code") or ""
+    )
     return SEOUL_SIGUNGU.get(code[:5])
 
 
@@ -145,7 +147,12 @@ def add_gu_boundaries(ax, path: Path) -> None:
             ha="center",
             va="center",
             zorder=6,
-            bbox=dict(boxstyle="round,pad=0.16", facecolor="white", edgecolor="none", alpha=0.62),
+            bbox=dict(
+                boxstyle="round,pad=0.16",
+                facecolor="white",
+                edgecolor="none",
+                alpha=0.62,
+            ),
         )
 
 
@@ -161,7 +168,9 @@ def build_kde_image() -> tuple[str, pd.DataFrame]:
     for col in required:
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df = df.dropna(subset=required)
-    df = df[(df["위도"].between(37.4, 37.7)) & (df["경도"].between(126.7, 127.3))].copy()
+    df = df[
+        (df["위도"].between(37.4, 37.7)) & (df["경도"].between(126.7, 127.3))
+    ].copy()
 
     weights = df["반경_50m_건물수"].to_numpy(dtype=float)
     if np.isclose(weights.sum(), 0):
@@ -177,9 +186,13 @@ def build_kde_image() -> tuple[str, pd.DataFrame]:
     lat_min, lat_max = lat.min() - pad_lat, lat.max() + pad_lat
 
     grid_n = 360
-    grid_lon, grid_lat = np.mgrid[lon_min:lon_max : grid_n * 1j, lat_min:lat_max : grid_n * 1j]
+    grid_lon, grid_lat = np.mgrid[
+        lon_min : lon_max : grid_n * 1j, lat_min : lat_max : grid_n * 1j
+    ]
     kde = gaussian_kde(np.vstack([lon, lat]), weights=weights, bw_method=0.04)
-    kde_values = kde(np.vstack([grid_lon.ravel(), grid_lat.ravel()])).reshape(grid_n, grid_n)
+    kde_values = kde(np.vstack([grid_lon.ravel(), grid_lat.ravel()])).reshape(
+        grid_n, grid_n
+    )
     kde_norm = (kde_values - kde_values.min()) / (kde_values.max() - kde_values.min())
 
     cmap = plt.get_cmap("YlOrRd")
@@ -191,7 +204,9 @@ def build_kde_image() -> tuple[str, pd.DataFrame]:
     fig, ax = plt.subplots(figsize=(13.5, 9), dpi=180)
     ax.set_facecolor("#F8FAFC")
     add_boundaries(ax, BOUNDARY_GEOJSON)
-    ax.contourf(grid_lon, grid_lat, kde_norm, levels=24, cmap=custom_cmap, alpha=0.92, zorder=3)
+    ax.contourf(
+        grid_lon, grid_lat, kde_norm, levels=24, cmap=custom_cmap, alpha=0.92, zorder=3
+    )
     add_gu_boundaries(ax, BOUNDARY_GEOJSON)
 
     bins = [
@@ -219,7 +234,9 @@ def build_kde_image() -> tuple[str, pd.DataFrame]:
     for spine in ax.spines.values():
         spine.set_visible(False)
 
-    ax.set_title("버퍼(50m) + KDE 건물 밀집도", loc="left", fontsize=20, weight="bold", pad=18)
+    ax.set_title(
+        "버퍼(50m) + KDE 건물 밀집도", loc="left", fontsize=20, weight="bold", pad=18
+    )
     ax.text(
         lon_min,
         lat_max + (lat_max - lat_min) * 0.012,

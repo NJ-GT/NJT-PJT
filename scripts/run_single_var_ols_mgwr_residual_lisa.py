@@ -5,6 +5,7 @@ Run single-variable OLS and cluster-wise MGWR residual LISA comparisons.
 One comparison is produced for each variable:
     구조노후도, 도로폭위험도, 단속위험도
 """
+
 from __future__ import annotations
 
 import json
@@ -36,15 +37,43 @@ OUT_DIR = BASE / "data" / "single_var_residual_lisa"
 TARGET = "최종위험점수_new"
 VARIABLES = ["구조노후도", "도로폭위험도", "단속위험도"]
 COORDS = ["x_5181", "y_5181"]
-ID_COLS = ["구", "동", "숙소명", "cluster", "cluster_label", "위도", "경도", *COORDS, TARGET]
+ID_COLS = [
+    "구",
+    "동",
+    "숙소명",
+    "cluster",
+    "cluster_label",
+    "위도",
+    "경도",
+    *COORDS,
+    TARGET,
+]
 
 GU_BY_CODE = {
-    "11110": "종로구", "11140": "중구", "11170": "용산구", "11200": "성동구",
-    "11215": "광진구", "11230": "동대문구", "11260": "중랑구", "11290": "성북구",
-    "11305": "강북구", "11320": "도봉구", "11350": "노원구", "11380": "은평구",
-    "11410": "서대문구", "11440": "마포구", "11470": "양천구", "11500": "강서구",
-    "11530": "구로구", "11545": "금천구", "11560": "영등포구", "11590": "동작구",
-    "11620": "관악구", "11650": "서초구", "11680": "강남구", "11710": "송파구",
+    "11110": "종로구",
+    "11140": "중구",
+    "11170": "용산구",
+    "11200": "성동구",
+    "11215": "광진구",
+    "11230": "동대문구",
+    "11260": "중랑구",
+    "11290": "성북구",
+    "11305": "강북구",
+    "11320": "도봉구",
+    "11350": "노원구",
+    "11380": "은평구",
+    "11410": "서대문구",
+    "11440": "마포구",
+    "11470": "양천구",
+    "11500": "강서구",
+    "11530": "구로구",
+    "11545": "금천구",
+    "11560": "영등포구",
+    "11590": "동작구",
+    "11620": "관악구",
+    "11650": "서초구",
+    "11680": "강남구",
+    "11710": "송파구",
     "11740": "강동구",
 }
 
@@ -98,7 +127,12 @@ def run_ols(df: pd.DataFrame, variable: str) -> tuple[pd.DataFrame, dict]:
     out["prediction"] = pred
     out["residual"] = y - pred
     out[f"coef_{variable}"] = float(model.coef_[0])
-    return out, {"model": "OLS", "variable": variable, "rows": int(len(out)), "R2": float(model.score(x, y))}
+    return out, {
+        "model": "OLS",
+        "variable": variable,
+        "rows": int(len(out)),
+        "R2": float(model.score(x, y)),
+    }
 
 
 def standardize_group(group: pd.DataFrame, variable: str):
@@ -117,19 +151,33 @@ def as_bandwidth_list(raw_bw, expected_len: int) -> list[float]:
     return arr.tolist()
 
 
-def fit_mgwr_group(group: pd.DataFrame, variable: str, cluster_id, n_jobs: int) -> tuple[pd.DataFrame, dict]:
+def fit_mgwr_group(
+    group: pd.DataFrame, variable: str, cluster_id, n_jobs: int
+) -> tuple[pd.DataFrame, dict]:
     coords, y, x = standardize_group(group, variable)
-    label = group["cluster_label"].dropna().iloc[0] if group["cluster_label"].notna().any() else str(cluster_id)
+    label = (
+        group["cluster_label"].dropna().iloc[0]
+        if group["cluster_label"].notna().any()
+        else str(cluster_id)
+    )
     print(f"[MGWR-1VAR] {variable} cluster={cluster_id} {label}, rows={len(group):,}")
     t0 = time.time()
-    selector = Sel_BW(coords, y, x, multi=True, kernel="bisquare", fixed=False, n_jobs=n_jobs)
+    selector = Sel_BW(
+        coords, y, x, multi=True, kernel="bisquare", fixed=False, n_jobs=n_jobs
+    )
     selector.search(verbose=True)
     bandwidths = as_bandwidth_list(selector.bw, 2)
-    print(f"[MGWR-1VAR] {variable} cluster={cluster_id} BW={bandwidths} search={time.time() - t0:.1f}s")
+    print(
+        f"[MGWR-1VAR] {variable} cluster={cluster_id} BW={bandwidths} search={time.time() - t0:.1f}s"
+    )
 
     t0 = time.time()
-    result = MGWR(coords, y, x, selector, kernel="bisquare", fixed=False, n_jobs=n_jobs).fit()
-    print(f"[MGWR-1VAR] {variable} cluster={cluster_id} fit={time.time() - t0:.1f}s R2={result.R2:.4f}")
+    result = MGWR(
+        coords, y, x, selector, kernel="bisquare", fixed=False, n_jobs=n_jobs
+    ).fit()
+    print(
+        f"[MGWR-1VAR] {variable} cluster={cluster_id} fit={time.time() - t0:.1f}s R2={result.R2:.4f}"
+    )
 
     out = group[ID_COLS].copy()
     out["residual"] = np.asarray(result.resid_response).reshape(-1)
@@ -149,7 +197,9 @@ def fit_mgwr_group(group: pd.DataFrame, variable: str, cluster_id, n_jobs: int) 
     }
 
 
-def run_mgwr(df: pd.DataFrame, variable: str, n_jobs: int = 1) -> tuple[pd.DataFrame, list[dict]]:
+def run_mgwr(
+    df: pd.DataFrame, variable: str, n_jobs: int = 1
+) -> tuple[pd.DataFrame, list[dict]]:
     outputs = []
     metrics = []
     for cluster_id in sorted(df["cluster"].dropna().unique()):
@@ -170,13 +220,17 @@ def lisa_category(p: np.ndarray, q: np.ndarray) -> np.ndarray:
     return cats
 
 
-def residual_lisa(boundary: gpd.GeoDataFrame, result: pd.DataFrame, model_name: str, variable: str):
+def residual_lisa(
+    boundary: gpd.GeoDataFrame, result: pd.DataFrame, model_name: str, variable: str
+):
     dong = (
         result.groupby(["구", "동"], dropna=False)
         .agg(residual=("residual", "mean"), sample_count=("residual", "size"))
         .reset_index()
     )
-    gdf = boundary.merge(dong, left_on=["구_매칭", "동_매칭"], right_on=["구", "동"], how="left")
+    gdf = boundary.merge(
+        dong, left_on=["구_매칭", "동_매칭"], right_on=["구", "동"], how="left"
+    )
     data = gdf[gdf["residual"].notna()].copy().reset_index(drop=True)
     weights = Queen.from_dataframe(data, use_index=False)
     weights.transform = "r"
@@ -209,24 +263,38 @@ def residual_lisa(boundary: gpd.GeoDataFrame, result: pd.DataFrame, model_name: 
     return out, metrics
 
 
-def plot_lisa(variable: str, model_maps: dict[str, gpd.GeoDataFrame], metrics: list[dict]) -> Path:
+def plot_lisa(
+    variable: str, model_maps: dict[str, gpd.GeoDataFrame], metrics: list[dict]
+) -> Path:
     matplotlib.rcParams["font.family"] = ["Malgun Gothic", "DejaVu Sans"]
     matplotlib.rcParams["axes.unicode_minus"] = False
     fig, axes = plt.subplots(1, 2, figsize=(20, 9.8), dpi=180)
     fig.patch.set_facecolor("#f7f9fc")
     metric_by_model = {m["model"]: m for m in metrics}
-    gu_boundary = next(iter(model_maps.values())).dissolve(by="구_매칭", as_index=False, method="unary", grid_size=0.05)
+    gu_boundary = next(iter(model_maps.values())).dissolve(
+        by="구_매칭", as_index=False, method="unary", grid_size=0.05
+    )
 
     for ax, (model_name, gdf) in zip(axes, model_maps.items()):
         ax.set_facecolor("#f7f9fc")
-        gdf["plot_color"] = gdf["lisa_cat"].map(LISA_COLORS).fillna(LISA_COLORS["No Data"])
+        gdf["plot_color"] = (
+            gdf["lisa_cat"].map(LISA_COLORS).fillna(LISA_COLORS["No Data"])
+        )
         gdf.plot(ax=ax, color=gdf["plot_color"], edgecolor="#c9d1dc", linewidth=0.18)
         gu_boundary.boundary.plot(ax=ax, color="#303744", linewidth=0.75, alpha=0.9)
         for _, row in gu_boundary.iterrows():
             if row.geometry.is_empty:
                 continue
             point = row.geometry.representative_point()
-            ax.text(point.x, point.y, row["구_매칭"], ha="center", va="center", fontsize=5.8, weight="bold")
+            ax.text(
+                point.x,
+                point.y,
+                row["구_매칭"],
+                ha="center",
+                va="center",
+                fontsize=5.8,
+                weight="bold",
+            )
         m = metric_by_model[model_name]
         ax.set_title(
             f"{model_name} {variable} 단일변수 잔차 LISA\nMoran's I={m['global_moran_i']:.3f}, p={m['global_moran_p']:.3f}",
@@ -240,8 +308,21 @@ def plot_lisa(variable: str, model_maps: dict[str, gpd.GeoDataFrame], metrics: l
         mpatches.Patch(color=LISA_COLORS[key], label=LISA_LABELS[key])
         for key in ["HH", "LL", "HL", "LH", "Not Sig", "No Data"]
     ]
-    fig.legend(handles=handles, loc="lower center", ncol=3, frameon=True, framealpha=0.96, fontsize=9)
-    fig.suptitle(f"{variable} 단일변수 OLS 잔차 LISA vs MGWR 잔차 LISA", fontsize=23, weight="bold", x=0.03, ha="left")
+    fig.legend(
+        handles=handles,
+        loc="lower center",
+        ncol=3,
+        frameon=True,
+        framealpha=0.96,
+        fontsize=9,
+    )
+    fig.suptitle(
+        f"{variable} 단일변수 OLS 잔차 LISA vs MGWR 잔차 LISA",
+        fontsize=23,
+        weight="bold",
+        x=0.03,
+        ha="left",
+    )
     fig.text(
         0.03,
         0.04,
@@ -267,22 +348,52 @@ def main() -> None:
         ols_out, ols_model_metric = run_ols(df, variable)
         mgwr_out, mgwr_model_metrics = run_mgwr(df, variable, n_jobs=1)
 
-        ols_out.to_csv(OUT_DIR / f"{variable}_ols_single_var_results.csv", index=False, encoding="utf-8-sig")
-        mgwr_out.to_csv(OUT_DIR / f"{variable}_mgwr_single_var_results.csv", index=False, encoding="utf-8-sig")
+        ols_out.to_csv(
+            OUT_DIR / f"{variable}_ols_single_var_results.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+        mgwr_out.to_csv(
+            OUT_DIR / f"{variable}_mgwr_single_var_results.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
 
         ols_map, ols_lisa = residual_lisa(boundary, ols_out, "OLS", variable)
         mgwr_map, mgwr_lisa = residual_lisa(boundary, mgwr_out, "MGWR", variable)
-        ols_map.to_csv(OUT_DIR / f"{variable}_ols_single_var_residual_lisa_by_dong.csv", index=False, encoding="utf-8-sig")
-        mgwr_map.to_csv(OUT_DIR / f"{variable}_mgwr_single_var_residual_lisa_by_dong.csv", index=False, encoding="utf-8-sig")
+        ols_map.to_csv(
+            OUT_DIR / f"{variable}_ols_single_var_residual_lisa_by_dong.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
+        mgwr_map.to_csv(
+            OUT_DIR / f"{variable}_mgwr_single_var_residual_lisa_by_dong.csv",
+            index=False,
+            encoding="utf-8-sig",
+        )
 
-        path = plot_lisa(variable, {"OLS": ols_map, "MGWR": mgwr_map}, [ols_lisa, mgwr_lisa])
+        path = plot_lisa(
+            variable, {"OLS": ols_map, "MGWR": mgwr_map}, [ols_lisa, mgwr_lisa]
+        )
         print(f"[SAVED] {path}")
-        all_metrics.extend([{**ols_model_metric, **ols_lisa}, *mgwr_model_metrics, mgwr_lisa])
+        all_metrics.extend(
+            [{**ols_model_metric, **ols_lisa}, *mgwr_model_metrics, mgwr_lisa]
+        )
 
-    pd.DataFrame(all_metrics).to_csv(OUT_DIR / "single_var_residual_lisa_summary.csv", index=False, encoding="utf-8-sig")
-    (OUT_DIR / "run_metadata.json").write_text(json.dumps(all_metrics, ensure_ascii=False, indent=2), encoding="utf-8")
+    pd.DataFrame(all_metrics).to_csv(
+        OUT_DIR / "single_var_residual_lisa_summary.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    (OUT_DIR / "run_metadata.json").write_text(
+        json.dumps(all_metrics, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print("[DONE]")
-    print(pd.DataFrame([m for m in all_metrics if "global_moran_i" in m]).to_string(index=False))
+    print(
+        pd.DataFrame([m for m in all_metrics if "global_moran_i" in m]).to_string(
+            index=False
+        )
+    )
 
 
 if __name__ == "__main__":

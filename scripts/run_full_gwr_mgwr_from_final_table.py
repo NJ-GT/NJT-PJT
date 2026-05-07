@@ -16,6 +16,7 @@ Notes:
     MGWR is fit separately inside each risk cluster, because MGWR estimates
     variable-specific bandwidths and is much heavier than GWR.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -60,17 +61,12 @@ GU_BY_CODE = {
     "11140": "중구",
     "11170": "용산구",
     "11200": "성동구",
-    
     "11440": "마포구",
-    
     "11500": "강서구",
-    
     "11560": "영등포구",
-   
     "11650": "서초구",
     "11680": "강남구",
     "11710": "송파구",
-    
 }
 
 
@@ -81,7 +77,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--target", default=TARGET)
     parser.add_argument("--features", nargs="*", default=DEFAULT_FEATURES)
-    parser.add_argument("--kernel", default="bisquare", choices=["bisquare", "gaussian"])
+    parser.add_argument(
+        "--kernel", default="bisquare", choices=["bisquare", "gaussian"]
+    )
     parser.add_argument("--skip-gwr", action="store_true")
     parser.add_argument("--skip-mgwr", action="store_true")
     parser.add_argument("--n-jobs", type=int, default=1)
@@ -90,7 +88,17 @@ def parse_args() -> argparse.Namespace:
 
 def load_model_frame(table: Path, target: str, features: list[str]) -> pd.DataFrame:
     df = pd.read_csv(table, encoding="utf-8-sig")
-    required = ["구", "동", "숙소명", "cluster", "cluster_label", *LAT_LON, *COORDS, target, *features]
+    required = [
+        "구",
+        "동",
+        "숙소명",
+        "cluster",
+        "cluster_label",
+        *LAT_LON,
+        *COORDS,
+        target,
+        *features,
+    ]
     missing = [c for c in required if c not in df.columns]
     if missing:
         raise ValueError(f"Missing columns in {table}: {missing}")
@@ -111,7 +119,14 @@ def standardize_xy(df: pd.DataFrame, target: str, features: list[str]):
     return coords, y, x
 
 
-def run_gwr(df: pd.DataFrame, target: str, features: list[str], out_dir: Path, kernel: str, n_jobs: int):
+def run_gwr(
+    df: pd.DataFrame,
+    target: str,
+    features: list[str],
+    out_dir: Path,
+    kernel: str,
+    n_jobs: int,
+):
     coords, y, x = standardize_xy(df, target, features)
     print(f"[GWR] rows={len(df):,}, features={len(features)}")
     t0 = time.time()
@@ -121,7 +136,9 @@ def run_gwr(df: pd.DataFrame, target: str, features: list[str], out_dir: Path, k
 
     t0 = time.time()
     result = GWR(coords, y, x, bw=bw, kernel=kernel, fixed=False, n_jobs=n_jobs).fit()
-    print(f"[GWR] fit done in {time.time() - t0:.1f}s, R2={result.R2:.4f}, adj_R2={result.adj_R2:.4f}")
+    print(
+        f"[GWR] fit done in {time.time() - t0:.1f}s, R2={result.R2:.4f}, adj_R2={result.adj_R2:.4f}"
+    )
 
     out = df[["구", "동", "숙소명", *LAT_LON, *COORDS, target]].copy()
     out["local_R2"] = np.asarray(result.localR2).reshape(-1)
@@ -136,7 +153,13 @@ def run_gwr(df: pd.DataFrame, target: str, features: list[str], out_dir: Path, k
             out[f"tval_{feature}"] = result.tvalues[:, i]
     path = out_dir / "gwr_results_full.csv"
     out.to_csv(path, index=False, encoding="utf-8-sig")
-    return out, {"model": "GWR", "rows": len(out), "bandwidth": int(bw), "R2": float(result.R2), "adj_R2": float(result.adj_R2)}
+    return out, {
+        "model": "GWR",
+        "rows": len(out),
+        "bandwidth": int(bw),
+        "R2": float(result.R2),
+        "adj_R2": float(result.adj_R2),
+    }
 
 
 def as_bandwidth_list(raw_bw, expected_len: int) -> list[float]:
@@ -157,23 +180,37 @@ def fit_one_mgwr_group(
     n_jobs: int,
 ) -> tuple[pd.DataFrame, dict]:
     coords, y, x = standardize_xy(group, target, features)
-    label = group["cluster_label"].dropna().iloc[0] if group["cluster_label"].notna().any() else str(cluster_id)
-    print(f"[MGWR] cluster={cluster_id} ({label}), rows={len(group):,}, features={len(features)}")
+    label = (
+        group["cluster_label"].dropna().iloc[0]
+        if group["cluster_label"].notna().any()
+        else str(cluster_id)
+    )
+    print(
+        f"[MGWR] cluster={cluster_id} ({label}), rows={len(group):,}, features={len(features)}"
+    )
     print("[MGWR] variable-specific bandwidth search runs inside this cluster.")
     t0 = time.time()
-    selector = Sel_BW(coords, y, x, multi=True, kernel=kernel, fixed=False, n_jobs=n_jobs)
+    selector = Sel_BW(
+        coords, y, x, multi=True, kernel=kernel, fixed=False, n_jobs=n_jobs
+    )
     selector.search(verbose=True)
     bandwidths = as_bandwidth_list(selector.bw, len(features) + 1)
-    print(f"[MGWR] cluster={cluster_id} selected BW={bandwidths} in {time.time() - t0:.1f}s")
+    print(
+        f"[MGWR] cluster={cluster_id} selected BW={bandwidths} in {time.time() - t0:.1f}s"
+    )
 
     t0 = time.time()
-    result = MGWR(coords, y, x, selector, kernel=kernel, fixed=False, n_jobs=n_jobs).fit()
+    result = MGWR(
+        coords, y, x, selector, kernel=kernel, fixed=False, n_jobs=n_jobs
+    ).fit()
     print(
         f"[MGWR] cluster={cluster_id} fit done in {time.time() - t0:.1f}s, "
         f"R2={result.R2:.4f}, adj_R2={result.adj_R2:.4f}"
     )
 
-    out = group[["구", "동", "숙소명", "cluster", "cluster_label", *LAT_LON, *COORDS, target]].copy()
+    out = group[
+        ["구", "동", "숙소명", "cluster", "cluster_label", *LAT_LON, *COORDS, target]
+    ].copy()
     try:
         out["local_R2"] = np.asarray(result.localR2).reshape(-1)
     except NotImplementedError:
@@ -209,7 +246,9 @@ def run_mgwr_clusterwise(
     kernel: str,
     n_jobs: int,
 ):
-    print("[MGWR] cluster-wise mode: fit one MGWR per risk cluster, using all rows in that cluster.")
+    print(
+        "[MGWR] cluster-wise mode: fit one MGWR per risk cluster, using all rows in that cluster."
+    )
     outputs = []
     metrics = []
     for cluster_id in sorted(df["cluster"].dropna().unique()):
@@ -217,7 +256,9 @@ def run_mgwr_clusterwise(
         if len(group) <= len(features) + 2:
             print(f"[MGWR] skip cluster={cluster_id}: too few rows ({len(group):,})")
             continue
-        out, metric = fit_one_mgwr_group(group, cluster_id, target, features, kernel, n_jobs)
+        out, metric = fit_one_mgwr_group(
+            group, cluster_id, target, features, kernel, n_jobs
+        )
         outputs.append(out)
         metrics.append(metric)
     if not outputs:
@@ -246,11 +287,15 @@ def rank_0_100(s: pd.Series) -> pd.Series:
     if valid.max() == valid.min():
         out.loc[valid.index] = 50.0
     else:
-        out.loc[valid.index] = 100 * (valid.rank(method="average") - 1) / (len(valid) - 1)
+        out.loc[valid.index] = (
+            100 * (valid.rank(method="average") - 1) / (len(valid) - 1)
+        )
     return out
 
 
-def fill_idw(gdf: gpd.GeoDataFrame, value_col: str, out_col: str, k: int = 5) -> gpd.GeoDataFrame:
+def fill_idw(
+    gdf: gpd.GeoDataFrame, value_col: str, out_col: str, k: int = 5
+) -> gpd.GeoDataFrame:
     gdf[out_col] = gdf[value_col]
     points = gdf.geometry.representative_point()
     gdf["_x"] = points.x
@@ -260,7 +305,11 @@ def fill_idw(gdf: gpd.GeoDataFrame, value_col: str, out_col: str, k: int = 5) ->
     if valid.empty:
         gdf[out_col] = 0.0
         return gdf
-    vx, vy, vv = valid["_x"].to_numpy(), valid["_y"].to_numpy(), valid[value_col].to_numpy(dtype=float)
+    vx, vy, vv = (
+        valid["_x"].to_numpy(),
+        valid["_y"].to_numpy(),
+        valid[value_col].to_numpy(dtype=float),
+    )
     for idx, row in missing.iterrows():
         dist = np.sqrt((vx - row["_x"]) ** 2 + (vy - row["_y"]) ** 2)
         order = np.argsort(dist)[: min(k, len(dist))]
@@ -279,7 +328,9 @@ def plot_variable_maps(
     maps_dir.mkdir(parents=True, exist_ok=True)
     matplotlib.rcParams["font.family"] = ["Malgun Gothic", "DejaVu Sans"]
     matplotlib.rcParams["axes.unicode_minus"] = False
-    gu_boundary = boundary.dissolve(by="구", as_index=False, method="unary", grid_size=0.05)
+    gu_boundary = boundary.dissolve(
+        by="구", as_index=False, method="unary", grid_size=0.05
+    )
     cmap = matplotlib.colormaps["YlOrRd"]
     norm = Normalize(vmin=0, vmax=100)
 
@@ -303,7 +354,11 @@ def plot_variable_maps(
                 else:
                     out[raw_col] = out[f"coef_{feature}"].abs()
 
-            agg = out.groupby(["구", "동"], dropna=False).agg(raw_strength=(raw_col, "mean")).reset_index()
+            agg = (
+                out.groupby(["구", "동"], dropna=False)
+                .agg(raw_strength=(raw_col, "mean"))
+                .reset_index()
+            )
             agg["strength"] = rank_0_100(agg["raw_strength"])
             gdf = boundary.merge(agg, on=["구", "동"], how="left")
             gdf = fill_idw(gdf, "strength", "strength_full")
@@ -315,21 +370,57 @@ def plot_variable_maps(
         fig.patch.set_facecolor("#f7f9fc")
         for ax, (model_name, gdf) in zip(axes, map_frames.items()):
             ax.set_facecolor("#f7f9fc")
-            gdf.plot(ax=ax, column="strength_full", cmap=cmap, norm=norm, edgecolor="#c9d1dc", linewidth=0.14)
+            gdf.plot(
+                ax=ax,
+                column="strength_full",
+                cmap=cmap,
+                norm=norm,
+                edgecolor="#c9d1dc",
+                linewidth=0.14,
+            )
             gu_boundary.boundary.plot(ax=ax, color="#2f3642", linewidth=0.8, alpha=0.9)
             for _, row in gu_boundary.iterrows():
                 point = row.geometry.representative_point()
-                ax.text(point.x, point.y, row["구"], ha="center", va="center", fontsize=6, weight="bold")
+                ax.text(
+                    point.x,
+                    point.y,
+                    row["구"],
+                    ha="center",
+                    va="center",
+                    fontsize=6,
+                    weight="bold",
+                )
             ax.set_axis_off()
-            ax.set_title(f"{model_name} {feature} 상대강도", fontsize=16, weight="bold", loc="left")
+            ax.set_title(
+                f"{model_name} {feature} 상대강도",
+                fontsize=16,
+                weight="bold",
+                loc="left",
+            )
 
         sm = ScalarMappable(norm=norm, cmap=cmap)
         sm.set_array([])
         cbar = fig.colorbar(sm, ax=axes, fraction=0.025, pad=0.012)
         cbar.set_label("모형 내 상대강도 0-100", fontsize=9)
-        fig.suptitle(f"{feature}: GWR 전체 vs MGWR 군집별 전체 비교", fontsize=22, weight="bold", x=0.03, ha="left")
-        fig.text(0.03, 0.035, "직접값 없는 법정동은 인접 법정동 IDW로 전체 경계를 채움", fontsize=9, color="#667085")
-        fig.savefig(maps_dir / f"{feature}_gwr_mgwr_full.png", bbox_inches="tight", facecolor=fig.get_facecolor())
+        fig.suptitle(
+            f"{feature}: GWR 전체 vs MGWR 군집별 전체 비교",
+            fontsize=22,
+            weight="bold",
+            x=0.03,
+            ha="left",
+        )
+        fig.text(
+            0.03,
+            0.035,
+            "직접값 없는 법정동은 인접 법정동 IDW로 전체 경계를 채움",
+            fontsize=9,
+            color="#667085",
+        )
+        fig.savefig(
+            maps_dir / f"{feature}_gwr_mgwr_full.png",
+            bbox_inches="tight",
+            facecolor=fig.get_facecolor(),
+        )
         plt.close(fig)
 
 
@@ -350,7 +441,9 @@ def main() -> None:
     outputs = {}
     metrics = []
     if not args.skip_gwr:
-        gwr_out, gwr_metrics = run_gwr(df, args.target, args.features, args.out_dir, args.kernel, args.n_jobs)
+        gwr_out, gwr_metrics = run_gwr(
+            df, args.target, args.features, args.out_dir, args.kernel, args.n_jobs
+        )
         outputs["GWR"] = gwr_out
         metrics.append(gwr_metrics)
     if not args.skip_mgwr:
@@ -366,7 +459,9 @@ def main() -> None:
         metrics.extend(mgwr_metrics)
 
     metadata["metrics"] = metrics
-    (args.out_dir / "run_metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+    (args.out_dir / "run_metadata.json").write_text(
+        json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     if args.boundary.exists() and outputs:
         boundary = load_boundary(args.boundary)

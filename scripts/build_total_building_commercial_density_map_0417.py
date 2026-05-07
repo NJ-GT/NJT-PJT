@@ -14,6 +14,7 @@
       data/상가숙소밀집도_10개구_0417/서울10개구_상가숙소_격자별_밀집도.geojson (격자)
 출력: data/건물상가밀집도_10개구_0417/ 폴더 내 HTML·JS·CSV·GeoJSON 파일들
 """
+
 from __future__ import annotations
 
 import csv
@@ -42,7 +43,9 @@ OUT_GEOJSON = OUT_DIR / "서울10개구_건물상가_격자별_밀도.geojson"
 OUT_COLUMNS = OUT_DIR / "서울10개구_건물상가_시각화컬럼정의.csv"
 OUT_SUMMARY = OUT_DIR / "서울10개구_건물상가_산출요약.json"
 ZERO_DENSITY_EXCLUDE_CSV = OUT_DIR / "서울10개구_밀도0_제외건물목록_388.csv"
-REGISTRY_CORRECTION_CSV = OUT_DIR / "서울10개구_건물있지만_밀도0_표제부보정후보_건물목록.csv"
+REGISTRY_CORRECTION_CSV = (
+    OUT_DIR / "서울10개구_건물있지만_밀도0_표제부보정후보_건물목록.csv"
+)
 
 GRID_AREA_M2 = 50_000.0
 GRID_AREA_HA = GRID_AREA_M2 / 10_000.0
@@ -132,7 +135,9 @@ def quantile(values: list[float], q: float) -> float:
 def load_zero_density_exclude_keys() -> set[tuple[str, str]]:
     if not ZERO_DENSITY_EXCLUDE_CSV.exists():
         return set()
-    df = pd.read_csv(ZERO_DENSITY_EXCLUDE_CSV, encoding="utf-8-sig", dtype={"건물ID": str})
+    df = pd.read_csv(
+        ZERO_DENSITY_EXCLUDE_CSV, encoding="utf-8-sig", dtype={"건물ID": str}
+    )
     if "그리드ID" not in df.columns or "건물ID" not in df.columns:
         return set()
     return set(zip(df["그리드ID"].astype(str), df["건물ID"].astype(str)))
@@ -165,7 +170,9 @@ def load_registry_corrections() -> pd.DataFrame:
     if not required.issubset(df.columns):
         return pd.DataFrame()
 
-    df["_보정분자"] = pd.to_numeric(df["표제부선택후보_표제부_보정분자_후보"], errors="coerce").fillna(0.0)
+    df["_보정분자"] = pd.to_numeric(
+        df["표제부선택후보_표제부_보정분자_후보"], errors="coerce"
+    ).fillna(0.0)
     df = df[df["_보정분자"] > 0].copy()
     if df.empty:
         return df
@@ -208,19 +215,27 @@ def apply_registry_corrections(gdf: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame,
         "지하층수": "표제부선택후보_지하층수",
     }
     for target, source in numeric_pairs.items():
-        corrected.loc[mask, target] = pd.to_numeric(corrected.loc[mask, source], errors="coerce").fillna(0.0)
+        corrected.loc[mask, target] = pd.to_numeric(
+            corrected.loc[mask, source], errors="coerce"
+        ).fillna(0.0)
 
-    corrected.loc[mask, "건물용도코드"] = corrected.loc[mask, "표제부선택후보_주용도코드"].map(
-        lambda value: normalize_code(value, 5)
+    corrected.loc[mask, "건물용도코드"] = corrected.loc[
+        mask, "표제부선택후보_주용도코드"
+    ].map(lambda value: normalize_code(value, 5))
+    corrected.loc[mask, "건물용도명"] = (
+        corrected.loc[mask, "표제부선택후보_주용도코드명"].fillna("").astype(str)
     )
-    corrected.loc[mask, "건물용도명"] = corrected.loc[mask, "표제부선택후보_주용도코드명"].fillna("").astype(str)
-    corrected.loc[mask, "건물명"] = corrected.loc[mask, "표제부선택후보_건물명"].fillna("").astype(str)
+    corrected.loc[mask, "건물명"] = (
+        corrected.loc[mask, "표제부선택후보_건물명"].fillna("").astype(str)
+    )
     corrected.loc[mask, "관리건축물대장PK"] = (
         corrected.loc[mask, "표제부선택후보_관리건축물대장PK"].fillna("").astype(str)
     )
     corrected.loc[mask, "표제부보정여부"] = True
 
-    helper_cols = [col for col in corrections.columns if col not in {"그리드ID", "건물ID"}]
+    helper_cols = [
+        col for col in corrections.columns if col not in {"그리드ID", "건물ID"}
+    ]
     corrected = corrected.drop(columns=helper_cols)
     return corrected, int(mask.sum())
 
@@ -230,7 +245,9 @@ def calculate_building_metrics(gdf: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame,
     gdf["연면적있음"] = gdf["연면적"] > 0
     gdf["층수있음"] = (gdf["지상층수"] + gdf["지하층수"]) > 0
     gdf["총층수"] = (gdf["지상층수"] + gdf["지하층수"]).clip(lower=1)
-    gdf["건축면적추정여부"] = (~gdf["건축면적있음"]) & gdf["연면적있음"] & gdf["층수있음"]
+    gdf["건축면적추정여부"] = (
+        (~gdf["건축면적있음"]) & gdf["연면적있음"] & gdf["층수있음"]
+    )
     gdf["계산건축면적"] = gdf["건축면적"].where(
         gdf["건축면적있음"],
         (gdf["연면적"] / gdf["총층수"]).where(gdf["건축면적추정여부"], 0.0),
@@ -243,17 +260,18 @@ def calculate_building_metrics(gdf: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame,
         ~((gdf["연면적"] > 0) & (gdf["건축면적x층수_원값"] > gdf["연면적"])),
         gdf["연면적"],
     )
-    gdf["건축면적x층수_분자"] = capped_floor_proxy.where(gdf["건축면적산정가능여부"], 0.0)
-    use_floor_area = (
-        (gdf["연면적"] > 0)
-        & (
-            (gdf["건축면적"] <= 0)
-            | (gdf["건축면적"] > gdf["연면적"])
-            | (floor_proxy > gdf["연면적"])
-        )
+    gdf["건축면적x층수_분자"] = capped_floor_proxy.where(
+        gdf["건축면적산정가능여부"], 0.0
+    )
+    use_floor_area = (gdf["연면적"] > 0) & (
+        (gdf["건축면적"] <= 0)
+        | (gdf["건축면적"] > gdf["연면적"])
+        | (floor_proxy > gdf["연면적"])
     )
     gdf["면적보정여부"] = use_floor_area
-    gdf["전체건물입체화재하중_분자_원본"] = floor_proxy.where(floor_proxy > 0, gdf["연면적"])
+    gdf["전체건물입체화재하중_분자_원본"] = floor_proxy.where(
+        floor_proxy > 0, gdf["연면적"]
+    )
     gdf["전체건물입체화재하중_분자"] = floor_proxy.where(~use_floor_area, gdf["연면적"])
     gdf["전체건물입체화재하중_분자"] = gdf["전체건물입체화재하중_분자"].where(
         gdf["전체건물입체화재하중_분자"] > 0,
@@ -262,10 +280,16 @@ def calculate_building_metrics(gdf: gpd.GeoDataFrame) -> tuple[gpd.GeoDataFrame,
     gdf["면적계산가능여부"] = gdf["전체건물입체화재하중_분자"] > 0
 
     use_name = gdf["건물용도명"].fillna("").astype(str)
-    keyword_mask = use_name.apply(lambda text: any(keyword in text for keyword in COMMERCIAL_KEYWORDS))
+    keyword_mask = use_name.apply(
+        lambda text: any(keyword in text for keyword in COMMERCIAL_KEYWORDS)
+    )
     gdf["상가여부"] = gdf["건물용도코드"].isin(COMMERCIAL_CODES) | keyword_mask
-    gdf["상가입체화재하중_분자"] = gdf["전체건물입체화재하중_분자"].where(gdf["상가여부"], 0.0)
-    gdf["상가건축면적x층수_분자"] = gdf["건축면적x층수_분자"].where(gdf["상가여부"], 0.0)
+    gdf["상가입체화재하중_분자"] = gdf["전체건물입체화재하중_분자"].where(
+        gdf["상가여부"], 0.0
+    )
+    gdf["상가건축면적x층수_분자"] = gdf["건축면적x층수_분자"].where(
+        gdf["상가여부"], 0.0
+    )
     gdf["상가연면적"] = gdf["연면적"].where(gdf["상가여부"], 0.0)
     gdf["상가수_flag"] = gdf["상가여부"].astype(int)
 
@@ -293,7 +317,9 @@ def load_base_grid() -> tuple[dict, pd.DataFrame, float, float]:
                 "기준면적_ha": GRID_AREA_HA,
                 "숙박시설수": to_float(props.get("숙박시설수", 0)),
                 "숙박연면적합계_m2": to_float(props.get("숙박연면적합계_m2", 0)),
-                "숙박입체화재하중_분자": to_float(props.get("숙박입체화재하중_분자", 0)),
+                "숙박입체화재하중_분자": to_float(
+                    props.get("숙박입체화재하중_분자", 0)
+                ),
                 "중심위도": to_float(props.get("중심위도", 0)),
                 "중심경도": to_float(props.get("중심경도", 0)),
                 "x_min_EPSG5186": to_float(props["x_min_EPSG5186"]),
@@ -304,15 +330,21 @@ def load_base_grid() -> tuple[dict, pd.DataFrame, float, float]:
         )
 
     grid_df = pd.DataFrame(rows)
-    origin_x = (grid_df["x_min_EPSG5186"] - (grid_df["그리드열"] - 1) * GRID_SIDE_M).median()
-    origin_y = (grid_df["y_min_EPSG5186"] - (grid_df["그리드행"] - 1) * GRID_SIDE_M).median()
+    origin_x = (
+        grid_df["x_min_EPSG5186"] - (grid_df["그리드열"] - 1) * GRID_SIDE_M
+    ).median()
+    origin_y = (
+        grid_df["y_min_EPSG5186"] - (grid_df["그리드행"] - 1) * GRID_SIDE_M
+    ).median()
     return geojson, grid_df, float(origin_x), float(origin_y)
 
 
 def build_building_points(gdf: gpd.GeoDataFrame) -> list[list[object]]:
     print("2. 실제 건물 위치 레이어 데이터 생성", flush=True)
     to_wgs84 = Transformer.from_crs("EPSG:5186", "EPSG:4326", always_xy=True)
-    lng_values, lat_values = to_wgs84.transform(gdf["x_EPSG5186"].to_numpy(), gdf["y_EPSG5186"].to_numpy())
+    lng_values, lat_values = to_wgs84.transform(
+        gdf["x_EPSG5186"].to_numpy(), gdf["y_EPSG5186"].to_numpy()
+    )
 
     points = []
     rows = zip(
@@ -382,7 +414,9 @@ def build_building_points(gdf: gpd.GeoDataFrame) -> list[list[object]]:
     return points
 
 
-def load_and_aggregate_buildings(grid_ids: set[str], origin_x: float, origin_y: float) -> tuple[pd.DataFrame, dict, list[list[object]]]:
+def load_and_aggregate_buildings(
+    grid_ids: set[str], origin_x: float, origin_y: float
+) -> tuple[pd.DataFrame, dict, list[list[object]]]:
     print("1. 10개구 건물 원본 로드 및 전체/상가 분자 계산", flush=True)
     gdf = gpd.read_file(BUILDING_SHP)
     gdf = gdf.rename(columns=BUILDING_COLUMNS)
@@ -395,7 +429,9 @@ def load_and_aggregate_buildings(grid_ids: set[str], origin_x: float, origin_y: 
     gdf["구"] = gdf["구코드"].map(GU_MAP)
     gdf["주소"] = gdf["주소"].map(fix_mojibake)
     gdf["법정동명"] = gdf["주소"].str.split().str[2].fillna("")
-    gdf["건물용도코드"] = gdf["건물용도코드"].map(lambda value: normalize_code(value, 5))
+    gdf["건물용도코드"] = gdf["건물용도코드"].map(
+        lambda value: normalize_code(value, 5)
+    )
     gdf["건물용도명"] = gdf["건물용도명"].map(fix_mojibake)
 
     for col in ["연면적", "건축면적", "지상층수", "지하층수"]:
@@ -405,8 +441,12 @@ def load_and_aggregate_buildings(grid_ids: set[str], origin_x: float, origin_y: 
     centroids = gdf.geometry.centroid
     gdf["x_EPSG5186"] = centroids.x
     gdf["y_EPSG5186"] = centroids.y
-    gdf["그리드열"] = ((gdf["x_EPSG5186"] - origin_x) // GRID_SIDE_M).astype("Int64") + 1
-    gdf["그리드행"] = ((gdf["y_EPSG5186"] - origin_y) // GRID_SIDE_M).astype("Int64") + 1
+    gdf["그리드열"] = ((gdf["x_EPSG5186"] - origin_x) // GRID_SIDE_M).astype(
+        "Int64"
+    ) + 1
+    gdf["그리드행"] = ((gdf["y_EPSG5186"] - origin_y) // GRID_SIDE_M).astype(
+        "Int64"
+    ) + 1
     gdf["그리드ID"] = gdf.apply(
         lambda row: f"G50K_R{int(row['그리드행']):04d}_C{int(row['그리드열']):04d}",
         axis=1,
@@ -441,7 +481,10 @@ def load_and_aggregate_buildings(grid_ids: set[str], origin_x: float, origin_y: 
             건축면적입력건물수=("건축면적있음", "sum"),
             건축면적누락건물수=("건축면적있음", lambda values: int((~values).sum())),
             건축면적역추산건물수=("건축면적추정여부", "sum"),
-            건축면적산정불가건물수=("건축면적산정가능여부", lambda values: int((~values).sum())),
+            건축면적산정불가건물수=(
+                "건축면적산정가능여부",
+                lambda values: int((~values).sum()),
+            ),
             연면적입력건물수=("연면적있음", "sum"),
             층수입력건물수=("층수있음", "sum"),
             전체건물연면적합계_m2=("연면적", "sum"),
@@ -476,7 +519,9 @@ def load_and_aggregate_buildings(grid_ids: set[str], origin_x: float, origin_y: 
     return agg, summary, building_points
 
 
-def build_grid_dataset(base_geojson: dict, base_df: pd.DataFrame, agg: pd.DataFrame) -> tuple[dict, pd.DataFrame, dict]:
+def build_grid_dataset(
+    base_geojson: dict, base_df: pd.DataFrame, agg: pd.DataFrame
+) -> tuple[dict, pd.DataFrame, dict]:
     print("2. 50,000㎡ 격자에 전체건물/상가 지표 결합", flush=True)
     out = base_df.merge(agg, on="그리드ID", how="left")
     numeric_fill = [
@@ -512,15 +557,23 @@ def build_grid_dataset(base_geojson: dict, base_df: pd.DataFrame, agg: pd.DataFr
     out["숙박시설수_per_ha"] = out["숙박시설수"] / GRID_AREA_HA
     out["상가숙박_개수"] = out["상가수"] + out["숙박시설수"]
     out["상가숙박_개수_per_ha"] = out["상가숙박_개수"] / GRID_AREA_HA
-    out["상가숙박_면적층수_분자"] = out["상가건축면적x층수_분자"] + out["숙박입체화재하중_분자"]
+    out["상가숙박_면적층수_분자"] = (
+        out["상가건축면적x층수_분자"] + out["숙박입체화재하중_분자"]
+    )
     out["상가숙박_면적층수_밀도"] = out["상가숙박_면적층수_분자"] / GRID_AREA_M2
     out["건축면적x층수_밀도"] = out["건축면적x층수_분자"] / GRID_AREA_M2
     out["전체건물_입체화재하중밀도"] = out["전체건물입체화재하중_분자"] / GRID_AREA_M2
     out["상가건축면적x층수_밀도"] = out["상가건축면적x층수_분자"] / GRID_AREA_M2
     out["상가_입체화재하중밀도"] = out["상가입체화재하중_분자"] / GRID_AREA_M2
-    out["건물데이터_0여부"] = out["전체건물수"].map(lambda count: "Y" if count <= 0 else "N")
+    out["건물데이터_0여부"] = out["전체건물수"].map(
+        lambda count: "Y" if count <= 0 else "N"
+    )
     out["면적데이터_0여부"] = out.apply(
-        lambda row: "Y" if row["전체건물수"] > 0 and row["전체건물입체화재하중_분자"] <= 0 else "N",
+        lambda row: (
+            "Y"
+            if row["전체건물수"] > 0 and row["전체건물입체화재하중_분자"] <= 0
+            else "N"
+        ),
         axis=1,
     )
 
@@ -549,7 +602,10 @@ def build_grid_dataset(base_geojson: dict, base_df: pd.DataFrame, agg: pd.DataFr
     for col in round_cols:
         out[col] = out[col].round(6)
 
-    features_by_id = {feature["properties"]["그리드ID"]: feature for feature in base_geojson["features"]}
+    features_by_id = {
+        feature["properties"]["그리드ID"]: feature
+        for feature in base_geojson["features"]
+    }
     output_features = []
     output_columns = [
         "그리드ID",
@@ -646,27 +702,44 @@ def build_grid_dataset(base_geojson: dict, base_df: pd.DataFrame, agg: pd.DataFr
         "상가수_합계": int(out["상가수"].sum()),
         "숙박시설수_합계": int(out["숙박시설수"].sum()),
         "상가숙박_개수_합계": int(out["상가숙박_개수"].sum()),
-        "상가숙박_면적층수_분자_합계": round(float(out["상가숙박_면적층수_분자"].sum()), 3),
+        "상가숙박_면적층수_분자_합계": round(
+            float(out["상가숙박_면적층수_분자"].sum()), 3
+        ),
         "건축면적입력건물수_합계": int(out["건축면적입력건물수"].sum()),
         "건축면적역추산건물수_합계": int(out["건축면적역추산건물수"].sum()),
         "건축면적산정불가건물수_합계": int(out["건축면적산정불가건물수"].sum()),
         "면적계산가능건물수_합계": int(out["면적계산가능건물수"].sum()),
         "면적보정건물수_합계": int(out["면적보정건물수"].sum()),
         "표제부보정건물수_합계": int(out["표제부보정건물수"].sum()),
-        "건물있지만_면적분자0_격자수": int(((out["전체건물수"] > 0) & (out["전체건물입체화재하중_분자"] <= 0)).sum()),
-        "전체건물입체화재하중_분자_원본_합계": round(float(out["전체건물입체화재하중_분자_원본"].sum()), 3),
+        "건물있지만_면적분자0_격자수": int(
+            ((out["전체건물수"] > 0) & (out["전체건물입체화재하중_분자"] <= 0)).sum()
+        ),
+        "전체건물입체화재하중_분자_원본_합계": round(
+            float(out["전체건물입체화재하중_분자_원본"].sum()), 3
+        ),
         "계산건축면적합계_m2": round(float(out["계산건축면적합계_m2"].sum()), 3),
         "건축면적x층수_분자_합계": round(float(out["건축면적x층수_분자"].sum()), 3),
-        "전체건물입체화재하중_분자_합계": round(float(out["전체건물입체화재하중_분자"].sum()), 3),
+        "전체건물입체화재하중_분자_합계": round(
+            float(out["전체건물입체화재하중_분자"].sum()), 3
+        ),
         "전체건물입체화재하중_분자_감소량": round(
-            float(out["전체건물입체화재하중_분자_원본"].sum() - out["전체건물입체화재하중_분자"].sum()),
+            float(
+                out["전체건물입체화재하중_분자_원본"].sum()
+                - out["전체건물입체화재하중_분자"].sum()
+            ),
             3,
         ),
-        "상가건축면적x층수_분자_합계": round(float(out["상가건축면적x층수_분자"].sum()), 3),
-        "상가입체화재하중_분자_합계": round(float(out["상가입체화재하중_분자"].sum()), 3),
+        "상가건축면적x층수_분자_합계": round(
+            float(out["상가건축면적x층수_분자"].sum()), 3
+        ),
+        "상가입체화재하중_분자_합계": round(
+            float(out["상가입체화재하중_분자"].sum()), 3
+        ),
         "건축면적x층수_밀도_최대": caps["footprint_floor_density"]["max"],
         "전체건물_입체화재하중밀도_최대": caps["building_fire_density"]["max"],
-        "상가건축면적x층수_밀도_최대": caps["commercial_footprint_floor_density"]["max"],
+        "상가건축면적x층수_밀도_최대": caps["commercial_footprint_floor_density"][
+            "max"
+        ],
         "상가_입체화재하중밀도_최대": caps["commercial_fire_density"]["max"],
         "기준면적_m2": GRID_AREA_M2,
         "건축면적x층수_계산식": "건축면적x층수_밀도 = Σ(계산건축면적 × 총층수 기반 분자) / 50,000㎡; 건축면적이 없고 연면적/층수가 있으면 계산건축면적=연면적/총층수로 역추산, 건축면적×총층수가 연면적보다 크면 연면적으로 상한 처리",
@@ -675,7 +748,12 @@ def build_grid_dataset(base_geojson: dict, base_df: pd.DataFrame, agg: pd.DataFr
     return geojson, out[output_columns], {"caps": caps, "summary": summary}
 
 
-def write_outputs(geojson: dict, csv_df: pd.DataFrame, summary: dict, building_points: list[list[object]]) -> None:
+def write_outputs(
+    geojson: dict,
+    csv_df: pd.DataFrame,
+    summary: dict,
+    building_points: list[list[object]],
+) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     csv_df.to_csv(OUT_CSV, index=False, encoding="utf-8-sig")
     with OUT_GEOJSON.open("w", encoding="utf-8") as f:
@@ -683,7 +761,9 @@ def write_outputs(geojson: dict, csv_df: pd.DataFrame, summary: dict, building_p
     with OUT_SUMMARY.open("w", encoding="utf-8-sig") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
     with OUT_BUILDING_POINTS_JS.open("w", encoding="utf-8") as f:
-        f.write("window.BUILDING_POINT_FIELDS=['lat','lng','commercial','area_m2','floors','gu','dong','use_name','grid_id','building_id','building_area_m2','calc_building_area_m2','building_area_estimated','building_area_floor_raw_m2','building_area_floor_numerator_m2','building_name','registry_corrected','registry_pk'];\n")
+        f.write(
+            "window.BUILDING_POINT_FIELDS=['lat','lng','commercial','area_m2','floors','gu','dong','use_name','grid_id','building_id','building_area_m2','calc_building_area_m2','building_area_estimated','building_area_floor_raw_m2','building_area_floor_numerator_m2','building_name','registry_corrected','registry_pk'];\n"
+        )
         f.write("window.BUILDING_POINTS=")
         json.dump(building_points, f, ensure_ascii=False, separators=(",", ":"))
         f.write(";\n")
@@ -695,34 +775,134 @@ def write_outputs(geojson: dict, csv_df: pd.DataFrame, summary: dict, building_p
         ("기준면적_m2", "분모", "격자 기준면적. 모든 격자 50,000㎡", "밀도 계산"),
         ("전체건물수", "전체건물", "격자 안 전체 건물 개수", "건물수 모드/팝업"),
         ("건축면적입력건물수", "검증", "건축면적이 0보다 큰 건물 수", "호버/팝업"),
-        ("건축면적역추산건물수", "검증", "건축면적이 0이고 연면적/층수로 건축면적을 역추산한 건물 수", "호버/팝업"),
-        ("건축면적산정불가건물수", "검증", "건축면적도 없고 연면적/층수 역추산도 불가능한 건물 수", "호버/팝업"),
+        (
+            "건축면적역추산건물수",
+            "검증",
+            "건축면적이 0이고 연면적/층수로 건축면적을 역추산한 건물 수",
+            "호버/팝업",
+        ),
+        (
+            "건축면적산정불가건물수",
+            "검증",
+            "건축면적도 없고 연면적/층수 역추산도 불가능한 건물 수",
+            "호버/팝업",
+        ),
         ("연면적입력건물수", "검증", "연면적이 0보다 큰 건물 수", "호버/팝업"),
         ("층수입력건물수", "검증", "지상층수+지하층수가 0보다 큰 건물 수", "호버/팝업"),
         ("전체건물수_per_ha", "전체건물", "전체건물수 / 5ha", "건물수/ha 모드"),
-        ("전체건축면적합계_m2", "전체건물", "격자 안 전체 건물 원본 건축면적 합계", "팝업/검증"),
-        ("계산건축면적합계_m2", "전체건물", "원본 건축면적과 연면적/층수 역추산 건축면적을 합친 값", "팝업/검증"),
-        ("건축면적x층수_분자", "전체건물", "Σ(계산건축면적 × 총층수 기반 분자). 건축면적이 없고 연면적/층수가 있으면 연면적/총층수로 역추산", "건축면적×층수 밀도 계산"),
-        ("건축면적x층수_밀도", "전체건물", "건축면적x층수_분자 / 50,000㎡", "기본 지도 색상/라벨"),
-        ("전체건물입체화재하중_분자_원본", "전체건물", "Σ(건축면적 × 총층수), 건축면적×총층수가 0이면 연면적 사용", "보정 전 비교"),
-        ("전체건물입체화재하중_분자", "전체건물", "보정분자 합계. 이상 면적은 연면적으로 대체", "전체건물 보정밀도 계산"),
-        ("면적보정건물수", "검증", "건축면적<=0, 건축면적>연면적, 건축면적×총층수>연면적 중 하나에 해당해 연면적으로 대체한 건물수", "팝업/검증"),
-        ("표제부보정건물수", "검증", "SHP 원본 면적/층수 0 건물 중 표제부 후보로 면적·층수·건물명을 보정한 건물수", "팝업/실제건물 레이어"),
-        ("전체건물_입체화재하중밀도", "전체건물", "전체건물입체화재하중_분자 / 50,000㎡", "기본 지도 색상/라벨"),
-        ("상가수", "상가", "건물용도코드 03000/04000/07000 또는 용도명 근린생활시설/판매시설 건물수", "상가수 모드"),
+        (
+            "전체건축면적합계_m2",
+            "전체건물",
+            "격자 안 전체 건물 원본 건축면적 합계",
+            "팝업/검증",
+        ),
+        (
+            "계산건축면적합계_m2",
+            "전체건물",
+            "원본 건축면적과 연면적/층수 역추산 건축면적을 합친 값",
+            "팝업/검증",
+        ),
+        (
+            "건축면적x층수_분자",
+            "전체건물",
+            "Σ(계산건축면적 × 총층수 기반 분자). 건축면적이 없고 연면적/층수가 있으면 연면적/총층수로 역추산",
+            "건축면적×층수 밀도 계산",
+        ),
+        (
+            "건축면적x층수_밀도",
+            "전체건물",
+            "건축면적x층수_분자 / 50,000㎡",
+            "기본 지도 색상/라벨",
+        ),
+        (
+            "전체건물입체화재하중_분자_원본",
+            "전체건물",
+            "Σ(건축면적 × 총층수), 건축면적×총층수가 0이면 연면적 사용",
+            "보정 전 비교",
+        ),
+        (
+            "전체건물입체화재하중_분자",
+            "전체건물",
+            "보정분자 합계. 이상 면적은 연면적으로 대체",
+            "전체건물 보정밀도 계산",
+        ),
+        (
+            "면적보정건물수",
+            "검증",
+            "건축면적<=0, 건축면적>연면적, 건축면적×총층수>연면적 중 하나에 해당해 연면적으로 대체한 건물수",
+            "팝업/검증",
+        ),
+        (
+            "표제부보정건물수",
+            "검증",
+            "SHP 원본 면적/층수 0 건물 중 표제부 후보로 면적·층수·건물명을 보정한 건물수",
+            "팝업/실제건물 레이어",
+        ),
+        (
+            "전체건물_입체화재하중밀도",
+            "전체건물",
+            "전체건물입체화재하중_분자 / 50,000㎡",
+            "기본 지도 색상/라벨",
+        ),
+        (
+            "상가수",
+            "상가",
+            "건물용도코드 03000/04000/07000 또는 용도명 근린생활시설/판매시설 건물수",
+            "상가수 모드",
+        ),
         ("상가수_per_ha", "상가", "상가수 / 5ha", "상가수/ha 모드"),
         ("숙박시설수", "숙박", "격자 안 숙박시설 수", "숙박시설수 모드/팝업"),
         ("숙박시설수_per_ha", "숙박", "숙박시설수 / 5ha", "숙박시설수/ha 모드"),
         ("상가숙박_개수", "상가+숙박", "상가수 + 숙박시설수", "상가+숙박 개수 모드"),
-        ("상가숙박_개수_per_ha", "상가+숙박", "(상가수 + 숙박시설수) / 5ha", "상가+숙박 개수 밀도 모드"),
+        (
+            "상가숙박_개수_per_ha",
+            "상가+숙박",
+            "(상가수 + 숙박시설수) / 5ha",
+            "상가+숙박 개수 밀도 모드",
+        ),
         ("숙박연면적합계_m2", "숙박", "격자 안 숙박시설 연면적 합계", "팝업/규모 비교"),
-        ("상가건축면적x층수_분자", "상가", "상가 건물의 Σ(건축면적 × 총층수)", "상가 건축면적×층수 밀도 계산"),
-        ("상가건축면적x층수_밀도", "상가", "상가건축면적x층수_분자 / 50,000㎡", "상가 건축면적×층수 모드"),
-        ("숙박입체화재하중_분자", "숙박", "숙박시설 연면적 합계 기반 분자", "숙박 규모 비교"),
-        ("상가숙박_면적층수_분자", "상가+숙박", "상가건축면적x층수_분자 + 숙박입체화재하중_분자", "면적·층수 기반 보조 지표"),
-        ("상가숙박_면적층수_밀도", "상가+숙박", "상가숙박_면적층수_분자 / 50,000㎡", "면적·층수 기반 보조 지표"),
-        ("상가입체화재하중_분자", "상가", "Σ(상가 건축면적 × 총층수), 0이면 연면적 사용", "상가 밀도 계산"),
-        ("상가_입체화재하중밀도", "상가", "상가입체화재하중_분자 / 50,000㎡", "상가 밀도 모드"),
+        (
+            "상가건축면적x층수_분자",
+            "상가",
+            "상가 건물의 Σ(건축면적 × 총층수)",
+            "상가 건축면적×층수 밀도 계산",
+        ),
+        (
+            "상가건축면적x층수_밀도",
+            "상가",
+            "상가건축면적x층수_분자 / 50,000㎡",
+            "상가 건축면적×층수 모드",
+        ),
+        (
+            "숙박입체화재하중_분자",
+            "숙박",
+            "숙박시설 연면적 합계 기반 분자",
+            "숙박 규모 비교",
+        ),
+        (
+            "상가숙박_면적층수_분자",
+            "상가+숙박",
+            "상가건축면적x층수_분자 + 숙박입체화재하중_분자",
+            "면적·층수 기반 보조 지표",
+        ),
+        (
+            "상가숙박_면적층수_밀도",
+            "상가+숙박",
+            "상가숙박_면적층수_분자 / 50,000㎡",
+            "면적·층수 기반 보조 지표",
+        ),
+        (
+            "상가입체화재하중_분자",
+            "상가",
+            "Σ(상가 건축면적 × 총층수), 0이면 연면적 사용",
+            "상가 밀도 계산",
+        ),
+        (
+            "상가_입체화재하중밀도",
+            "상가",
+            "상가입체화재하중_분자 / 50,000㎡",
+            "상가 밀도 모드",
+        ),
         ("건물데이터_0여부", "검증", "전체건물수 0개 여부", "빨간 격자 표시"),
         ("중심위도", "좌표", "격자 중심 위도", "라벨/집계점"),
         ("중심경도", "좌표", "격자 중심 경도", "라벨/집계점"),
@@ -1373,11 +1553,15 @@ map.on("moveend zoomend", scheduleActualBuildingRender);
 
 def main() -> None:
     base_geojson, base_df, origin_x, origin_y = load_base_grid()
-    agg, source_summary, building_points = load_and_aggregate_buildings(set(base_df["그리드ID"]), origin_x, origin_y)
+    agg, source_summary, building_points = load_and_aggregate_buildings(
+        set(base_df["그리드ID"]), origin_x, origin_y
+    )
     geojson, csv_df, meta = build_grid_dataset(base_geojson, base_df, agg)
     summary = {**source_summary, **meta["summary"]}
     write_outputs(geojson, csv_df, summary, building_points)
-    OUT_HTML.write_text(build_html(geojson, meta["caps"], summary), encoding="utf-8-sig")
+    OUT_HTML.write_text(
+        build_html(geojson, meta["caps"], summary), encoding="utf-8-sig"
+    )
 
     print(f"HTML: {OUT_HTML}")
     print(f"BUILDING_POINTS_JS: {OUT_BUILDING_POINTS_JS}")

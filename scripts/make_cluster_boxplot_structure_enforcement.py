@@ -50,7 +50,9 @@ def main() -> None:
     df.columns = df.columns.str.strip()
 
     use = df[["cluster_label", "구조노후도", "단속위험도"]].copy()
-    use["cluster_label"] = pd.Categorical(use["cluster_label"], categories=ORDER, ordered=True)
+    use["cluster_label"] = pd.Categorical(
+        use["cluster_label"], categories=ORDER, ordered=True
+    )
     for col in ["구조노후도", "단속위험도"]:
         use[col] = pd.to_numeric(use[col], errors="coerce")
     use = use.dropna(subset=["cluster_label", "구조노후도", "단속위험도"])
@@ -124,7 +126,12 @@ def main() -> None:
                 va="top",
                 fontsize=9.2,
                 color="#1f2937",
-                bbox=dict(boxstyle="round,pad=0.28", facecolor="#ffffff", edgecolor="#e5e7eb", alpha=0.88),
+                bbox=dict(
+                    boxstyle="round,pad=0.28",
+                    facecolor="#ffffff",
+                    edgecolor="#e5e7eb",
+                    alpha=0.88,
+                ),
             )
 
     fig.suptitle(

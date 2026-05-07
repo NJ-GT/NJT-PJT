@@ -63,12 +63,25 @@ def prepare_tourism_like_source(path: Path) -> pd.DataFrame:
         if col in df.columns:
             df[col] = df[col].replace("", np.nan)
 
-    numeric_cols = ["좌표정보(X)", "좌표정보(Y)", "총층수", "지상층수", "지하층수", "객실수", "건축연면적", "시설규모"]
+    numeric_cols = [
+        "좌표정보(X)",
+        "좌표정보(Y)",
+        "총층수",
+        "지상층수",
+        "지하층수",
+        "객실수",
+        "건축연면적",
+        "시설규모",
+    ]
     for col in numeric_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    info_cols = [col for col in keep_cols if col not in {"사업장명", "좌표정보(X)", "좌표정보(Y)", "최종수정일자"}]
+    info_cols = [
+        col
+        for col in keep_cols
+        if col not in {"사업장명", "좌표정보(X)", "좌표정보(Y)", "최종수정일자"}
+    ]
     df["_info_score"] = df[info_cols].notna().sum(axis=1)
     sort_cols = ["사업장명", "좌표정보(X)", "좌표정보(Y)", "_info_score"]
     ascending = [True, True, True, False]
@@ -78,7 +91,11 @@ def prepare_tourism_like_source(path: Path) -> pd.DataFrame:
 
     df = df.sort_values(sort_cols, ascending=ascending)
     df = df.groupby(["사업장명", "좌표정보(X)", "좌표정보(Y)"], as_index=False).agg(
-        {col: choose_non_null_first for col in df.columns if col not in {"사업장명", "좌표정보(X)", "좌표정보(Y)"}}
+        {
+            col: choose_non_null_first
+            for col in df.columns
+            if col not in {"사업장명", "좌표정보(X)", "좌표정보(Y)"}
+        }
     )
     return df.drop(columns=["_info_score", "최종수정일자"], errors="ignore")
 
@@ -97,12 +114,24 @@ def prepare_lodging_source(path: Path) -> pd.DataFrame:
         "최종수정일자",
     ]
     df = df[keep_cols].copy()
-    numeric_cols = ["좌표정보(X)", "좌표정보(Y)", "건물지상층수", "건물지하층수", "건물총층수", "한실수", "양실수"]
+    numeric_cols = [
+        "좌표정보(X)",
+        "좌표정보(Y)",
+        "건물지상층수",
+        "건물지하층수",
+        "건물총층수",
+        "한실수",
+        "양실수",
+    ]
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
     df["객실수_추정"] = df[["한실수", "양실수"]].fillna(0).sum(axis=1)
-    df["_info_score"] = df[["건물지상층수", "건물지하층수", "건물총층수", "객실수_추정"]].notna().sum(axis=1)
+    df["_info_score"] = (
+        df[["건물지상층수", "건물지하층수", "건물총층수", "객실수_추정"]]
+        .notna()
+        .sum(axis=1)
+    )
     df = df.sort_values(
         ["사업장명", "좌표정보(X)", "좌표정보(Y)", "_info_score", "최종수정일자"],
         ascending=[True, True, True, False, False],
@@ -121,15 +150,15 @@ def prepare_lodging_source(path: Path) -> pd.DataFrame:
 def classify_housing_type(use_text: pd.Series) -> pd.Series:
     return pd.Series(
         np.select(
-        [
-            use_text.str.contains("아파트", na=False),
-            use_text.str.contains("다세대", na=False),
-            use_text.str.contains("다가구", na=False),
-            use_text.str.contains("연립", na=False),
-            use_text.str.contains("단독주택|단독", na=False),
-        ],
-        ["아파트", "다세대", "다가구", "연립", "단독"],
-        default=None,
+            [
+                use_text.str.contains("아파트", na=False),
+                use_text.str.contains("다세대", na=False),
+                use_text.str.contains("다가구", na=False),
+                use_text.str.contains("연립", na=False),
+                use_text.str.contains("단독주택|단독", na=False),
+            ],
+            ["아파트", "다세대", "다가구", "연립", "단독"],
+            default=None,
         ),
         index=use_text.index,
     )
@@ -138,12 +167,12 @@ def classify_housing_type(use_text: pd.Series) -> pd.Series:
 def classify_region(region_text: pd.Series) -> pd.Series:
     return pd.Series(
         np.select(
-        [
-            region_text.str.contains("상업", na=False),
-            region_text.str.contains("주거", na=False),
-        ],
-        ["상업지역", "주거지역"],
-        default=None,
+            [
+                region_text.str.contains("상업", na=False),
+                region_text.str.contains("주거", na=False),
+            ],
+            ["상업지역", "주거지역"],
+            default=None,
         ),
         index=region_text.index,
     )
@@ -197,7 +226,12 @@ def build_probe() -> None:
     enriched = analysis.copy()
     enriched["위도"] = enriched["위도"].round(8)
     enriched["경도"] = enriched["경도"].round(8)
-    enriched = enriched.merge(core_key, left_on=["숙소명", "위도", "경도"], right_on=["업소명", "위도", "경도"], how="left")
+    enriched = enriched.merge(
+        core_key,
+        left_on=["숙소명", "위도", "경도"],
+        right_on=["업소명", "위도", "경도"],
+        how="left",
+    )
 
     tourism = prepare_tourism_like_source(tourism_path)
     foreign = prepare_tourism_like_source(foreign_path)
@@ -243,18 +277,38 @@ def build_probe() -> None:
     foreign_mask = enriched["업종"].eq("외국인관광도시민박업")
     lodging_mask = enriched["업종"].eq("숙박업")
 
-    tourism_cols = ["건물용도명", "지역구분명", "주변환경명", "객실수", "시설규모", "건축연면적", "총층수", "지상층수", "지하층수"]
+    tourism_cols = [
+        "건물용도명",
+        "지역구분명",
+        "주변환경명",
+        "객실수",
+        "시설규모",
+        "건축연면적",
+        "총층수",
+        "지상층수",
+        "지하층수",
+    ]
     for column in tourism_cols:
         target = f"{column}_direct"
         enriched.loc[tourism_mask, target] = tourism_match.loc[tourism_mask, column]
         enriched.loc[foreign_mask, target] = foreign_match.loc[foreign_mask, column]
 
-    enriched.loc[lodging_mask, "객실수_direct"] = lodging_match.loc[lodging_mask, "객실수_추정"]
-    enriched.loc[lodging_mask, "총층수_direct"] = lodging_match.loc[lodging_mask, "건물총층수"]
-    enriched.loc[lodging_mask, "지상층수_direct"] = lodging_match.loc[lodging_mask, "건물지상층수"]
-    enriched.loc[lodging_mask, "지하층수_direct"] = lodging_match.loc[lodging_mask, "건물지하층수"]
+    enriched.loc[lodging_mask, "객실수_direct"] = lodging_match.loc[
+        lodging_mask, "객실수_추정"
+    ]
+    enriched.loc[lodging_mask, "총층수_direct"] = lodging_match.loc[
+        lodging_mask, "건물총층수"
+    ]
+    enriched.loc[lodging_mask, "지상층수_direct"] = lodging_match.loc[
+        lodging_mask, "건물지상층수"
+    ]
+    enriched.loc[lodging_mask, "지하층수_direct"] = lodging_match.loc[
+        lodging_mask, "건물지하층수"
+    ]
 
-    enriched["건물용도명_통합"] = enriched["건물용도명_direct"].fillna(enriched["기타용도"])
+    enriched["건물용도명_통합"] = enriched["건물용도명_direct"].fillna(
+        enriched["기타용도"]
+    )
     enriched["지역구분명_통합"] = enriched["지역구분명_direct"]
     enriched["객실수_통합"] = positive_numeric(enriched["객실수_direct"])
     enriched["시설규모_통합"] = positive_numeric(enriched["시설규모_direct"])
@@ -267,20 +321,53 @@ def build_probe() -> None:
         positive_numeric(enriched["총층수"])
     )
 
-    above = pd.to_numeric(enriched["지상층수_direct"], errors="coerce").fillna(pd.to_numeric(enriched["지상층수"], errors="coerce")).fillna(0)
-    below = pd.to_numeric(enriched["지하층수_direct"], errors="coerce").fillna(pd.to_numeric(enriched["지하층수"], errors="coerce")).fillna(0)
+    above = (
+        pd.to_numeric(enriched["지상층수_direct"], errors="coerce")
+        .fillna(pd.to_numeric(enriched["지상층수"], errors="coerce"))
+        .fillna(0)
+    )
+    below = (
+        pd.to_numeric(enriched["지하층수_direct"], errors="coerce")
+        .fillna(pd.to_numeric(enriched["지하층수"], errors="coerce"))
+        .fillna(0)
+    )
     corrected_above = above.mask(above == 0, 1)
     enriched["총층수_0층만보정"] = (corrected_above + below).clip(lower=1)
-    enriched["총층수_현재값과차이"] = pd.to_numeric(enriched["총층수_통합"], errors="coerce") - enriched["총층수_0층만보정"]
+    enriched["총층수_현재값과차이"] = (
+        pd.to_numeric(enriched["총층수_통합"], errors="coerce")
+        - enriched["총층수_0층만보정"]
+    )
 
-    use_text = enriched["건물용도명_통합"].fillna("").astype(str) + " " + enriched["기타용도"].fillna("").astype(str)
+    use_text = (
+        enriched["건물용도명_통합"].fillna("").astype(str)
+        + " "
+        + enriched["기타용도"].fillna("").astype(str)
+    )
     enriched["주택유형_분류"] = classify_housing_type(use_text)
-    enriched["지역분류_상업주거"] = classify_region(enriched["지역구분명_통합"].fillna("").astype(str))
-    enriched["상업지역여부"] = enriched["지역분류_상업주거"].eq("상업지역").astype("float").mask(enriched["지역구분명_통합"].isna(), np.nan)
-    enriched["주거지역여부"] = enriched["지역분류_상업주거"].eq("주거지역").astype("float").mask(enriched["지역구분명_통합"].isna(), np.nan)
-    enriched["주택가주변_여부"] = flag_from_environment(enriched["주변환경명_direct"], "주택가")
-    enriched["역세권_인접여부"] = flag_from_environment(enriched["주변환경명_direct"], "역세권")
-    enriched["유흥가_인접여부"] = flag_from_environment(enriched["주변환경명_direct"], "유흥|유흥업소")
+    enriched["지역분류_상업주거"] = classify_region(
+        enriched["지역구분명_통합"].fillna("").astype(str)
+    )
+    enriched["상업지역여부"] = (
+        enriched["지역분류_상업주거"]
+        .eq("상업지역")
+        .astype("float")
+        .mask(enriched["지역구분명_통합"].isna(), np.nan)
+    )
+    enriched["주거지역여부"] = (
+        enriched["지역분류_상업주거"]
+        .eq("주거지역")
+        .astype("float")
+        .mask(enriched["지역구분명_통합"].isna(), np.nan)
+    )
+    enriched["주택가주변_여부"] = flag_from_environment(
+        enriched["주변환경명_direct"], "주택가"
+    )
+    enriched["역세권_인접여부"] = flag_from_environment(
+        enriched["주변환경명_direct"], "역세권"
+    )
+    enriched["유흥가_인접여부"] = flag_from_environment(
+        enriched["주변환경명_direct"], "유흥|유흥업소"
+    )
 
     enriched_out = TABLE_DIR / "분석변수_최종테이블0423_건물특성_probe.csv"
     summary_out = TABLE_DIR / "건물특성_가용성요약.csv"
@@ -293,14 +380,18 @@ def build_probe() -> None:
         {
             "요청변수": "건물용도명",
             "가용행수": int(enriched["건물용도명_통합"].notna().sum()),
-            "가용비율": round(float(enriched["건물용도명_통합"].notna().mean() * 100), 2),
+            "가용비율": round(
+                float(enriched["건물용도명_통합"].notna().mean() * 100), 2
+            ),
             "주요소스": "관광/외국인 원천 건물용도명 + 표제부 기타용도 fallback",
             "비고": "숙박업은 표제부 기타용도 기반 보완",
         },
         {
             "요청변수": "지역구분명",
             "가용행수": int(enriched["지역구분명_통합"].notna().sum()),
-            "가용비율": round(float(enriched["지역구분명_통합"].notna().mean() * 100), 2),
+            "가용비율": round(
+                float(enriched["지역구분명_통합"].notna().mean() * 100), 2
+            ),
             "주요소스": "관광숙박업/외국인관광도시민박업 원천",
             "비고": "숙박업 원천에는 직접 컬럼이 없음",
         },
@@ -335,14 +426,18 @@ def build_probe() -> None:
         {
             "요청변수": "상업지역·주거지역 여부",
             "가용행수": int(enriched["지역분류_상업주거"].notna().sum()),
-            "가용비율": round(float(enriched["지역분류_상업주거"].notna().mean() * 100), 2),
+            "가용비율": round(
+                float(enriched["지역분류_상업주거"].notna().mean() * 100), 2
+            ),
             "주요소스": "지역구분명 분류",
             "비고": "숙박업은 별도 용도지역 공간조인 없이는 공란",
         },
         {
             "요청변수": "주택가주변/역세권/유흥가 인접",
             "가용행수": int(enriched["주변환경명_direct"].notna().sum()),
-            "가용비율": round(float(enriched["주변환경명_direct"].notna().mean() * 100), 2),
+            "가용비율": round(
+                float(enriched["주변환경명_direct"].notna().mean() * 100), 2
+            ),
             "주요소스": "관광숙박업/외국인관광도시민박업 주변환경명",
             "비고": "플래그 3개로 분리 저장",
         },
@@ -383,7 +478,9 @@ def build_probe() -> None:
             "foreign_source": str(foreign_path.relative_to(ROOT)),
         },
     }
-    floor_meta_out.write_text(json.dumps(floor_meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    floor_meta_out.write_text(
+        json.dumps(floor_meta, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     print(f"Saved: {enriched_out}")
     print(f"Saved: {summary_out}")

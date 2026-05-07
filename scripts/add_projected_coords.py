@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """분析변수_최종테이블0423_AHP3등급비교.csv 에 EPSG:5181 평면좌표 (x_5181, y_5181) 추가"""
+
 import glob
 import sys
 
@@ -25,5 +26,5 @@ df["x_5181"] = gdf_proj.geometry.x.round(2).values
 df["y_5181"] = gdf_proj.geometry.y.round(2).values
 
 df.to_csv(SRC, index=False, encoding="utf-8-sig")
-print(f"저장 완료: x_5181, y_5181 컬럼 추가")
+print("저장 완료: x_5181, y_5181 컬럼 추가")
 print(df[["위도", "경도", "x_5181", "y_5181"]].head(3).to_string(index=False))

@@ -41,7 +41,11 @@ def main() -> None:
     for dong in target_dongs:
         part = subset[subset["동"].eq(dong)]
         print(f"\n=== {dong} n={len(part):,} ===")
-        desc = part[cols].describe().T[["count", "mean", "std", "min", "25%", "50%", "75%", "max"]]
+        desc = (
+            part[cols]
+            .describe()
+            .T[["count", "mean", "std", "min", "25%", "50%", "75%", "max"]]
+        )
         print(desc.round(4).to_string())
 
     print("\n[동별 평균 요약]")

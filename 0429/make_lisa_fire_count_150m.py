@@ -6,7 +6,6 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
 from esda.moran import Moran_Local
@@ -27,17 +26,31 @@ def set_korean_font() -> None:
 
 
 def read_data() -> pd.DataFrame:
-    csv_files = sorted(K2_DIR.glob("*cluster_k2.csv"), key=lambda p: p.stat().st_size, reverse=True)
+    csv_files = sorted(
+        K2_DIR.glob("*cluster_k2.csv"), key=lambda p: p.stat().st_size, reverse=True
+    )
     if not csv_files:
         raise FileNotFoundError(K2_DIR)
     df = pd.read_csv(csv_files[0], encoding="utf-8-sig")
-    needed = ["구", "동", "숙소명", "경도", "위도", "x_5181", "y_5181", TARGET, "cluster_k2"]
+    needed = [
+        "구",
+        "동",
+        "숙소명",
+        "경도",
+        "위도",
+        "x_5181",
+        "y_5181",
+        TARGET,
+        "cluster_k2",
+    ]
     missing = [c for c in needed if c not in df.columns]
     if missing:
         raise KeyError(f"Missing columns: {missing}")
     for col in ["경도", "위도", "x_5181", "y_5181", TARGET, "cluster_k2"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
-    return df.dropna(subset=["경도", "위도", "x_5181", "y_5181", TARGET]).reset_index(drop=True)
+    return df.dropna(subset=["경도", "위도", "x_5181", "y_5181", TARGET]).reset_index(
+        drop=True
+    )
 
 
 def classify_lisa(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
@@ -56,7 +69,9 @@ def classify_lisa(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     labels = {1: "High-High", 2: "Low-High", 3: "Low-Low", 4: "High-Low"}
     out["lisa_type"] = "Not significant"
     sig = out["lisa_significant"]
-    out.loc[sig, "lisa_type"] = out.loc[sig, "lisa_q"].map(labels).fillna("Not significant")
+    out.loc[sig, "lisa_type"] = (
+        out.loc[sig, "lisa_q"].map(labels).fillna("Not significant")
+    )
 
     global_info = {
         "knn_k": KNN_K,
@@ -165,11 +180,17 @@ def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     df = read_data()
     lisa_df, global_info = classify_lisa(df)
-    lisa_df.to_csv(OUT_DIR / "lisa_fire_count_150m_results.csv", index=False, encoding="utf-8-sig")
-    pd.DataFrame([global_info]).to_csv(OUT_DIR / "lisa_fire_count_150m_summary.csv", index=False, encoding="utf-8-sig")
+    lisa_df.to_csv(
+        OUT_DIR / "lisa_fire_count_150m_results.csv", index=False, encoding="utf-8-sig"
+    )
+    pd.DataFrame([global_info]).to_csv(
+        OUT_DIR / "lisa_fire_count_150m_summary.csv", index=False, encoding="utf-8-sig"
+    )
     plot_lisa_map(lisa_df, OUT_DIR / "lisa_fire_count_150m_map.png")
     top = plot_high_high_bar(lisa_df, OUT_DIR / "lisa_high_high_top_dongs.png")
-    top.to_csv(OUT_DIR / "lisa_high_high_top_dongs.csv", index=False, encoding="utf-8-sig")
+    top.to_csv(
+        OUT_DIR / "lisa_high_high_top_dongs.csv", index=False, encoding="utf-8-sig"
+    )
     print(OUT_DIR)
     print(pd.DataFrame([global_info]).to_string(index=False))
     print(top.head(15).to_string(index=False))

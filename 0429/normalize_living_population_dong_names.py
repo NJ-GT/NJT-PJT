@@ -58,10 +58,9 @@ def main() -> None:
     for col in TIME_COLS:
         row_df[col] = pd.to_numeric(row_df[col], errors="coerce").fillna(0)
 
-    monthly = (
-        row_df.groupby(["파일기준년월", "추정_구", "대표_동"], as_index=False)[TIME_COLS]
-        .sum()
-    )
+    monthly = row_df.groupby(["파일기준년월", "추정_구", "대표_동"], as_index=False)[
+        TIME_COLS
+    ].sum()
     summary = monthly.groupby(["추정_구", "대표_동"], as_index=False)[TIME_COLS].mean()
     summary["25개월평균_방문생활인구수"] = summary[TIME_COLS].sum(axis=1)
     summary = summary.sort_values("25개월평균_방문생활인구수", ascending=False)

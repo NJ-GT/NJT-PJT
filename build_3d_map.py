@@ -14,28 +14,42 @@
 출력: 숙박시설_3D.html            (Deck.gl 기반 3D 인터랙티브 맵)
 """
 
-import sys, json, os
-sys.stdout.reconfigure(encoding='utf-8')  # 한글 출력 설정
+import sys
+import json
+import os
+
+sys.stdout.reconfigure(encoding="utf-8")  # 한글 출력 설정
 
 # ─── 1. 집계구 데이터 로드 및 분리 ─────────────────────────────
-with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/oa_density.json', encoding='utf-8') as f:
+with open(
+    "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/oa_density.json",
+    encoding="utf-8",
+) as f:
     raw = json.load(f)
 
 # 숙박시설 있는 집계구(3D 돌출 표현)와 없는 집계구(바닥 평면 표현)로 분리
-filled = [f for f in raw['features'] if f['properties']['count'] > 0]
-empty  = [f for f in raw['features'] if f['properties']['count'] == 0]
+filled = [f for f in raw["features"] if f["properties"]["count"] > 0]
+empty = [f for f in raw["features"] if f["properties"]["count"] == 0]
 
 # JavaScript에 삽입할 GeoJSON 문자열로 변환
-filled_json = json.dumps({'type':'FeatureCollection','features':filled}, ensure_ascii=False)
-empty_json  = json.dumps({'type':'FeatureCollection','features':empty},  ensure_ascii=False)
+filled_json = json.dumps(
+    {"type": "FeatureCollection", "features": filled}, ensure_ascii=False
+)
+empty_json = json.dumps(
+    {"type": "FeatureCollection", "features": empty}, ensure_ascii=False
+)
 
 # ─── 2. 소방서/안전센터 데이터 로드 ─────────────────────────────
-with open('c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/firestation_data.json', encoding='utf-8') as f:
+with open(
+    "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/firestation_data.json",
+    encoding="utf-8",
+) as f:
     stations_json = json.dumps(json.load(f), ensure_ascii=False)
 
 print(f"채워진 집계구: {len(filled)}, 빈 집계구: {len(empty)}")
 
-html = """<!DOCTYPE html>
+html = (
+    """<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -123,9 +137,15 @@ html,body{width:100%;height:100%;background:#0e0e1a;font-family:'Segoe UI',sans-
 <div id="guide">🖱 드래그: 이동 &nbsp;|&nbsp; 우클릭 드래그: 회전/기울기 &nbsp;|&nbsp; 스크롤: 줌</div>
 
 <script>
-const FILLED   = """ + filled_json + """;
-const EMPTY    = """ + empty_json  + """;
-const STATIONS = """ + stations_json + """;
+const FILLED   = """
+    + filled_json
+    + """;
+const EMPTY    = """
+    + empty_json
+    + """;
+const STATIONS = """
+    + stations_json
+    + """;
 
 // ── 색상 정의 ─────────────────────────────────────────────────
 const COLOR_MODES = {
@@ -389,9 +409,10 @@ refresh();
 </body>
 </html>
 """
+)
 
 # ─── 3. HTML 파일 저장 ───────────────────────────────────────────
-out = 'c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/숙박시설_3D.html'
-with open(out, 'w', encoding='utf-8') as f:
+out = "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/숙박시설_3D.html"
+with open(out, "w", encoding="utf-8") as f:
     f.write(html)
-print(f'Done: {os.path.getsize(out)//1024} KB')
+print(f"Done: {os.path.getsize(out) // 1024} KB")

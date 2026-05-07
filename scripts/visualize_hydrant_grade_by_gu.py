@@ -27,7 +27,9 @@ COLORS = {
 
 def main() -> None:
     df = pd.read_csv(SRC, encoding="utf-8-sig")
-    df["최근접_소화용수_거리등급"] = pd.to_numeric(df["최근접_소화용수_거리등급"], errors="coerce")
+    df["최근접_소화용수_거리등급"] = pd.to_numeric(
+        df["최근접_소화용수_거리등급"], errors="coerce"
+    )
     df = df.dropna(subset=["구", "최근접_소화용수_거리등급"]).copy()
     df["최근접_소화용수_거리등급"] = df["최근접_소화용수_거리등급"].astype(int)
 
@@ -59,8 +61,14 @@ def main() -> None:
         .agg(
             평균등급=("최근접_소화용수_거리등급", "mean"),
             시설수=("숙소명", "size"),
-            이십미터이내비율=("최근접_소화용수_거리등급", lambda s: (s.eq(0).mean() * 100)),
-            사십미터이내비율=("최근접_소화용수_거리등급", lambda s: (s.le(1).mean() * 100)),
+            이십미터이내비율=(
+                "최근접_소화용수_거리등급",
+                lambda s: s.eq(0).mean() * 100,
+            ),
+            사십미터이내비율=(
+                "최근접_소화용수_거리등급",
+                lambda s: s.le(1).mean() * 100,
+            ),
         )
         .reindex(gu_order)
         .reset_index()
@@ -156,12 +164,18 @@ def main() -> None:
             font=dict(size=13),
         ),
         margin=dict(l=80, r=50, t=120, b=70),
-        font=dict(family="Malgun Gothic, Apple SD Gothic Neo, Arial", size=13, color="#1E293B"),
+        font=dict(
+            family="Malgun Gothic, Apple SD Gothic Neo, Arial", size=13, color="#1E293B"
+        ),
     )
-    fig.update_xaxes(title_text="구성비 (%)", range=[0, 100], ticksuffix="%", row=1, col=1)
+    fig.update_xaxes(
+        title_text="구성비 (%)", range=[0, 100], ticksuffix="%", row=1, col=1
+    )
     fig.update_xaxes(title_text="평균 등급", range=[0, 2.25], row=1, col=2)
     fig.update_yaxes(title_text=None, autorange="reversed", row=1, col=1)
-    fig.update_yaxes(title_text=None, autorange="reversed", showticklabels=False, row=1, col=2)
+    fig.update_yaxes(
+        title_text=None, autorange="reversed", showticklabels=False, row=1, col=2
+    )
     fig.add_annotation(
         text="초록 비중이 클수록 소화용수 접근성이 좋고, 빨강 비중이 클수록 최근접 소화용수가 40m를 초과합니다.",
         x=0,

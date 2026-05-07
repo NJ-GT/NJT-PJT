@@ -19,7 +19,9 @@ TARGET_FILES = [
     BASE / "data" / "clustering_result_all.csv",
     BASE / "data" / "final_spatial_pipeline" / "analysis_dataset.csv",
 ]
-BUILDING_SHP = BASE / "data" / "AL_D010_11_20260409" / "AL_D010_11_20260409_filtered.shp"
+BUILDING_SHP = (
+    BASE / "data" / "AL_D010_11_20260409" / "AL_D010_11_20260409_filtered.shp"
+)
 
 BUILDING_COUNT_COLS = [
     "주변건물수_50m",
@@ -39,7 +41,9 @@ ADDRESS_COLS = ["주소", "도로명대지위치", "대지위치"]
 def read_table(path: Path, nrows: int | None = None) -> pd.DataFrame | None:
     try:
         if path.suffix.lower() == ".csv":
-            return pd.read_csv(path, encoding="utf-8-sig", nrows=nrows, low_memory=False)
+            return pd.read_csv(
+                path, encoding="utf-8-sig", nrows=nrows, low_memory=False
+            )
         if path.suffix.lower() in {".xlsx", ".xls"}:
             return pd.read_excel(path, nrows=nrows)
     except Exception:
@@ -89,7 +93,11 @@ def inventory_sources() -> pd.DataFrame:
                 }
             )
     result = pd.DataFrame(rows).sort_values(["path"])
-    result.to_csv(OUT / "nearby_building_count_source_inventory.csv", index=False, encoding="utf-8-sig")
+    result.to_csv(
+        OUT / "nearby_building_count_source_inventory.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
     return result
 
 
@@ -139,7 +147,9 @@ def collect_candidates() -> pd.DataFrame:
             {
                 "_name_key": df[name_col].map(norm_name) if name_col else "",
                 "후보_주변건물수": pd.to_numeric(df[count_col], errors="coerce"),
-                "후보_집중도": pd.to_numeric(df[conc_col], errors="coerce") if conc_col else np.nan,
+                "후보_집중도": pd.to_numeric(df[conc_col], errors="coerce")
+                if conc_col
+                else np.nan,
                 "후보_파일": str(path.relative_to(BASE)),
                 "후보_컬럼": count_col,
                 "후보_우선순위": candidate_priority(path, count_col),
@@ -162,22 +172,40 @@ def collect_candidates() -> pd.DataFrame:
 
     all_cand = pd.concat(frames, ignore_index=True)
     all_cand = all_cand.sort_values(
-        ["_name_key", "후보_우선순위", "후보_주변건물수"], ascending=[True, False, False]
+        ["_name_key", "후보_우선순위", "후보_주변건물수"],
+        ascending=[True, False, False],
     )
-    all_cand.to_csv(OUT / "nearby_building_count_all_candidates.csv", index=False, encoding="utf-8-sig")
+    all_cand.to_csv(
+        OUT / "nearby_building_count_all_candidates.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
     return all_cand
 
 
-def best_candidates(candidates: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    candidates = candidates[pd.to_numeric(candidates["후보_주변건물수"], errors="coerce").gt(0)].copy()
-    coord = candidates[candidates["_name_key"].ne("")].dropna(subset=["_lat_key", "_lon_key"]).copy()
-    coord = coord.sort_values(
-        ["_name_key", "_lat_key", "_lon_key", "후보_우선순위"], ascending=[True, True, True, False]
+def best_candidates(
+    candidates: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    candidates = candidates[
+        pd.to_numeric(candidates["후보_주변건물수"], errors="coerce").gt(0)
+    ].copy()
+    coord = (
+        candidates[candidates["_name_key"].ne("")]
+        .dropna(subset=["_lat_key", "_lon_key"])
+        .copy()
     )
-    coord_best = coord.drop_duplicates(["_name_key", "_lat_key", "_lon_key"], keep="first")
+    coord = coord.sort_values(
+        ["_name_key", "_lat_key", "_lon_key", "후보_우선순위"],
+        ascending=[True, True, True, False],
+    )
+    coord_best = coord.drop_duplicates(
+        ["_name_key", "_lat_key", "_lon_key"], keep="first"
+    )
 
     coord_only = candidates.dropna(subset=["_lat_key", "_lon_key"]).copy()
-    coord_only = coord_only.sort_values(["_lat_key", "_lon_key", "후보_우선순위"], ascending=[True, True, False])
+    coord_only = coord_only.sort_values(
+        ["_lat_key", "_lon_key", "후보_우선순위"], ascending=[True, True, False]
+    )
     coord_only_best = coord_only.drop_duplicates(["_lat_key", "_lon_key"], keep="first")
 
     name_best = candidates[candidates["_name_key"].ne("")].sort_values(
@@ -201,12 +229,16 @@ def use_group(code: object) -> str:
 
 
 def direct_building_counts(df: pd.DataFrame, mask: pd.Series) -> pd.DataFrame:
-    result = pd.DataFrame(index=df.index, columns=["직접산출_주변건물수", "직접산출_집중도"])
+    result = pd.DataFrame(
+        index=df.index, columns=["직접산출_주변건물수", "직접산출_집중도"]
+    )
     if not mask.any() or not BUILDING_SHP.exists():
         return result
 
     buildings = gpd.read_file(BUILDING_SHP, columns=["A8", "geometry"])
-    buildings = buildings[buildings.geometry.notna() & ~buildings.geometry.is_empty].copy()
+    buildings = buildings[
+        buildings.geometry.notna() & ~buildings.geometry.is_empty
+    ].copy()
     buildings["용도그룹"] = buildings["A8"].map(use_group)
     targets = df.loc[mask, ["위도", "경도"]].copy()
     target_gdf = gpd.GeoDataFrame(
@@ -228,24 +260,56 @@ def direct_building_counts(df: pd.DataFrame, mask: pd.Series) -> pd.DataFrame:
             continue
         groups = nearby["용도그룹"].value_counts()
         result.loc[target_index, "직접산출_주변건물수"] = count
-        result.loc[target_index, "직접산출_집중도"] = float(groups.iloc[0] / count * 100)
+        result.loc[target_index, "직접산출_집중도"] = float(
+            groups.iloc[0] / count * 100
+        )
     return result
 
 
-def repair_target(path: Path, coord_best: pd.DataFrame, coord_only_best: pd.DataFrame, name_best: pd.DataFrame) -> dict:
+def repair_target(
+    path: Path,
+    coord_best: pd.DataFrame,
+    coord_only_best: pd.DataFrame,
+    name_best: pd.DataFrame,
+) -> dict:
     df = pd.read_csv(path, encoding="utf-8-sig")
     name_col = "숙소명" if "숙소명" in df.columns else "업소명"
     df["_name_key"] = df[name_col].map(norm_name)
-    df["_lat_key"] = pd.to_numeric(df["위도"], errors="coerce").round(6) if "위도" in df.columns else np.nan
-    df["_lon_key"] = pd.to_numeric(df["경도"], errors="coerce").round(6) if "경도" in df.columns else np.nan
+    df["_lat_key"] = (
+        pd.to_numeric(df["위도"], errors="coerce").round(6)
+        if "위도" in df.columns
+        else np.nan
+    )
+    df["_lon_key"] = (
+        pd.to_numeric(df["경도"], errors="coerce").round(6)
+        if "경도" in df.columns
+        else np.nan
+    )
 
-    original = pd.to_numeric(df["주변건물수"], errors="coerce") if "주변건물수" in df.columns else pd.Series(np.nan, index=df.index)
-    original_conc = pd.to_numeric(df["집중도"], errors="coerce") if "집중도" in df.columns else pd.Series(np.nan, index=df.index)
+    original = (
+        pd.to_numeric(df["주변건물수"], errors="coerce")
+        if "주변건물수" in df.columns
+        else pd.Series(np.nan, index=df.index)
+    )
+    original_conc = (
+        pd.to_numeric(df["집중도"], errors="coerce")
+        if "집중도" in df.columns
+        else pd.Series(np.nan, index=df.index)
+    )
     suspect = original.eq(0) | original_conc.eq(0) | original.isna()
 
     merged = df.merge(
         coord_best[
-            ["_name_key", "_lat_key", "_lon_key", "후보_주변건물수", "후보_집중도", "후보_파일", "후보_컬럼", "후보_우선순위"]
+            [
+                "_name_key",
+                "_lat_key",
+                "_lon_key",
+                "후보_주변건물수",
+                "후보_집중도",
+                "후보_파일",
+                "후보_컬럼",
+                "후보_우선순위",
+            ]
         ],
         on=["_name_key", "_lat_key", "_lon_key"],
         how="left",
@@ -255,44 +319,85 @@ def repair_target(path: Path, coord_best: pd.DataFrame, coord_only_best: pd.Data
     ).le(0)
     coord_only_merge = df[["_lat_key", "_lon_key"]].merge(
         coord_only_best[
-            ["_lat_key", "_lon_key", "후보_주변건물수", "후보_집중도", "후보_파일", "후보_컬럼", "후보_우선순위"]
+            [
+                "_lat_key",
+                "_lon_key",
+                "후보_주변건물수",
+                "후보_집중도",
+                "후보_파일",
+                "후보_컬럼",
+                "후보_우선순위",
+            ]
         ],
         on=["_lat_key", "_lon_key"],
         how="left",
     )
-    for col in ["후보_주변건물수", "후보_집중도", "후보_파일", "후보_컬럼", "후보_우선순위"]:
+    for col in [
+        "후보_주변건물수",
+        "후보_집중도",
+        "후보_파일",
+        "후보_컬럼",
+        "후보_우선순위",
+    ]:
         merged.loc[no_coord, col] = coord_only_merge.loc[no_coord, col].to_numpy()
 
     no_coord = merged["후보_주변건물수"].isna() | pd.to_numeric(
         merged["후보_주변건물수"], errors="coerce"
     ).le(0)
     name_merge = df[["_name_key"]].merge(
-        name_best[["_name_key", "후보_주변건물수", "후보_집중도", "후보_파일", "후보_컬럼", "후보_우선순위"]],
+        name_best[
+            [
+                "_name_key",
+                "후보_주변건물수",
+                "후보_집중도",
+                "후보_파일",
+                "후보_컬럼",
+                "후보_우선순위",
+            ]
+        ],
         on="_name_key",
         how="left",
     )
-    for col in ["후보_주변건물수", "후보_집중도", "후보_파일", "후보_컬럼", "후보_우선순위"]:
+    for col in [
+        "후보_주변건물수",
+        "후보_집중도",
+        "후보_파일",
+        "후보_컬럼",
+        "후보_우선순위",
+    ]:
         merged.loc[no_coord, col] = name_merge.loc[no_coord, col].to_numpy()
 
     no_candidate = merged["후보_주변건물수"].isna() | pd.to_numeric(
         merged["후보_주변건물수"], errors="coerce"
     ).le(0)
-    needs_nearest = suspect & no_candidate & df["_lat_key"].notna() & df["_lon_key"].notna()
+    needs_nearest = (
+        suspect & no_candidate & df["_lat_key"].notna() & df["_lon_key"].notna()
+    )
     nearest_source = coord_only_best.dropna(subset=["_lat_key", "_lon_key"]).copy()
     nearest_source = nearest_source[
         pd.to_numeric(nearest_source["후보_주변건물수"], errors="coerce").gt(0)
     ].copy()
     if needs_nearest.any() and len(nearest_source):
-        source_rad = np.deg2rad(nearest_source[["_lat_key", "_lon_key"]].to_numpy(dtype=float))
+        source_rad = np.deg2rad(
+            nearest_source[["_lat_key", "_lon_key"]].to_numpy(dtype=float)
+        )
         tree = BallTree(source_rad, metric="haversine")
-        target_rad = np.deg2rad(df.loc[needs_nearest, ["_lat_key", "_lon_key"]].to_numpy(dtype=float))
+        target_rad = np.deg2rad(
+            df.loc[needs_nearest, ["_lat_key", "_lon_key"]].to_numpy(dtype=float)
+        )
         dist_rad, idx = tree.query(target_rad, k=1)
         dist_m = dist_rad[:, 0] * 6371000
         target_idx = df.index[needs_nearest]
         source_rows = nearest_source.iloc[idx[:, 0]].reset_index(drop=True)
         close = dist_m <= 30
         close_target_idx = target_idx[close]
-        for col in ["후보_주변건물수", "후보_집중도", "후보_파일", "후보_컬럼", "후보_우선순위"]:
+        for col in [
+            "후보_주변건물수",
+            "후보_집중도",
+            "후보_파일",
+            "후보_컬럼",
+            "후보_우선순위",
+        ]:
             merged.loc[close_target_idx, col] = source_rows.loc[close, col].to_numpy()
         merged.loc[close_target_idx, "후보_파일"] = (
             source_rows.loc[close, "후보_파일"].astype(str).to_numpy()
@@ -309,32 +414,62 @@ def repair_target(path: Path, coord_best: pd.DataFrame, coord_only_best: pd.Data
     direct_ok = direct["직접산출_주변건물수"].notna()
     if direct_ok.any():
         direct_idx = direct.index[direct_ok]
-        merged.loc[direct_idx, "후보_주변건물수"] = direct.loc[direct_idx, "직접산출_주변건물수"].to_numpy()
-        merged.loc[direct_idx, "후보_집중도"] = direct.loc[direct_idx, "직접산출_집중도"].to_numpy()
-        merged.loc[direct_idx, "후보_파일"] = str(BUILDING_SHP.relative_to(BASE)) + " (직접 50m 재산출)"
+        merged.loc[direct_idx, "후보_주변건물수"] = direct.loc[
+            direct_idx, "직접산출_주변건물수"
+        ].to_numpy()
+        merged.loc[direct_idx, "후보_집중도"] = direct.loc[
+            direct_idx, "직접산출_집중도"
+        ].to_numpy()
+        merged.loc[direct_idx, "후보_파일"] = (
+            str(BUILDING_SHP.relative_to(BASE)) + " (직접 50m 재산출)"
+        )
         merged.loc[direct_idx, "후보_컬럼"] = "건물중심점_50m_count"
         merged.loc[direct_idx, "후보_우선순위"] = 120
 
-    can_fill = suspect & merged["후보_주변건물수"].notna() & pd.to_numeric(merged["후보_주변건물수"], errors="coerce").gt(0)
-    repaired = df.drop(columns=["_name_key", "_lat_key", "_lon_key"], errors="ignore").copy()
+    can_fill = (
+        suspect
+        & merged["후보_주변건물수"].notna()
+        & pd.to_numeric(merged["후보_주변건물수"], errors="coerce").gt(0)
+    )
+    repaired = df.drop(
+        columns=["_name_key", "_lat_key", "_lon_key"], errors="ignore"
+    ).copy()
     repaired["주변건물수_원본"] = original
     repaired["집중도_원본"] = original_conc
-    repaired["주변건물수_보정여부"] = np.where(can_fill, "보정", np.where(suspect, "검토필요", "원본유지"))
+    repaired["주변건물수_보정여부"] = np.where(
+        can_fill, "보정", np.where(suspect, "검토필요", "원본유지")
+    )
     repaired["주변건물수_보정출처"] = np.where(can_fill, merged["후보_파일"], "")
     repaired["주변건물수_보정컬럼"] = np.where(can_fill, merged["후보_컬럼"], "")
-    repaired.loc[can_fill, "주변건물수"] = pd.to_numeric(merged.loc[can_fill, "후보_주변건물수"], errors="coerce")
+    repaired.loc[can_fill, "주변건물수"] = pd.to_numeric(
+        merged.loc[can_fill, "후보_주변건물수"], errors="coerce"
+    )
 
     if "집중도" in repaired.columns:
-        fill_conc = can_fill & pd.to_numeric(merged["후보_집중도"], errors="coerce").notna() & pd.to_numeric(merged["후보_집중도"], errors="coerce").gt(0)
-        repaired.loc[fill_conc, "집중도"] = pd.to_numeric(merged.loc[fill_conc, "후보_집중도"], errors="coerce")
+        fill_conc = (
+            can_fill
+            & pd.to_numeric(merged["후보_집중도"], errors="coerce").notna()
+            & pd.to_numeric(merged["후보_집중도"], errors="coerce").gt(0)
+        )
+        repaired.loc[fill_conc, "집중도"] = pd.to_numeric(
+            merged.loc[fill_conc, "후보_집중도"], errors="coerce"
+        )
 
     remaining = repaired["주변건물수_보정여부"].eq("검토필요")
-    reliable = repaired["주변건물수_보정여부"].isin(["원본유지", "보정"]) & pd.to_numeric(
-        repaired["주변건물수"], errors="coerce"
-    ).gt(0)
+    reliable = repaired["주변건물수_보정여부"].isin(
+        ["원본유지", "보정"]
+    ) & pd.to_numeric(repaired["주변건물수"], errors="coerce").gt(0)
     if remaining.any() and reliable.any():
-        global_count = float(pd.to_numeric(repaired.loc[reliable, "주변건물수"], errors="coerce").median())
-        global_conc = float(pd.to_numeric(repaired.loc[reliable, "집중도"], errors="coerce").replace(0, np.nan).median())
+        global_count = float(
+            pd.to_numeric(
+                repaired.loc[reliable, "주변건물수"], errors="coerce"
+            ).median()
+        )
+        global_conc = float(
+            pd.to_numeric(repaired.loc[reliable, "집중도"], errors="coerce")
+            .replace(0, np.nan)
+            .median()
+        )
         for idx in repaired.index[remaining]:
             row = repaired.loc[idx]
             count_value = np.nan
@@ -352,7 +487,9 @@ def repair_target(path: Path, coord_best: pd.DataFrame, coord_only_best: pd.Data
                 for key in keys:
                     subset &= repaired[key].eq(row[key])
                 if subset.any():
-                    count_value = pd.to_numeric(repaired.loc[subset, "주변건물수"], errors="coerce").median()
+                    count_value = pd.to_numeric(
+                        repaired.loc[subset, "주변건물수"], errors="coerce"
+                    ).median()
                     conc_value = (
                         pd.to_numeric(repaired.loc[subset, "집중도"], errors="coerce")
                         .replace(0, np.nan)
@@ -413,7 +550,9 @@ def repair_target(path: Path, coord_best: pd.DataFrame, coord_only_best: pd.Data
         "suspect_rows": int(suspect.sum()),
         "filled_rows": int(can_fill.sum()),
         "estimated_rows": int((repaired["주변건물수_보정여부"] == "통계추정").sum()),
-        "still_review_needed": int((repaired["주변건물수_보정여부"] == "검토필요").sum()),
+        "still_review_needed": int(
+            (repaired["주변건물수_보정여부"] == "검토필요").sum()
+        ),
     }
 
 
@@ -424,7 +563,11 @@ def main() -> None:
         raise RuntimeError("주변건물수 후보 파일을 찾지 못했습니다.")
 
     coord_best, coord_only_best, name_best = best_candidates(candidates)
-    summaries = [repair_target(path, coord_best, coord_only_best, name_best) for path in TARGET_FILES if path.exists()]
+    summaries = [
+        repair_target(path, coord_best, coord_only_best, name_best)
+        for path in TARGET_FILES
+        if path.exists()
+    ]
 
     summary = {
         "inventory_files": int(len(inventory)),

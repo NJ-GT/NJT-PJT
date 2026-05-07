@@ -47,7 +47,9 @@ def build_result() -> pd.DataFrame:
 
     features = list(WEIGHTS.keys())
     x = df[features].apply(pd.to_numeric, errors="coerce").fillna(0)
-    scaled = pd.DataFrame(MinMaxScaler().fit_transform(x), columns=features, index=df.index)
+    scaled = pd.DataFrame(
+        MinMaxScaler().fit_transform(x), columns=features, index=df.index
+    )
 
     # Renormalize weights after excluding area so the score remains on a 0-100 scale.
     weight_sum = sum(WEIGHTS.values())
@@ -61,8 +63,7 @@ def build_result() -> pd.DataFrame:
         df.groupby("cluster_k3_연면적제외")["최종_화재위험점수_연면적제외"]
         .mean()
         .sort_values()
-        .index
-        .tolist()
+        .index.tolist()
     )
     label_map = {cluster: label for cluster, label in zip(order, RISK_LABELS)}
     df["위험군_연면적제외"] = df["cluster_k3_연면적제외"].map(label_map)
@@ -110,7 +111,9 @@ def main() -> None:
                 fontweight="bold",
             )
 
-        mean_score = df.loc[df["위험군_연면적제외"].eq(label), "최종_화재위험점수_연면적제외"].mean()
+        mean_score = df.loc[
+            df["위험군_연면적제외"].eq(label), "최종_화재위험점수_연면적제외"
+        ].mean()
         count = int(df["위험군_연면적제외"].eq(label).sum())
         ax.set_title(
             f"{label}\nN={count:,} | 평균 {mean_score:.1f}점",

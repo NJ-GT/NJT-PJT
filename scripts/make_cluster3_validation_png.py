@@ -117,9 +117,19 @@ def main() -> None:
     ax = fig.add_axes([0, 0, 1, 1])
     ax.set_axis_off()
 
-    ax.add_patch(Rectangle((0, 0.78), 1, 0.22, transform=ax.transAxes, color="#0F172A", zorder=0))
     ax.add_patch(
-        Rectangle((0, 0.765), 1, 0.015, transform=ax.transAxes, color="#38BDF8", zorder=0, alpha=0.8)
+        Rectangle((0, 0.78), 1, 0.22, transform=ax.transAxes, color="#0F172A", zorder=0)
+    )
+    ax.add_patch(
+        Rectangle(
+            (0, 0.765),
+            1,
+            0.015,
+            transform=ax.transAxes,
+            color="#38BDF8",
+            zorder=0,
+            alpha=0.8,
+        )
     )
     ax.text(
         0.055,
@@ -156,10 +166,27 @@ def main() -> None:
 
     xs = [0.075, 0.365, 0.655]
     for x, title in zip(xs, values):
-        add_card(ax, x, 0.32, 0.255, 0.34, title, values[title], hints[title], colors[title])
+        add_card(
+            ax, x, 0.32, 0.255, 0.34, title, values[title], hints[title], colors[title]
+        )
 
-    ax.text(0.075, 0.245, "군집 구성", transform=ax.transAxes, fontsize=16, color="#0F172A", weight="bold")
-    ax.text(0.075, 0.213, "총 4,246개 숙박시설 · 3개 군집", transform=ax.transAxes, fontsize=12.5, color="#64748B")
+    ax.text(
+        0.075,
+        0.245,
+        "군집 구성",
+        transform=ax.transAxes,
+        fontsize=16,
+        color="#0F172A",
+        weight="bold",
+    )
+    ax.text(
+        0.075,
+        0.213,
+        "총 4,246개 숙박시설 · 3개 군집",
+        transform=ax.transAxes,
+        fontsize=12.5,
+        color="#64748B",
+    )
 
     bar_x, bar_y, bar_w, bar_h = 0.32, 0.205, 0.56, 0.045
     total = sum(counts.values())
@@ -167,7 +194,16 @@ def main() -> None:
     cluster_colors = ["#60A5FA", "#34D399", "#FBBF24"]
     for idx, (cid, cnt) in enumerate(counts.items()):
         width = bar_w * cnt / total
-        ax.add_patch(Rectangle((start, bar_y), width, bar_h, transform=ax.transAxes, color=cluster_colors[idx], zorder=4))
+        ax.add_patch(
+            Rectangle(
+                (start, bar_y),
+                width,
+                bar_h,
+                transform=ax.transAxes,
+                color=cluster_colors[idx],
+                zorder=4,
+            )
+        )
         ax.text(
             start + width / 2,
             bar_y + bar_h / 2,
@@ -182,7 +218,16 @@ def main() -> None:
         )
         start += width
     ax.add_patch(
-        Rectangle((bar_x, bar_y), bar_w, bar_h, transform=ax.transAxes, fill=False, edgecolor="#CBD5E1", linewidth=1.0, zorder=6)
+        Rectangle(
+            (bar_x, bar_y),
+            bar_w,
+            bar_h,
+            transform=ax.transAxes,
+            fill=False,
+            edgecolor="#CBD5E1",
+            linewidth=1.0,
+            zorder=6,
+        )
     )
 
     strip = FancyBboxPatch(
@@ -197,7 +242,16 @@ def main() -> None:
         zorder=3,
     )
     ax.add_patch(strip)
-    ax.text(0.095, 0.143, "해석", transform=ax.transAxes, fontsize=12.5, color="#0F172A", weight="bold", va="center")
+    ax.text(
+        0.095,
+        0.143,
+        "해석",
+        transform=ax.transAxes,
+        fontsize=12.5,
+        color="#0F172A",
+        weight="bold",
+        va="center",
+    )
     ax.text(
         0.145,
         0.143,

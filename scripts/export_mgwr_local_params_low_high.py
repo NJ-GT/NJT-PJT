@@ -35,7 +35,9 @@ def as_bandwidth_list(raw_bw, expected_len: int) -> list[float]:
     return arr.tolist()
 
 
-def fit_group(df: pd.DataFrame, cluster_id: int, target: str, features: list[str]) -> pd.DataFrame:
+def fit_group(
+    df: pd.DataFrame, cluster_id: int, target: str, features: list[str]
+) -> pd.DataFrame:
     group = (
         df[df["cluster"] == cluster_id]
         .dropna(subset=["x_5181", "y_5181", target, *features])
@@ -48,18 +50,26 @@ def fit_group(df: pd.DataFrame, cluster_id: int, target: str, features: list[str
         sample = group.reset_index(drop=True)
     else:
         sample_n = min(SAMPLE_CAP, len(group))
-        sample = group.sample(n=sample_n, random_state=RANDOM_SEED).reset_index(drop=True)
+        sample = group.sample(n=sample_n, random_state=RANDOM_SEED).reset_index(
+            drop=True
+        )
     coords = sample[["x_5181", "y_5181"]].astype(float).to_numpy()
     y = sample[target].astype(float).to_numpy().reshape((-1, 1))
     scaler = StandardScaler()
     x = scaler.fit_transform(sample[features].astype(float).to_numpy())
 
-    selector = Sel_BW(coords, y, x, multi=True, kernel="bisquare", fixed=False, n_jobs=1)
+    selector = Sel_BW(
+        coords, y, x, multi=True, kernel="bisquare", fixed=False, n_jobs=1
+    )
     selector.search(verbose=False)
-    result = MGWR(coords, y, x, selector, kernel="bisquare", fixed=False, n_jobs=1).fit()
+    result = MGWR(
+        coords, y, x, selector, kernel="bisquare", fixed=False, n_jobs=1
+    ).fit()
     bandwidths = as_bandwidth_list(selector.bw, len(features) + 1)
 
-    out = sample[["구", "동", "숙소명", "위도", "경도", "x_5181", "y_5181", target, *features]].copy()
+    out = sample[
+        ["구", "동", "숙소명", "위도", "경도", "x_5181", "y_5181", target, *features]
+    ].copy()
     out.insert(0, "cluster", cluster_id)
     out.insert(1, "cluster_label", RISK_LABELS[cluster_id])
     try:

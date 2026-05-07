@@ -82,24 +82,30 @@ def load_facilities() -> gpd.GeoDataFrame:
     return gdf
 
 
-def aggregate_to_grid(grid: gpd.GeoDataFrame, facilities: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def aggregate_to_grid(
+    grid: gpd.GeoDataFrame, facilities: gpd.GeoDataFrame
+) -> gpd.GeoDataFrame:
     joined = gpd.sjoin(
         facilities,
         grid[["grid_id", "geometry"]],
         how="left",
         predicate="within",
     )
-    grouped = joined.dropna(subset=["grid_id"]).groupby("grid_id").agg(
-        facility_count=("업소명", "size"),
-        gu_count=("구", "nunique"),
-        fire_sum=("fire_100m", "sum"),
-        mean_fire_risk=("fire_risk", "mean"),
-        mean_building_age=("building_age", "mean"),
-        mean_nearby_buildings=("nearby_buildings", "mean"),
-        mean_density=("density", "mean"),
-        mean_enforcement=("enforcement", "mean"),
-        mean_road_risk=("road_risk", "mean"),
-        mean_structure_age=("structure_age", "mean"),
+    grouped = (
+        joined.dropna(subset=["grid_id"])
+        .groupby("grid_id")
+        .agg(
+            facility_count=("업소명", "size"),
+            gu_count=("구", "nunique"),
+            fire_sum=("fire_100m", "sum"),
+            mean_fire_risk=("fire_risk", "mean"),
+            mean_building_age=("building_age", "mean"),
+            mean_nearby_buildings=("nearby_buildings", "mean"),
+            mean_density=("density", "mean"),
+            mean_enforcement=("enforcement", "mean"),
+            mean_road_risk=("road_risk", "mean"),
+            mean_structure_age=("structure_age", "mean"),
+        )
     )
     out = grid.merge(grouped, on="grid_id", how="left")
     numeric = [
@@ -127,7 +133,9 @@ def build_weights(grid: gpd.GeoDataFrame, method: str):
         w = Queen.from_dataframe(grid, ids=grid["grid_id"].tolist(), use_index=False)
     elif method == "distance_500m":
         coords = np.column_stack([grid["centroid_x"], grid["centroid_y"]])
-        w = DistanceBand.from_array(coords, threshold=500, binary=True, ids=grid["grid_id"].tolist())
+        w = DistanceBand.from_array(
+            coords, threshold=500, binary=True, ids=grid["grid_id"].tolist()
+        )
     else:
         raise ValueError(method)
     w.transform = "r"
@@ -234,15 +242,21 @@ def main() -> None:
     for cell_size in (250, 500):
         grid = aggregate_to_grid(make_grid(boundary, cell_size), facilities)
         grids[cell_size] = grid
-        grid.to_crs("EPSG:4326").to_file(OUT / f"seoul_grid_{cell_size}m.geojson", driver="GeoJSON")
+        grid.to_crs("EPSG:4326").to_file(
+            OUT / f"seoul_grid_{cell_size}m.geojson", driver="GeoJSON"
+        )
         all_moran.append(moran_rows(grid, "queen", "Queen"))
         all_models.extend(model_rows(grid, "queen", "Queen"))
 
     all_moran.append(moran_rows(grids[250], "distance_500m", "DistanceBand 500m"))
     all_models.extend(model_rows(grids[250], "distance_500m", "DistanceBand 500m"))
 
-    pd.DataFrame(all_moran).to_csv(OUT / "grid_moran_summary.csv", index=False, encoding="utf-8-sig")
-    pd.DataFrame(all_models).to_csv(OUT / "grid_model_comparison.csv", index=False, encoding="utf-8-sig")
+    pd.DataFrame(all_moran).to_csv(
+        OUT / "grid_moran_summary.csv", index=False, encoding="utf-8-sig"
+    )
+    pd.DataFrame(all_models).to_csv(
+        OUT / "grid_model_comparison.csv", index=False, encoding="utf-8-sig"
+    )
     metadata = {
         "boundary": str(SEOUL_BOUNDARY.relative_to(BASE)),
         "facility_source": str(FACILITY_SOURCE.relative_to(BASE)),
@@ -258,7 +272,9 @@ def main() -> None:
             "500m grid robustness check",
         ],
     }
-    (OUT / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+    (OUT / "metadata.json").write_text(
+        json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(f"saved: {OUT}")
 
 

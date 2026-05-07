@@ -49,7 +49,9 @@ def set_korean_font() -> None:
 
 
 def read_data() -> pd.DataFrame:
-    csv_files = sorted(DATA_DIR.glob("*.csv"), key=lambda p: p.stat().st_size, reverse=True)
+    csv_files = sorted(
+        DATA_DIR.glob("*.csv"), key=lambda p: p.stat().st_size, reverse=True
+    )
     if not csv_files:
         raise FileNotFoundError(f"No CSV files found in {DATA_DIR}")
     df = pd.read_csv(csv_files[0], encoding="utf-8-sig")
@@ -81,7 +83,9 @@ def main() -> None:
     means = df.groupby("cluster")[FEATURES].mean().sort_index()
     relative = minmax_by_feature(means)
     relative.columns = [FEATURE_LABELS[c] for c in relative.columns]
-    relative.index = [f"Cluster {idx}\n(n={counts.loc[idx]:,})" for idx in relative.index]
+    relative.index = [
+        f"Cluster {idx}\n(n={counts.loc[idx]:,})" for idx in relative.index
+    ]
 
     out_png = OUT_DIR / "군집3개_핵심근거_프로파일히트맵_0429.png"
     out_csv = OUT_DIR / "군집3개_핵심근거_변수평균표_0429.csv"
@@ -107,7 +111,9 @@ def main() -> None:
         annot_kws={"fontsize": 10, "weight": "bold"},
     )
 
-    ax.set_title("K=3 군집화 핵심 근거: 변수 평균 프로파일", fontsize=19, weight="bold", pad=18)
+    ax.set_title(
+        "K=3 군집화 핵심 근거: 변수 평균 프로파일", fontsize=19, weight="bold", pad=18
+    )
     ax.set_xlabel("")
     ax.set_ylabel("")
     ax.tick_params(axis="x", labelsize=10, rotation=0)

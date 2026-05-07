@@ -34,7 +34,12 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATA_PATH = ROOT / "data" / "최최최종0428변수테이블.csv"
 BUNDLE_DIR_150M = ROOT / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428"
 DATA_PATH = DEFAULT_DATA_PATH
-FIRE_TARGET_PATH = ROOT.parents[0] / "data" / "team_pipeline_validation" / "team_pipeline_scored_dataset.csv"
+FIRE_TARGET_PATH = (
+    ROOT.parents[0]
+    / "data"
+    / "team_pipeline_validation"
+    / "team_pipeline_scored_dataset.csv"
+)
 OUT_DIR = ROOT / "data" / "cluster3_spatial_pipeline_0428"
 
 TARGET = "최종_화재위험점수"
@@ -92,7 +97,9 @@ def read_dataset() -> pd.DataFrame:
     df = df[[c for c in needed if c in df.columns]].copy()
     for col in FEATURES + [TARGET, CLUSTER_COL] + COORD_COLS:
         df[col] = pd.to_numeric(df[col], errors="coerce")
-    return df.dropna(subset=FEATURES + [TARGET, CLUSTER_COL] + COORD_COLS).reset_index(drop=True)
+    return df.dropna(subset=FEATURES + [TARGET, CLUSTER_COL] + COORD_COLS).reset_index(
+        drop=True
+    )
 
 
 def standardize_x(df: pd.DataFrame) -> np.ndarray:
@@ -123,7 +130,9 @@ def sample_for_local_model(df: pd.DataFrame, cap: int) -> pd.DataFrame:
     return df.loc[np.sort(sampled_idx)].copy().reset_index(drop=True)
 
 
-def run_ols_moran(df: pd.DataFrame, cluster_id: int) -> tuple[dict, pd.DataFrame, np.ndarray]:
+def run_ols_moran(
+    df: pd.DataFrame, cluster_id: int
+) -> tuple[dict, pd.DataFrame, np.ndarray]:
     x = standardize_x(df)
     y = df[TARGET].to_numpy(dtype=float)
     coords = df[COORD_COLS].to_numpy(dtype=float)
@@ -155,7 +164,9 @@ def run_ols_moran(df: pd.DataFrame, cluster_id: int) -> tuple[dict, pd.DataFrame
     return summary, pd.DataFrame(coef_rows), model.resid
 
 
-def run_spatial_lag_error(df: pd.DataFrame, cluster_id: int) -> tuple[list[dict], dict[str, np.ndarray]]:
+def run_spatial_lag_error(
+    df: pd.DataFrame, cluster_id: int
+) -> tuple[list[dict], dict[str, np.ndarray]]:
     x = standardize_x(df)
     y = df[TARGET].to_numpy(dtype=float).reshape(-1, 1)
     coords = df[COORD_COLS].to_numpy(dtype=float)
@@ -204,10 +215,14 @@ def select_gwr_bw(coords: np.ndarray, y: np.ndarray, x: np.ndarray) -> float:
     bw_min = max(30, x.shape[1] + 3)
     bw_max = max(bw_min + 2, min(len(y) - 1, 420))
     selector = Sel_BW(coords, y, x, fixed=False, kernel="bisquare", n_jobs=1)
-    return float(selector.search(search_method="golden_section", bw_min=bw_min, bw_max=bw_max))
+    return float(
+        selector.search(search_method="golden_section", bw_min=bw_min, bw_max=bw_max)
+    )
 
 
-def run_gwr(df: pd.DataFrame, cluster_id: int) -> tuple[dict, pd.DataFrame, np.ndarray | None]:
+def run_gwr(
+    df: pd.DataFrame, cluster_id: int
+) -> tuple[dict, pd.DataFrame, np.ndarray | None]:
     work = sample_for_local_model(df, GWR_SAMPLE_CAP)
     coords = work[COORD_COLS].to_numpy(dtype=float)
     y = work[TARGET].to_numpy(dtype=float).reshape(-1, 1)
@@ -215,7 +230,9 @@ def run_gwr(df: pd.DataFrame, cluster_id: int) -> tuple[dict, pd.DataFrame, np.n
     t0 = time.time()
     try:
         bw = select_gwr_bw(coords, y, x)
-        result = GWR(coords, y, x, bw=bw, fixed=False, kernel="bisquare", n_jobs=1).fit()
+        result = GWR(
+            coords, y, x, bw=bw, fixed=False, kernel="bisquare", n_jobs=1
+        ).fit()
         resid = np.asarray(result.resid_response).flatten()
         w = build_weights(coords)
         moran = Moran(resid, w, permutations=MORAN_PERMUTATIONS)
@@ -271,14 +288,18 @@ def run_mgwr(df: pd.DataFrame, cluster_id: int) -> tuple[dict, pd.DataFrame]:
     x = standardize_x(work)
     t0 = time.time()
     try:
-        selector = Sel_BW(coords, y, x, multi=True, fixed=False, kernel="bisquare", n_jobs=1)
+        selector = Sel_BW(
+            coords, y, x, multi=True, fixed=False, kernel="bisquare", n_jobs=1
+        )
         selector.search(
             multi_bw_min=[max(30, x.shape[1] + 3)],
             multi_bw_max=[min(len(work) - 1, 180)],
             max_iter_multi=15,
             verbose=False,
         )
-        result = MGWR(coords, y, x, selector, fixed=False, kernel="bisquare", n_jobs=1).fit()
+        result = MGWR(
+            coords, y, x, selector, fixed=False, kernel="bisquare", n_jobs=1
+        ).fit()
         bw_values = np.asarray(selector.bw[0]).flatten()
         resid = np.asarray(result.resid_response).flatten()
         w = build_weights(coords)
@@ -343,7 +364,13 @@ def save_dashboard(
             color=colors.get(int(row["cluster"]), "#777777"),
             alpha=0.9,
         )
-        ax.text(str(int(row["cluster"])), row["ols_r2"], f"{row['ols_r2']:.3f}", ha="center", va="bottom")
+        ax.text(
+            str(int(row["cluster"])),
+            row["ols_r2"],
+            f"{row['ols_r2']:.3f}",
+            ha="center",
+            va="bottom",
+        )
     ax.set_title("OLS 설명력 by cluster")
     ax.set_xlabel("cluster")
     ax.set_ylabel("R-squared")
@@ -362,7 +389,9 @@ def save_dashboard(
     ax.legend(ncol=3, fontsize=9)
 
     ax = axes[1, 0]
-    bw_plot = model_summary[model_summary["model"].isin(["GWR", "MGWR"])].dropna(subset=["bandwidth"])
+    bw_plot = model_summary[model_summary["model"].isin(["GWR", "MGWR"])].dropna(
+        subset=["bandwidth"]
+    )
     width = 0.34
     clusters = sorted(ols_summary["cluster"].astype(int).unique())
     for offset, model in [(-width / 2, "GWR"), (width / 2, "MGWR")]:
@@ -395,7 +424,10 @@ def save_dashboard(
     ax.set_ylabel("y_5181")
     ax.grid(alpha=0.15)
 
-    fig.suptitle(f"3군집 공간회귀 파이프라인: {TARGET} / OLS -> Moran's I -> SEM/SLM -> GWR/MGWR", fontsize=17)
+    fig.suptitle(
+        f"3군집 공간회귀 파이프라인: {TARGET} / OLS -> Moran's I -> SEM/SLM -> GWR/MGWR",
+        fontsize=17,
+    )
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     fig.savefig(out_path, dpi=220, bbox_inches="tight")
     plt.close(fig)
@@ -466,7 +498,9 @@ def main() -> None:
         spatial_rows, _ = run_spatial_lag_error(sub, cluster_id)
         model_rows.extend(spatial_rows)
         for row in spatial_rows:
-            print(f"{row['model']} fit={row['fit']:.4f}, Moran I={row['resid_moran_I']:.4f}, {row['status']}")
+            print(
+                f"{row['model']} fit={row['fit']:.4f}, Moran I={row['resid_moran_I']:.4f}, {row['status']}"
+            )
 
         gwr_summary, local_df, _ = run_gwr(sub, cluster_id)
         model_rows.append(gwr_summary)
@@ -489,14 +523,34 @@ def main() -> None:
     ols_summary_df = pd.DataFrame(ols_rows)
     coef_df = pd.concat(coef_tables, ignore_index=True)
     model_summary_df = pd.DataFrame(model_rows)
-    gwr_local_df = pd.concat(local_tables, ignore_index=True) if local_tables else pd.DataFrame()
-    mgwr_bw_df = pd.concat(mgwr_bw_tables, ignore_index=True) if mgwr_bw_tables else pd.DataFrame()
+    gwr_local_df = (
+        pd.concat(local_tables, ignore_index=True) if local_tables else pd.DataFrame()
+    )
+    mgwr_bw_df = (
+        pd.concat(mgwr_bw_tables, ignore_index=True)
+        if mgwr_bw_tables
+        else pd.DataFrame()
+    )
 
-    ols_summary_df.to_csv(OUT_DIR / "ols_moran_by_cluster.csv", index=False, encoding="utf-8-sig")
-    coef_df.to_csv(OUT_DIR / "ols_coefficients_by_cluster.csv", index=False, encoding="utf-8-sig")
-    model_summary_df.to_csv(OUT_DIR / "spatial_model_summary_by_cluster.csv", index=False, encoding="utf-8-sig")
-    gwr_local_df.to_csv(OUT_DIR / "gwr_local_diagnostics_by_cluster.csv", index=False, encoding="utf-8-sig")
-    mgwr_bw_df.to_csv(OUT_DIR / "mgwr_bandwidth_by_variable.csv", index=False, encoding="utf-8-sig")
+    ols_summary_df.to_csv(
+        OUT_DIR / "ols_moran_by_cluster.csv", index=False, encoding="utf-8-sig"
+    )
+    coef_df.to_csv(
+        OUT_DIR / "ols_coefficients_by_cluster.csv", index=False, encoding="utf-8-sig"
+    )
+    model_summary_df.to_csv(
+        OUT_DIR / "spatial_model_summary_by_cluster.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    gwr_local_df.to_csv(
+        OUT_DIR / "gwr_local_diagnostics_by_cluster.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    mgwr_bw_df.to_csv(
+        OUT_DIR / "mgwr_bandwidth_by_variable.csv", index=False, encoding="utf-8-sig"
+    )
 
     metadata = {
         "input": str(DATA_PATH),
@@ -510,9 +564,16 @@ def main() -> None:
         "mgwr_sample_cap": MGWR_SAMPLE_CAP,
         "note": "GWR/MGWR use adaptive bisquare bandwidth search. Large clusters are sampled for local models to keep the run reproducible on a laptop.",
     }
-    (OUT_DIR / "metadata.json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+    (OUT_DIR / "metadata.json").write_text(
+        json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
-    save_dashboard(model_summary_df, ols_summary_df, gwr_local_df, OUT_DIR / "cluster3_spatial_pipeline_dashboard.png")
+    save_dashboard(
+        model_summary_df,
+        ols_summary_df,
+        gwr_local_df,
+        OUT_DIR / "cluster3_spatial_pipeline_dashboard.png",
+    )
     print(f"\nSaved results to: {OUT_DIR}")
 
 

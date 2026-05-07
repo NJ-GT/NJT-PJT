@@ -45,7 +45,9 @@ def clean_text_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def prepare_data(csv_path: Path, start_year: int | None, end_year: int | None) -> pd.DataFrame:
+def prepare_data(
+    csv_path: Path, start_year: int | None, end_year: int | None
+) -> pd.DataFrame:
     df = clean_text_columns(read_csv_robust(csv_path))
 
     numeric_cols = [
@@ -74,7 +76,12 @@ def prepare_data(csv_path: Path, start_year: int | None, end_year: int | None) -
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    date_text = df["발생일자"].astype("string").str.replace(r"\.0$", "", regex=True).str.zfill(8)
+    date_text = (
+        df["발생일자"]
+        .astype("string")
+        .str.replace(r"\.0$", "", regex=True)
+        .str.zfill(8)
+    )
     df["발생일자_dt"] = pd.to_datetime(date_text, format="%Y%m%d", errors="coerce")
     df["발생연월"] = df["발생일자_dt"].dt.to_period("M").dt.to_timestamp()
     df["출동소요시간_분"] = df["출동소요시간"] / 60
@@ -92,12 +99,16 @@ def prepare_data(csv_path: Path, start_year: int | None, end_year: int | None) -
 def write_plotly(fig: go.Figure, out_path: Path) -> Path:
     fig.update_layout(
         template="plotly_white",
-        font=dict(family="Malgun Gothic, Apple SD Gothic Neo, Arial, sans-serif", size=13),
+        font=dict(
+            family="Malgun Gothic, Apple SD Gothic Neo, Arial, sans-serif", size=13
+        ),
         title=dict(x=0.02, xanchor="left"),
         margin=dict(l=48, r=28, t=72, b=48),
         colorway=COLOR_SEQUENCE,
     )
-    pio.write_html(fig, out_path, include_plotlyjs=True, full_html=True, config=PLOTLY_CONFIG)
+    pio.write_html(
+        fig, out_path, include_plotlyjs=True, full_html=True, config=PLOTLY_CONFIG
+    )
     return out_path
 
 
@@ -117,7 +128,9 @@ def viz_01_monthly_trend(df: pd.DataFrame, out_dir: Path) -> Path:
         title="연도-월별 화재 발생 추세",
         labels={"발생연월": "발생 연월", "화재건수": "화재 건수"},
     )
-    fig.update_traces(line=dict(width=3, color="#2563eb"), marker=dict(size=7, color="#dc2626"))
+    fig.update_traces(
+        line=dict(width=3, color="#2563eb"), marker=dict(size=7, color="#dc2626")
+    )
     fig.update_xaxes(rangeslider_visible=True)
     return write_plotly(fig, out_dir / "01_year_month_fire_trend.html")
 
@@ -171,9 +184,13 @@ def viz_03_district_map(df: pd.DataFrame, out_dir: Path) -> Path:
     m = folium.Map(location=center, zoom_start=11, tiles="CartoDB positron")
 
     heat_data = geo[["위도", "경도"]].dropna().values.tolist()
-    HeatMap(heat_data, name="전체 화재 밀도", radius=14, blur=18, min_opacity=0.25).add_to(m)
+    HeatMap(
+        heat_data, name="전체 화재 밀도", radius=14, blur=18, min_opacity=0.25
+    ).add_to(m)
 
-    colormap = linear.YlOrRd_09.scale(gu_stats["화재건수"].min(), gu_stats["화재건수"].max())
+    colormap = linear.YlOrRd_09.scale(
+        gu_stats["화재건수"].min(), gu_stats["화재건수"].max()
+    )
     colormap.caption = "구별 화재 건수"
     colormap.add_to(m)
 
@@ -203,7 +220,9 @@ def viz_03_district_map(df: pd.DataFrame, out_dir: Path) -> Path:
 
     out_path = out_dir / "03_district_fire_map.html"
     m.save(out_path)
-    gu_stats.to_csv(out_dir / "03_district_fire_summary.csv", index=False, encoding="utf-8-sig")
+    gu_stats.to_csv(
+        out_dir / "03_district_fire_summary.csv", index=False, encoding="utf-8-sig"
+    )
     return out_path
 
 
@@ -228,7 +247,9 @@ def viz_04_cause_top10(df: pd.DataFrame, out_dir: Path) -> Path:
         labels={"화재건수": "화재 건수", "발화요인_대분류": "발화요인"},
         text="화재건수",
     )
-    fig.update_traces(texttemplate="%{text:,}건", textposition="outside", cliponaxis=False)
+    fig.update_traces(
+        texttemplate="%{text:,}건", textposition="outside", cliponaxis=False
+    )
     fig.update_layout(coloraxis_showscale=False)
     return write_plotly(fig, out_dir / "04_top10_fire_causes.html")
 
@@ -239,7 +260,8 @@ def viz_05_response_vs_distance(df: pd.DataFrame, out_dir: Path) -> Path:
     distance_cap = scatter["현장거리(km)"].quantile(0.99)
     response_cap = scatter["출동소요시간_분"].quantile(0.99)
     plot_df = scatter[
-        (scatter["현장거리(km)"] <= distance_cap) & (scatter["출동소요시간_분"] <= response_cap)
+        (scatter["현장거리(km)"] <= distance_cap)
+        & (scatter["출동소요시간_분"] <= response_cap)
     ].copy()
     if len(plot_df) > 9000:
         plot_df = plot_df.sample(9000, random_state=42)
@@ -258,8 +280,12 @@ def viz_05_response_vs_distance(df: pd.DataFrame, out_dir: Path) -> Path:
 
     line_df = plot_df[["현장거리(km)", "출동소요시간_분"]].dropna()
     if len(line_df) >= 2:
-        slope, intercept = np.polyfit(line_df["현장거리(km)"], line_df["출동소요시간_분"], 1)
-        x_line = np.linspace(line_df["현장거리(km)"].min(), line_df["현장거리(km)"].max(), 100)
+        slope, intercept = np.polyfit(
+            line_df["현장거리(km)"], line_df["출동소요시간_분"], 1
+        )
+        x_line = np.linspace(
+            line_df["현장거리(km)"].min(), line_df["현장거리(km)"].max(), 100
+        )
         y_line = slope * x_line + intercept
         fig.add_trace(
             go.Scatter(
@@ -296,7 +322,11 @@ def viz_06_high_damage_map(df: pd.DataFrame, out_dir: Path) -> Path:
     )
     top["재산피해액_백만원"] = top["재산피해액(천원)"] / 1000
 
-    center = [top["위도"].median(), top["경도"].median()] if len(top) else [37.5665, 126.9780]
+    center = (
+        [top["위도"].median(), top["경도"].median()]
+        if len(top)
+        else [37.5665, 126.9780]
+    )
     m = folium.Map(location=center, zoom_start=11, tiles="CartoDB positron")
     cluster = MarkerCluster(name="재산피해 TOP 100").add_to(m)
 
@@ -388,7 +418,9 @@ def viz_06_high_damage_map(df: pd.DataFrame, out_dir: Path) -> Path:
     return out_path
 
 
-def write_summary(df: pd.DataFrame, csv_path: Path, out_dir: Path, outputs: list[Path]) -> Path:
+def write_summary(
+    df: pd.DataFrame, csv_path: Path, out_dir: Path, outputs: list[Path]
+) -> Path:
     summary = {
         "source_csv": str(csv_path),
         "row_count": int(len(df)),
@@ -399,12 +431,22 @@ def write_summary(df: pd.DataFrame, csv_path: Path, out_dir: Path, outputs: list
             for k, v in df.groupby("발생연도").size().sort_index().items()
             if pd.notna(k)
         },
-        "top_districts": df.groupby("발생시군구").size().sort_values(ascending=False).head(10).to_dict(),
-        "top_causes": df.groupby("발화요인_대분류").size().sort_values(ascending=False).head(10).to_dict(),
+        "top_districts": df.groupby("발생시군구")
+        .size()
+        .sort_values(ascending=False)
+        .head(10)
+        .to_dict(),
+        "top_causes": df.groupby("발화요인_대분류")
+        .size()
+        .sort_values(ascending=False)
+        .head(10)
+        .to_dict(),
         "outputs": [p.name for p in outputs],
     }
     out_path = out_dir / "summary.json"
-    out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return out_path
 
 
@@ -418,7 +460,8 @@ def write_index(out_dir: Path, outputs: list[Path], summary_path: Path) -> Path:
         "06_high_damage_fire_map_and_ranking.html": "6. 재산피해액 TOP 화재 지도/랭킹",
     }
     items = "\n".join(
-        f'<li><a href="{path.name}">{labels.get(path.name, path.name)}</a></li>' for path in outputs
+        f'<li><a href="{path.name}">{labels.get(path.name, path.name)}</a></li>'
+        for path in outputs
     )
     html = f"""<!doctype html>
 <html lang="ko">
@@ -492,11 +535,21 @@ def write_index(out_dir: Path, outputs: list[Path], summary_path: Path) -> Path:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build six fire-dispatch visualizations.")
-    parser.add_argument("--csv", type=Path, default=DEFAULT_CSV, help="Input fire dispatch CSV path")
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="Output directory")
-    parser.add_argument("--start-year", type=int, default=None, help="Optional inclusive start year")
-    parser.add_argument("--end-year", type=int, default=None, help="Optional inclusive end year")
+    parser = argparse.ArgumentParser(
+        description="Build six fire-dispatch visualizations."
+    )
+    parser.add_argument(
+        "--csv", type=Path, default=DEFAULT_CSV, help="Input fire dispatch CSV path"
+    )
+    parser.add_argument(
+        "--out", type=Path, default=DEFAULT_OUT, help="Output directory"
+    )
+    parser.add_argument(
+        "--start-year", type=int, default=None, help="Optional inclusive start year"
+    )
+    parser.add_argument(
+        "--end-year", type=int, default=None, help="Optional inclusive end year"
+    )
     return parser.parse_args()
 
 

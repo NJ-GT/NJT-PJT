@@ -154,8 +154,13 @@ def main() -> int:
         cache[road] = geocode_road(session, road)
         if idx % 100 == 0 or idx == len(missing_roads):
             save_cache(cache)
-            success = sum(1 for row in cache.values() if row.get("좌표조회결과") == "성공")
-            print(f"Geocoded {idx}/{len(missing_roads)} new roads, success cache={success}", flush=True)
+            success = sum(
+                1 for row in cache.values() if row.get("좌표조회결과") == "성공"
+            )
+            print(
+                f"Geocoded {idx}/{len(missing_roads)} new roads, success cache={success}",
+                flush=True,
+            )
         time.sleep(REQUEST_DELAY)
 
     save_cache(cache)

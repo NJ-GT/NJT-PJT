@@ -10,8 +10,16 @@ from spreg import ML_Lag
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA_PATH = ROOT / "0424" / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428" / "최최최종0428변수테이블.csv"
-FIRE_TARGET_PATH = ROOT / "data" / "team_pipeline_validation" / "team_pipeline_scored_dataset.csv"
+DATA_PATH = (
+    ROOT
+    / "0424"
+    / "data"
+    / "cluster3_spatial_pipeline_fire_count_150m_0428"
+    / "최최최종0428변수테이블.csv"
+)
+FIRE_TARGET_PATH = (
+    ROOT / "data" / "team_pipeline_validation" / "team_pipeline_scored_dataset.csv"
+)
 OUT_PATH = ROOT / "0429" / "slm_rho_k12_fire_count_150m_by_cluster.csv"
 
 TARGET = "fire_count_150m"
@@ -60,7 +68,9 @@ def main() -> None:
     df = attach_fire_target(df)
     for col in FEATURES + [TARGET, CLUSTER_COL] + COORD_COLS:
         df[col] = pd.to_numeric(df[col], errors="coerce")
-    df = df.dropna(subset=FEATURES + [TARGET, CLUSTER_COL] + COORD_COLS).reset_index(drop=True)
+    df = df.dropna(subset=FEATURES + [TARGET, CLUSTER_COL] + COORD_COLS).reset_index(
+        drop=True
+    )
 
     rows = []
     for cluster_id in sorted(df[CLUSTER_COL].astype(int).unique()):

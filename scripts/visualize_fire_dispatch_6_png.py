@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 from pathlib import Path
 
 import matplotlib
@@ -60,7 +59,9 @@ def clean_text_columns(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def prepare_data(csv_path: Path, start_year: int | None, end_year: int | None) -> pd.DataFrame:
+def prepare_data(
+    csv_path: Path, start_year: int | None, end_year: int | None
+) -> pd.DataFrame:
     df = clean_text_columns(read_csv_robust(csv_path))
 
     numeric_cols = [
@@ -89,7 +90,12 @@ def prepare_data(csv_path: Path, start_year: int | None, end_year: int | None) -
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    date_text = df["발생일자"].astype("string").str.replace(r"\.0$", "", regex=True).str.zfill(8)
+    date_text = (
+        df["발생일자"]
+        .astype("string")
+        .str.replace(r"\.0$", "", regex=True)
+        .str.zfill(8)
+    )
     df["발생일자_dt"] = pd.to_datetime(date_text, format="%Y%m%d", errors="coerce")
     df["발생연월"] = df["발생일자_dt"].dt.to_period("M").dt.to_timestamp()
     df["출동소요시간_분"] = df["출동소요시간"] / 60
@@ -111,7 +117,9 @@ def save_fig(fig: plt.Figure, out_path: Path) -> Path:
 
 
 def add_title(ax: plt.Axes, title: str, subtitle: str | None = None) -> None:
-    ax.set_title(title, loc="left", fontsize=17, fontweight="bold", pad=34 if subtitle else 16)
+    ax.set_title(
+        title, loc="left", fontsize=17, fontweight="bold", pad=34 if subtitle else 16
+    )
     if subtitle:
         ax.text(
             0,
@@ -135,7 +143,9 @@ def viz_01_monthly_trend(df: pd.DataFrame, out_dir: Path) -> Path:
     )
     fig, ax = plt.subplots(figsize=(13.5, 6.2))
     ax.plot(monthly["발생연월"], monthly["화재건수"], color="#2563eb", linewidth=2.5)
-    ax.scatter(monthly["발생연월"], monthly["화재건수"], color="#dc2626", s=28, zorder=3)
+    ax.scatter(
+        monthly["발생연월"], monthly["화재건수"], color="#dc2626", s=28, zorder=3
+    )
     add_title(ax, "연도-월별 화재 발생 추세", f"총 {len(df):,}건")
     ax.set_xlabel("발생 연월")
     ax.set_ylabel("화재 건수")
@@ -191,7 +201,9 @@ def viz_03_district_map(df: pd.DataFrame, out_dir: Path) -> Path:
         .reset_index()
         .sort_values("화재건수", ascending=False)
     )
-    gu_stats.to_csv(out_dir / "03_district_fire_summary.csv", index=False, encoding="utf-8-sig")
+    gu_stats.to_csv(
+        out_dir / "03_district_fire_summary.csv", index=False, encoding="utf-8-sig"
+    )
 
     fig, ax = plt.subplots(figsize=(10.8, 10.8))
     ax.scatter(
@@ -226,7 +238,9 @@ def viz_03_district_map(df: pd.DataFrame, out_dir: Path) -> Path:
             fontweight="bold",
             color="#111827",
         )
-    add_title(ax, "구별 화재 발생 지도", "점은 개별 화재 위치, 원 크기와 색은 구별 발생 건수")
+    add_title(
+        ax, "구별 화재 발생 지도", "점은 개별 화재 위치, 원 크기와 색은 구별 발생 건수"
+    )
     ax.set_xlabel("경도")
     ax.set_ylabel("위도")
     ax.set_xlim(126.75, 127.18)
@@ -252,7 +266,13 @@ def viz_04_cause_top10(df: pd.DataFrame, out_dir: Path) -> Path:
     colors = sns.color_palette("crest", len(cause))
     ax.barh(cause["발화요인_대분류"], cause["화재건수"], color=colors)
     for i, value in enumerate(cause["화재건수"]):
-        ax.text(value + cause["화재건수"].max() * 0.012, i, f"{int(value):,}건", va="center", fontsize=10)
+        ax.text(
+            value + cause["화재건수"].max() * 0.012,
+            i,
+            f"{int(value):,}건",
+            va="center",
+            fontsize=10,
+        )
     add_title(ax, "발화요인 대분류 TOP 10")
     ax.set_xlabel("화재 건수")
     ax.set_ylabel("발화요인")
@@ -268,7 +288,8 @@ def viz_05_response_vs_distance(df: pd.DataFrame, out_dir: Path) -> Path:
     distance_cap = scatter["현장거리(km)"].quantile(0.99)
     response_cap = scatter["출동소요시간_분"].quantile(0.99)
     plot_df = scatter[
-        (scatter["현장거리(km)"] <= distance_cap) & (scatter["출동소요시간_분"] <= response_cap)
+        (scatter["현장거리(km)"] <= distance_cap)
+        & (scatter["출동소요시간_분"] <= response_cap)
     ].copy()
     if len(plot_df) > 9000:
         plot_df = plot_df.sample(9000, random_state=42)
@@ -288,10 +309,22 @@ def viz_05_response_vs_distance(df: pd.DataFrame, out_dir: Path) -> Path:
         ax=ax,
     )
     if len(plot_df) >= 2:
-        slope, intercept = np.polyfit(plot_df["현장거리(km)"], plot_df["출동소요시간_분"], 1)
-        x_line = np.linspace(plot_df["현장거리(km)"].min(), plot_df["현장거리(km)"].max(), 100)
-        ax.plot(x_line, slope * x_line + intercept, color="#111827", linewidth=2.4, label="선형 추세")
-    add_title(ax, "출동소요시간 vs 현장거리", f"상위 1% 이상치 제외, 상관계수 r = {corr:.3f}")
+        slope, intercept = np.polyfit(
+            plot_df["현장거리(km)"], plot_df["출동소요시간_분"], 1
+        )
+        x_line = np.linspace(
+            plot_df["현장거리(km)"].min(), plot_df["현장거리(km)"].max(), 100
+        )
+        ax.plot(
+            x_line,
+            slope * x_line + intercept,
+            color="#111827",
+            linewidth=2.4,
+            label="선형 추세",
+        )
+    add_title(
+        ax, "출동소요시간 vs 현장거리", f"상위 1% 이상치 제외, 상관계수 r = {corr:.3f}"
+    )
     ax.set_xlabel("현장거리(km)")
     ax.set_ylabel("출동소요시간(분)")
     ax.grid(color="#e5e7eb")
@@ -336,8 +369,12 @@ def viz_06_high_damage_map(df: pd.DataFrame, out_dir: Path) -> Path:
     ax_map = fig.add_subplot(gs[0, 0])
     ax_rank = fig.add_subplot(gs[0, 1])
 
-    ax_map.scatter(geo["경도"], geo["위도"], s=3, color="#d1d5db", alpha=0.16, linewidths=0)
-    sizes = 40 + 420 * np.log10(top["재산피해액(천원)"] + 1) / np.log10(top["재산피해액(천원)"].max() + 1)
+    ax_map.scatter(
+        geo["경도"], geo["위도"], s=3, color="#d1d5db", alpha=0.16, linewidths=0
+    )
+    sizes = 40 + 420 * np.log10(top["재산피해액(천원)"] + 1) / np.log10(
+        top["재산피해액(천원)"].max() + 1
+    )
     ax_map.scatter(
         top["경도"],
         top["위도"],
@@ -348,7 +385,15 @@ def viz_06_high_damage_map(df: pd.DataFrame, out_dir: Path) -> Path:
         alpha=0.74,
     )
     for rank, (_, row) in enumerate(top.head(10).iterrows(), start=1):
-        ax_map.text(row["경도"], row["위도"], str(rank), ha="center", va="center", fontsize=8, fontweight="bold")
+        ax_map.text(
+            row["경도"],
+            row["위도"],
+            str(rank),
+            ha="center",
+            va="center",
+            fontsize=8,
+            fontweight="bold",
+        )
     add_title(ax_map, "재산피해액 TOP 100 화재 위치", "숫자 표기는 피해액 상위 10건")
     ax_map.set_xlabel("경도")
     ax_map.set_ylabel("위도")
@@ -360,7 +405,9 @@ def viz_06_high_damage_map(df: pd.DataFrame, out_dir: Path) -> Path:
     rank = top.head(15).copy()
     rank["순위"] = range(1, len(rank) + 1)
     labels = rank.apply(
-        lambda r: f"{int(r['순위'])}. {r.get('발생시군구', '')} | {str(r.get('발생일자', ''))}",
+        lambda r: (
+            f"{int(r['순위'])}. {r.get('발생시군구', '')} | {str(r.get('발생일자', ''))}"
+        ),
         axis=1,
     )
     y_pos = np.arange(len(rank))
@@ -370,17 +417,24 @@ def viz_06_high_damage_map(df: pd.DataFrame, out_dir: Path) -> Path:
     ax_rank.invert_yaxis()
     ax_rank.set_xscale("log")
     ax_rank.set_xlabel("재산피해액(백만원, 로그축)")
-    ax_rank.set_title("재산피해액 TOP 15", loc="left", fontsize=15, fontweight="bold", pad=14)
+    ax_rank.set_title(
+        "재산피해액 TOP 15", loc="left", fontsize=15, fontweight="bold", pad=14
+    )
     ax_rank.grid(axis="x", color="#e5e7eb")
     ax_rank.grid(axis="y", visible=False)
     for y, value in zip(y_pos, rank["재산피해액_백만원"]):
         ax_rank.text(value * 1.08, y, f"{value:,.1f}", va="center", fontsize=8.5)
-    ax_rank.set_xlim(max(rank["재산피해액_백만원"].min() * 0.72, 1), rank["재산피해액_백만원"].max() * 1.55)
+    ax_rank.set_xlim(
+        max(rank["재산피해액_백만원"].min() * 0.72, 1),
+        rank["재산피해액_백만원"].max() * 1.55,
+    )
 
     return save_fig(fig, out_dir / "06_high_damage_fire_map_and_ranking.png")
 
 
-def write_summary(df: pd.DataFrame, csv_path: Path, out_dir: Path, outputs: list[Path]) -> Path:
+def write_summary(
+    df: pd.DataFrame, csv_path: Path, out_dir: Path, outputs: list[Path]
+) -> Path:
     summary = {
         "source_csv": str(csv_path),
         "row_count": int(len(df)),
@@ -391,21 +445,41 @@ def write_summary(df: pd.DataFrame, csv_path: Path, out_dir: Path, outputs: list
             for k, v in df.groupby("발생연도").size().sort_index().items()
             if pd.notna(k)
         },
-        "top_districts": df.groupby("발생시군구").size().sort_values(ascending=False).head(10).to_dict(),
-        "top_causes": df.groupby("발화요인_대분류").size().sort_values(ascending=False).head(10).to_dict(),
+        "top_districts": df.groupby("발생시군구")
+        .size()
+        .sort_values(ascending=False)
+        .head(10)
+        .to_dict(),
+        "top_causes": df.groupby("발화요인_대분류")
+        .size()
+        .sort_values(ascending=False)
+        .head(10)
+        .to_dict(),
         "outputs": [p.name for p in outputs],
     }
     out_path = out_dir / "summary.json"
-    out_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     return out_path
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build six static PNG fire-dispatch visualizations.")
-    parser.add_argument("--csv", type=Path, default=DEFAULT_CSV, help="Input fire dispatch CSV path")
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="Output directory")
-    parser.add_argument("--start-year", type=int, default=None, help="Optional inclusive start year")
-    parser.add_argument("--end-year", type=int, default=None, help="Optional inclusive end year")
+    parser = argparse.ArgumentParser(
+        description="Build six static PNG fire-dispatch visualizations."
+    )
+    parser.add_argument(
+        "--csv", type=Path, default=DEFAULT_CSV, help="Input fire dispatch CSV path"
+    )
+    parser.add_argument(
+        "--out", type=Path, default=DEFAULT_OUT, help="Output directory"
+    )
+    parser.add_argument(
+        "--start-year", type=int, default=None, help="Optional inclusive start year"
+    )
+    parser.add_argument(
+        "--end-year", type=int, default=None, help="Optional inclusive end year"
+    )
     return parser.parse_args()
 
 

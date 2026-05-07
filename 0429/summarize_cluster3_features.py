@@ -6,7 +6,13 @@ import pandas as pd
 
 
 BASE_DIR = Path(__file__).resolve().parent
-INPUT_PATH = BASE_DIR.parent / "0424" / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428" / "최최최종0428변수테이블.csv"
+INPUT_PATH = (
+    BASE_DIR.parent
+    / "0424"
+    / "data"
+    / "cluster3_spatial_pipeline_fire_count_150m_0428"
+    / "최최최종0428변수테이블.csv"
+)
 OUTPUT_SUMMARY = BASE_DIR / "cluster3_feature_summary.csv"
 OUTPUT_TOP_AREAS = BASE_DIR / "cluster3_top_areas_for_profile.csv"
 
@@ -45,7 +51,15 @@ def main() -> None:
             .head(10)
         )
         for rank, row in enumerate(top_dongs.itertuples(index=False), start=1):
-            area_rows.append({"cluster": cluster, "rank": rank, "구": row.구, "동": row.동, "시설수": row.시설수})
+            area_rows.append(
+                {
+                    "cluster": cluster,
+                    "rank": rank,
+                    "구": row.구,
+                    "동": row.동,
+                    "시설수": row.시설수,
+                }
+            )
     pd.DataFrame(area_rows).to_csv(OUTPUT_TOP_AREAS, index=False, encoding="utf-8-sig")
 
     mean = df.groupby("cluster")[FEATURES].mean()

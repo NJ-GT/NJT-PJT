@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import geopandas as gpd
 import matplotlib
 
 matplotlib.use("Agg")
@@ -30,10 +29,23 @@ BASE = Path(__file__).resolve().parents[1]
 OUT = BASE / "data" / "team_pipeline_validation"
 OUT.mkdir(parents=True, exist_ok=True)
 
-ACC_PATH = BASE / "0424" / "분석" / "tables" / "분석변수_최종테이블0423_AHP3등급비교_주변건물수보정.csv"
+ACC_PATH = (
+    BASE
+    / "0424"
+    / "분석"
+    / "tables"
+    / "분석변수_최종테이블0423_AHP3등급비교_주변건물수보정.csv"
+)
 FIRE_PATH = BASE / "data" / "화재출동" / "화재출동_2021_2024.csv"
 
-FEATURES = ["승인연도", "주변건물수", "집중도", "단속위험도", "구조노후도", "도로폭위험도"]
+FEATURES = [
+    "승인연도",
+    "주변건물수",
+    "집중도",
+    "단속위험도",
+    "구조노후도",
+    "도로폭위험도",
+]
 RISK_FEATURES = ["주변건물수", "집중도", "단속위험도", "구조노후도", "도로폭위험도"]
 GWR_X_VARS = ["구조노후도", "도로폭위험도", "주변건물수", "집중도"]
 RANDOM_STATE = 42
@@ -58,14 +70,18 @@ def load_data() -> tuple[pd.DataFrame, pd.DataFrame]:
     return acc, fire
 
 
-def add_fire_targets(acc: pd.DataFrame, fire: pd.DataFrame, radius_m: int = 150) -> pd.DataFrame:
+def add_fire_targets(
+    acc: pd.DataFrame, fire: pd.DataFrame, radius_m: int = 150
+) -> pd.DataFrame:
     result = acc.copy()
     fire_coords = np.radians(fire[["위도", "경도"]].to_numpy())
     acc_coords = np.radians(result[["위도", "경도"]].to_numpy())
     tree = BallTree(fire_coords, metric="haversine")
     indices = tree.query_radius(acc_coords, r=radius_m / 6371000)
 
-    damage = pd.to_numeric(fire["재산피해액(천원)"], errors="coerce").fillna(0).to_numpy()
+    damage = (
+        pd.to_numeric(fire["재산피해액(천원)"], errors="coerce").fillna(0).to_numpy()
+    )
     result["fire_count_150m"] = [len(idx) for idx in indices]
     result["target_damage_sum_천원"] = [float(damage[idx].sum()) for idx in indices]
     result["target_damage_mean_천원"] = [
@@ -94,7 +110,9 @@ def run_clustering(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     plt.close(fig)
 
     clustered = df.copy()
-    clustered["cluster"] = KMeans(n_clusters=4, random_state=RANDOM_STATE, n_init=10).fit_predict(x_scaled)
+    clustered["cluster"] = KMeans(
+        n_clusters=4, random_state=RANDOM_STATE, n_init=10
+    ).fit_predict(x_scaled)
     summary = (
         clustered.groupby("cluster")
         .agg(
@@ -109,7 +127,9 @@ def run_clustering(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
         .round(4)
         .reset_index()
     )
-    summary.to_csv(OUT / "01_cluster_fire_summary.csv", index=False, encoding="utf-8-sig")
+    summary.to_csv(
+        OUT / "01_cluster_fire_summary.csv", index=False, encoding="utf-8-sig"
+    )
 
     fig, ax = plt.subplots(figsize=(10, 6))
     sns.boxplot(x="cluster", y="fire_count_150m", data=clustered, ax=ax)
@@ -138,7 +158,10 @@ def run_lasso(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
         }
     ).sort_values("abs_cv_coef", ascending=False)
     coef.to_csv(OUT / "02_lasso_coefficients.csv", index=False, encoding="utf-8-sig")
-    return coef, {"train_rows_fire_matched": int(len(train_df)), "lasso_cv_alpha": float(lasso_cv.alpha_)}
+    return coef, {
+        "train_rows_fire_matched": int(len(train_df)),
+        "lasso_cv_alpha": float(lasso_cv.alpha_),
+    }
 
 
 def add_team_risk_score(df: pd.DataFrame) -> pd.DataFrame:
@@ -166,14 +189,26 @@ def run_moran(df: pd.DataFrame) -> pd.DataFrame:
     w_latlon = KNN.from_array(coords_latlon, k=5)
     w_latlon.transform = "R"
     moran_latlon = Moran(df["위험도점수"].to_numpy(), w_latlon, permutations=999)
-    rows.append({"좌표": "위경도_그대로", "moran_I": moran_latlon.I, "p_value": moran_latlon.p_sim})
+    rows.append(
+        {
+            "좌표": "위경도_그대로",
+            "moran_I": moran_latlon.I,
+            "p_value": moran_latlon.p_sim,
+        }
+    )
 
     if {"x_5181", "y_5181"}.issubset(df.columns):
         valid = df[["x_5181", "y_5181", "위험도점수"]].dropna()
         w_proj = KNN.from_array(valid[["x_5181", "y_5181"]].to_numpy(), k=5)
         w_proj.transform = "R"
         moran_proj = Moran(valid["위험도점수"].to_numpy(), w_proj, permutations=999)
-        rows.append({"좌표": "EPSG5181_평면좌표", "moran_I": moran_proj.I, "p_value": moran_proj.p_sim})
+        rows.append(
+            {
+                "좌표": "EPSG5181_평면좌표",
+                "moran_I": moran_proj.I,
+                "p_value": moran_proj.p_sim,
+            }
+        )
     result = pd.DataFrame(rows)
     result.to_csv(OUT / "04_moran_results.csv", index=False, encoding="utf-8-sig")
     return result
@@ -191,10 +226,18 @@ def run_gwr_sample(df: pd.DataFrame, max_rows: int = 650) -> tuple[pd.DataFrame,
     model = GWR(coords, y, x, bw, spherical=False, n_jobs=1).fit()
     params = pd.DataFrame(
         model.params,
-        columns=["Intercept", "C_구조노후도", "C_도로폭위험도", "C_주변건물수", "C_집중도"],
+        columns=[
+            "Intercept",
+            "C_구조노후도",
+            "C_도로폭위험도",
+            "C_주변건물수",
+            "C_집중도",
+        ],
         index=work.index,
     )
-    out = pd.concat([work.reset_index(drop=True), params.reset_index(drop=True)], axis=1)
+    out = pd.concat(
+        [work.reset_index(drop=True), params.reset_index(drop=True)], axis=1
+    )
     out.to_csv(OUT / "05_gwr_sample_params.csv", index=False, encoding="utf-8-sig")
     return out, {
         "gwr_rows_sampled": int(len(out)),
@@ -205,13 +248,18 @@ def run_gwr_sample(df: pd.DataFrame, max_rows: int = 650) -> tuple[pd.DataFrame,
     }
 
 
-def run_rf_checks(df: pd.DataFrame, gwr_df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def run_rf_checks(
+    df: pd.DataFrame, gwr_df: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     rows = []
 
     def fit_rf(name: str, data: pd.DataFrame, features: list[str], target: str) -> None:
         model_df = data.dropna(subset=features + [target]).copy()
         x_train, x_test, y_train, y_test = train_test_split(
-            model_df[features], model_df[target], test_size=0.2, random_state=RANDOM_STATE
+            model_df[features],
+            model_df[target],
+            test_size=0.2,
+            random_state=RANDOM_STATE,
         )
         rf = RandomForestRegressor(n_estimators=200, random_state=RANDOM_STATE)
         rf.fit(x_train, y_train)
@@ -227,7 +275,9 @@ def run_rf_checks(df: pd.DataFrame, gwr_df: pd.DataFrame) -> tuple[pd.DataFrame,
             }
         )
 
-    fit_rf("순환검증_A: 위험도점수를 구성변수로 다시 예측", df, GWR_X_VARS, "위험도점수")
+    fit_rf(
+        "순환검증_A: 위험도점수를 구성변수로 다시 예측", df, GWR_X_VARS, "위험도점수"
+    )
     fit_rf(
         "순환검증_B: 위험도점수 + GWR계수 사용",
         gwr_df,
@@ -238,25 +288,40 @@ def run_rf_checks(df: pd.DataFrame, gwr_df: pd.DataFrame) -> tuple[pd.DataFrame,
     true_df["log1p_fire_count_150m"] = np.log1p(true_df["fire_count_150m"])
     true_df["log1p_damage_sum_천원"] = np.log1p(true_df["target_damage_sum_천원"])
     fit_rf("진짜검증_C: 실제 화재수 예측", true_df, FEATURES, "log1p_fire_count_150m")
-    fit_rf("진짜검증_D: 실제 재산피해액 예측", true_df, FEATURES, "log1p_damage_sum_천원")
+    fit_rf(
+        "진짜검증_D: 실제 재산피해액 예측", true_df, FEATURES, "log1p_damage_sum_천원"
+    )
 
     metrics = pd.DataFrame(rows)
-    metrics.to_csv(OUT / "06_rf_validation_metrics.csv", index=False, encoding="utf-8-sig")
+    metrics.to_csv(
+        OUT / "06_rf_validation_metrics.csv", index=False, encoding="utf-8-sig"
+    )
 
     # Feature importance for the shiny but circular model.
     sample = gwr_df.dropna(
-        subset=GWR_X_VARS + ["C_구조노후도", "C_도로폭위험도", "C_주변건물수", "C_집중도", "위험도점수"]
+        subset=GWR_X_VARS
+        + ["C_구조노후도", "C_도로폭위험도", "C_주변건물수", "C_집중도", "위험도점수"]
     ).copy()
-    final_features = GWR_X_VARS + ["C_구조노후도", "C_도로폭위험도", "C_주변건물수", "C_집중도"]
+    final_features = GWR_X_VARS + [
+        "C_구조노후도",
+        "C_도로폭위험도",
+        "C_주변건물수",
+        "C_집중도",
+    ]
     x_train, x_test, y_train, y_test = train_test_split(
-        sample[final_features], sample["위험도점수"], test_size=0.2, random_state=RANDOM_STATE
+        sample[final_features],
+        sample["위험도점수"],
+        test_size=0.2,
+        random_state=RANDOM_STATE,
     )
     rf = RandomForestRegressor(n_estimators=200, random_state=RANDOM_STATE)
     rf.fit(x_train, y_train)
-    importance = pd.DataFrame({"변수": final_features, "importance": rf.feature_importances_}).sort_values(
-        "importance", ascending=False
+    importance = pd.DataFrame(
+        {"변수": final_features, "importance": rf.feature_importances_}
+    ).sort_values("importance", ascending=False)
+    importance.to_csv(
+        OUT / "06_rf_circular_feature_importance.csv", index=False, encoding="utf-8-sig"
     )
-    importance.to_csv(OUT / "06_rf_circular_feature_importance.csv", index=False, encoding="utf-8-sig")
     return metrics, importance
 
 
@@ -272,7 +337,15 @@ def run_ols_sanity(df: pd.DataFrame) -> pd.DataFrame:
         x = sm.add_constant(StandardScaler().fit_transform(reg[FEATURES]))
         model = sm.OLS(reg[target], x).fit(cov_type="HC3")
         for term, coef, p in zip(["const"] + FEATURES, model.params, model.pvalues):
-            rows.append({"target": target, "term": term, "coef": coef, "p_value": p, "r2": model.rsquared})
+            rows.append(
+                {
+                    "target": target,
+                    "term": term,
+                    "coef": coef,
+                    "p_value": p,
+                    "r2": model.rsquared,
+                }
+            )
     result = pd.DataFrame(rows)
     result.to_csv(OUT / "07_ols_sanity.csv", index=False, encoding="utf-8-sig")
     return result
@@ -289,7 +362,9 @@ def main() -> None:
     rf_metrics, rf_importance = run_rf_checks(scored, gwr_df)
     ols = run_ols_sanity(scored)
 
-    scored.to_csv(OUT / "team_pipeline_scored_dataset.csv", index=False, encoding="utf-8-sig")
+    scored.to_csv(
+        OUT / "team_pipeline_scored_dataset.csv", index=False, encoding="utf-8-sig"
+    )
     summary = {
         "rows": int(len(scored)),
         "fire_rows_2021_2024": int(len(fire)),
@@ -302,7 +377,9 @@ def main() -> None:
         "moran": moran.to_dict(orient="records"),
         "outputs": sorted(p.name for p in OUT.glob("*")),
     }
-    (OUT / "validation_summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    (OUT / "validation_summary.json").write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 

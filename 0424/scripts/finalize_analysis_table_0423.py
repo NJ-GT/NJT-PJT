@@ -8,19 +8,39 @@ from build_building_feature_probe import build_probe
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PROBE_PATH = ROOT / "0424" / "분석" / "tables" / "분석변수_최종테이블0423_건물특성_probe.csv"
+PROBE_PATH = (
+    ROOT / "0424" / "분석" / "tables" / "분석변수_최종테이블0423_건물특성_probe.csv"
+)
 OUTPUT_PATH = ROOT / "0424" / "data" / "분석변수_최종테이블0423.csv"
 
 
 def prepare_output_table(df: pd.DataFrame) -> pd.DataFrame:
     out = pd.DataFrame()
 
-    base_cols = ["구", "동", "숙소명", "승인연도", "주변건물수", "집중도", "단속위험도", "구조노후도", "도로폭위험도", "위도", "경도", "업종"]
+    base_cols = [
+        "구",
+        "동",
+        "숙소명",
+        "승인연도",
+        "주변건물수",
+        "집중도",
+        "단속위험도",
+        "구조노후도",
+        "도로폭위험도",
+        "위도",
+        "경도",
+        "업종",
+    ]
     for col in base_cols:
         out[col] = df[col]
 
     out["건물용도명"] = df["건물용도명_통합"].fillna("미상").astype(str)
-    out["총층수"] = pd.to_numeric(df["총층수_0층만보정"], errors="coerce").fillna(1).round().astype(int)
+    out["총층수"] = (
+        pd.to_numeric(df["총층수_0층만보정"], errors="coerce")
+        .fillna(1)
+        .round()
+        .astype(int)
+    )
     out["연면적"] = pd.to_numeric(df["연면적_통합"], errors="coerce").fillna(0.0)
 
     # Sanity-check columns that must be fully populated for downstream models.

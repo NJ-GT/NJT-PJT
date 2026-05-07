@@ -41,7 +41,9 @@ def load_cache() -> dict:
 
 
 def save_cache(cache: dict) -> None:
-    CACHE_PATH.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+    CACHE_PATH.write_text(
+        json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
 
 def read_csv(path: Path) -> pd.DataFrame:
@@ -54,7 +56,13 @@ def build_address_map() -> pd.DataFrame:
         if not path.exists():
             continue
         df = read_csv(path)
-        name_col = "숙소명" if "숙소명" in df.columns else "업소명" if "업소명" in df.columns else None
+        name_col = (
+            "숙소명"
+            if "숙소명" in df.columns
+            else "업소명"
+            if "업소명" in df.columns
+            else None
+        )
         if not name_col or "주소" not in df.columns:
             continue
         cols = [c for c in ["구", "동", name_col, "주소"] if c in df.columns]
@@ -67,7 +75,9 @@ def build_address_map() -> pd.DataFrame:
         tmp = tmp[tmp["_name_key"].ne("") & tmp["주소"].notna()]
         frames.append(tmp)
     if not frames:
-        return pd.DataFrame(columns=["_name_key", "_gu_key", "_dong_key", "주소", "주소출처"])
+        return pd.DataFrame(
+            columns=["_name_key", "_gu_key", "_dong_key", "주소", "주소출처"]
+        )
     merged = pd.concat(frames, ignore_index=True)
     merged = merged.drop_duplicates(["_name_key", "_gu_key", "_dong_key"], keep="first")
     return merged
@@ -83,8 +93,18 @@ def parse_lon_lat(payload: dict) -> tuple[float | None, float | None, str]:
     for item in coords:
         if not isinstance(item, dict):
             continue
-        lon = item.get("newLon") or item.get("lon") or item.get("longitude") or item.get("x")
-        lat = item.get("newLat") or item.get("lat") or item.get("latitude") or item.get("y")
+        lon = (
+            item.get("newLon")
+            or item.get("lon")
+            or item.get("longitude")
+            or item.get("x")
+        )
+        lat = (
+            item.get("newLat")
+            or item.get("lat")
+            or item.get("latitude")
+            or item.get("y")
+        )
         if lon and lat:
             return float(lon), float(lat), "ok"
     # Fallback for small response schema changes.
@@ -97,7 +117,9 @@ def parse_lon_lat(payload: dict) -> tuple[float | None, float | None, str]:
 def geocode(address: str, app_key: str, cache: dict, sleep_sec: float) -> dict:
     if address in cache:
         return cache[address]
-    query = urlencode({"version": "1", "format": "json", "coordType": "WGS84GEO", "fullAddr": address})
+    query = urlencode(
+        {"version": "1", "format": "json", "coordType": "WGS84GEO", "fullAddr": address}
+    )
     req = Request(f"{API_URL}?{query}", headers={"appKey": app_key})
     with urlopen(req, timeout=15) as response:
         payload = json.loads(response.read().decode("utf-8"))
@@ -116,7 +138,9 @@ def add_projected_xy(df: pd.DataFrame) -> pd.DataFrame:
     if valid.any():
         gdf = gpd.GeoDataFrame(
             df.loc[valid].copy(),
-            geometry=gpd.points_from_xy(df.loc[valid, "보정_경도"], df.loc[valid, "보정_위도"]),
+            geometry=gpd.points_from_xy(
+                df.loc[valid, "보정_경도"], df.loc[valid, "보정_위도"]
+            ),
             crs="EPSG:4326",
         )
         p5181 = gdf.to_crs(epsg=5181)
@@ -130,9 +154,13 @@ def add_projected_xy(df: pd.DataFrame) -> pd.DataFrame:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--limit", type=int, default=None, help="테스트용 호출 개수 제한")
+    parser.add_argument(
+        "--limit", type=int, default=None, help="테스트용 호출 개수 제한"
+    )
     parser.add_argument("--sleep", type=float, default=0.12, help="API 호출 간 대기초")
-    parser.add_argument("--key-env", default="TMAP_APP_KEY", help="SK OpenAPI appKey 환경변수명")
+    parser.add_argument(
+        "--key-env", default="TMAP_APP_KEY", help="SK OpenAPI appKey 환경변수명"
+    )
     args = parser.parse_args()
 
     target = read_csv(TARGET)
@@ -155,16 +183,24 @@ def main() -> None:
         result.loc[no_address, "주소"] = fallback["주소"].to_numpy()
         result.loc[no_address, "주소출처"] = fallback["주소출처"].to_numpy()
 
-    result.to_csv(OUT_DIR / "tmap_geocode_input_addresses.csv", index=False, encoding="utf-8-sig")
+    result.to_csv(
+        OUT_DIR / "tmap_geocode_input_addresses.csv", index=False, encoding="utf-8-sig"
+    )
 
-    app_key = os.getenv(args.key_env) or os.getenv("SK_OPENAPI_APP_KEY") or os.getenv("TMAP_API_KEY")
+    app_key = (
+        os.getenv(args.key_env)
+        or os.getenv("SK_OPENAPI_APP_KEY")
+        or os.getenv("TMAP_API_KEY")
+    )
     if not app_key:
         summary = {
             "status": "need_app_key",
             "message": f"환경변수 {args.key_env} 또는 SK_OPENAPI_APP_KEY/TMAP_API_KEY에 appKey를 넣은 뒤 다시 실행하세요.",
             "address_matched": int(result["주소"].notna().sum()),
             "address_missing": int(result["주소"].isna().sum()),
-            "input_file": str((OUT_DIR / "tmap_geocode_input_addresses.csv").relative_to(BASE)),
+            "input_file": str(
+                (OUT_DIR / "tmap_geocode_input_addresses.csv").relative_to(BASE)
+            ),
         }
         (OUT_DIR / "tmap_geocode_summary.json").write_text(
             json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"

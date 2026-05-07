@@ -10,6 +10,7 @@ Outputs:
     data/three_var_residual_lisa/mgwr_3var_results.csv
     data/three_var_residual_lisa/ols_mgwr_3var_residual_lisa_maps.png
 """
+
 from __future__ import annotations
 
 import json
@@ -41,7 +42,17 @@ OUT_DIR = BASE / "data" / "three_var_residual_lisa"
 TARGET = "최종위험점수_new"
 FEATURES = ["구조노후도", "도로폭위험도", "단속위험도"]
 COORDS = ["x_5181", "y_5181"]
-ID_COLS = ["구", "동", "숙소명", "cluster", "cluster_label", "위도", "경도", *COORDS, TARGET]
+ID_COLS = [
+    "구",
+    "동",
+    "숙소명",
+    "cluster",
+    "cluster_label",
+    "위도",
+    "경도",
+    *COORDS,
+    TARGET,
+]
 
 GU_BY_CODE = {
     "11110": "종로구",
@@ -135,19 +146,33 @@ def as_bandwidth_list(raw_bw, expected_len: int) -> list[float]:
     return arr.tolist()
 
 
-def fit_mgwr_group(group: pd.DataFrame, cluster_id, n_jobs: int) -> tuple[pd.DataFrame, dict]:
+def fit_mgwr_group(
+    group: pd.DataFrame, cluster_id, n_jobs: int
+) -> tuple[pd.DataFrame, dict]:
     coords, y, x = standardize_xy(group)
-    label = group["cluster_label"].dropna().iloc[0] if group["cluster_label"].notna().any() else str(cluster_id)
+    label = (
+        group["cluster_label"].dropna().iloc[0]
+        if group["cluster_label"].notna().any()
+        else str(cluster_id)
+    )
     print(f"[MGWR-3VAR] cluster={cluster_id} {label}, rows={len(group):,}")
     t0 = time.time()
-    selector = Sel_BW(coords, y, x, multi=True, kernel="bisquare", fixed=False, n_jobs=n_jobs)
+    selector = Sel_BW(
+        coords, y, x, multi=True, kernel="bisquare", fixed=False, n_jobs=n_jobs
+    )
     selector.search(verbose=True)
     bandwidths = as_bandwidth_list(selector.bw, len(FEATURES) + 1)
-    print(f"[MGWR-3VAR] cluster={cluster_id} BW={bandwidths} search={time.time() - t0:.1f}s")
+    print(
+        f"[MGWR-3VAR] cluster={cluster_id} BW={bandwidths} search={time.time() - t0:.1f}s"
+    )
 
     t0 = time.time()
-    result = MGWR(coords, y, x, selector, kernel="bisquare", fixed=False, n_jobs=n_jobs).fit()
-    print(f"[MGWR-3VAR] cluster={cluster_id} fit={time.time() - t0:.1f}s R2={result.R2:.4f}")
+    result = MGWR(
+        coords, y, x, selector, kernel="bisquare", fixed=False, n_jobs=n_jobs
+    ).fit()
+    print(
+        f"[MGWR-3VAR] cluster={cluster_id} fit={time.time() - t0:.1f}s R2={result.R2:.4f}"
+    )
 
     out = group[ID_COLS].copy()
     out["residual"] = np.asarray(result.resid_response).reshape(-1)
@@ -200,13 +225,17 @@ def lisa_category(p: np.ndarray, q: np.ndarray) -> np.ndarray:
     return cats
 
 
-def residual_lisa(boundary: gpd.GeoDataFrame, model_result: pd.DataFrame, model_name: str):
+def residual_lisa(
+    boundary: gpd.GeoDataFrame, model_result: pd.DataFrame, model_name: str
+):
     dong = (
         model_result.groupby(["구", "동"], dropna=False)
         .agg(residual=("residual", "mean"), sample_count=("residual", "size"))
         .reset_index()
     )
-    gdf = boundary.merge(dong, left_on=["구_매칭", "동_매칭"], right_on=["구", "동"], how="left")
+    gdf = boundary.merge(
+        dong, left_on=["구_매칭", "동_매칭"], right_on=["구", "동"], how="left"
+    )
     data = gdf[gdf["residual"].notna()].copy().reset_index(drop=True)
     weights = Queen.from_dataframe(data, use_index=False)
     weights.transform = "r"
@@ -224,7 +253,11 @@ def residual_lisa(boundary: gpd.GeoDataFrame, model_result: pd.DataFrame, model_
         how="left",
     )
     out["lisa_cat"] = out["lisa_cat"].fillna("No Data")
-    out.to_csv(OUT_DIR / f"{model_name.lower()}_3var_residual_lisa_by_dong.csv", index=False, encoding="utf-8-sig")
+    out.to_csv(
+        OUT_DIR / f"{model_name.lower()}_3var_residual_lisa_by_dong.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
     metrics = {
         "model": model_name,
         "dong_count": int(len(data)),
@@ -245,18 +278,30 @@ def plot_lisa(model_maps: dict[str, gpd.GeoDataFrame], metrics: list[dict]) -> P
     fig, axes = plt.subplots(1, 2, figsize=(20, 9.8), dpi=180)
     fig.patch.set_facecolor("#f7f9fc")
     metric_by_model = {m["model"]: m for m in metrics}
-    gu_boundary = next(iter(model_maps.values())).dissolve(by="구_매칭", as_index=False, method="unary", grid_size=0.05)
+    gu_boundary = next(iter(model_maps.values())).dissolve(
+        by="구_매칭", as_index=False, method="unary", grid_size=0.05
+    )
 
     for ax, (model_name, gdf) in zip(axes, model_maps.items()):
         ax.set_facecolor("#f7f9fc")
-        gdf["plot_color"] = gdf["lisa_cat"].map(LISA_COLORS).fillna(LISA_COLORS["No Data"])
+        gdf["plot_color"] = (
+            gdf["lisa_cat"].map(LISA_COLORS).fillna(LISA_COLORS["No Data"])
+        )
         gdf.plot(ax=ax, color=gdf["plot_color"], edgecolor="#c9d1dc", linewidth=0.18)
         gu_boundary.boundary.plot(ax=ax, color="#303744", linewidth=0.75, alpha=0.9)
         for _, row in gu_boundary.iterrows():
             if row.geometry.is_empty:
                 continue
             point = row.geometry.representative_point()
-            ax.text(point.x, point.y, row["구_매칭"], ha="center", va="center", fontsize=5.8, weight="bold")
+            ax.text(
+                point.x,
+                point.y,
+                row["구_매칭"],
+                ha="center",
+                va="center",
+                fontsize=5.8,
+                weight="bold",
+            )
         m = metric_by_model[model_name]
         ax.set_title(
             f"{model_name} 3변수 잔차 LISA\nMoran's I={m['global_moran_i']:.3f}, p={m['global_moran_p']:.3f}",
@@ -270,8 +315,21 @@ def plot_lisa(model_maps: dict[str, gpd.GeoDataFrame], metrics: list[dict]) -> P
         mpatches.Patch(color=LISA_COLORS[key], label=LISA_LABELS[key])
         for key in ["HH", "LL", "HL", "LH", "Not Sig", "No Data"]
     ]
-    fig.legend(handles=handles, loc="lower center", ncol=3, frameon=True, framealpha=0.96, fontsize=9)
-    fig.suptitle("3변수 OLS 잔차 LISA vs 3변수 MGWR 잔차 LISA", fontsize=23, weight="bold", x=0.03, ha="left")
+    fig.legend(
+        handles=handles,
+        loc="lower center",
+        ncol=3,
+        frameon=True,
+        framealpha=0.96,
+        fontsize=9,
+    )
+    fig.suptitle(
+        "3변수 OLS 잔차 LISA vs 3변수 MGWR 잔차 LISA",
+        fontsize=23,
+        weight="bold",
+        x=0.03,
+        ha="left",
+    )
     fig.text(
         0.03,
         0.04,
@@ -299,8 +357,12 @@ def main() -> None:
     mgwr_map, mgwr_lisa = residual_lisa(boundary, mgwr_out, "MGWR")
     lisa_metrics = [ols_lisa, mgwr_lisa]
     metrics = {"ols": ols_metric, "mgwr": mgwr_metrics, "lisa": lisa_metrics}
-    (OUT_DIR / "run_metadata.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
-    pd.DataFrame(lisa_metrics).to_csv(OUT_DIR / "residual_lisa_summary.csv", index=False, encoding="utf-8-sig")
+    (OUT_DIR / "run_metadata.json").write_text(
+        json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    pd.DataFrame(lisa_metrics).to_csv(
+        OUT_DIR / "residual_lisa_summary.csv", index=False, encoding="utf-8-sig"
+    )
     out_path = plot_lisa({"OLS": ols_map, "MGWR": mgwr_map}, lisa_metrics)
     print(f"[DONE] {out_path}")
     print(pd.DataFrame(lisa_metrics).to_string(index=False))

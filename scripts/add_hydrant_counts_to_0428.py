@@ -73,8 +73,12 @@ def main() -> None:
     lodging.to_csv(LODGING_PATH, index=False, encoding="utf-8-sig")
 
     print(f"updated={LODGING_PATH}")
-    print(f"lodging_rows={len(lodging)} valid_lodging_coords={int(valid_lodging.sum())}")
-    print(f"hydrant_rows={len(hydrant)} valid_hydrant_coords={int(valid_hydrant.sum())}")
+    print(
+        f"lodging_rows={len(lodging)} valid_lodging_coords={int(valid_lodging.sum())}"
+    )
+    print(
+        f"hydrant_rows={len(hydrant)} valid_hydrant_coords={int(valid_hydrant.sum())}"
+    )
     print(f"unique_hydrant_xy={len(hydrant_unique)}")
     print(
         lodging[

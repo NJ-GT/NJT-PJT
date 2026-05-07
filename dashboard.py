@@ -35,9 +35,23 @@ MODEL_SUMMARY = DATA_DIR / "가중치군집_대표모형_최종결과표.csv"
 MODEL_COMPARE = DATA_DIR / "가중치군집_공간모형_비교표.csv"
 GWR_LOCAL_SOURCE = BASE / "data" / "gwr_results.csv"
 MGWR_LOCAL_PARAM_SOURCE = BASE / "data" / "mgwr_local_params_low_high.csv"
-MGWR_CLUSTER_LOCAL_SOURCE = BASE / "0424" / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428" / "gwr_local_diagnostics_by_cluster.csv"
-MGWR_CLUSTER_INPUT_SOURCE = BASE / "0424" / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428" / "최최최종0428변수테이블.csv"
-DONG_BOUNDARY_SOURCE = BASE / "data" / "seoul_legal_dong_age_buckets_joined_0415.geojson"
+MGWR_CLUSTER_LOCAL_SOURCE = (
+    BASE
+    / "0424"
+    / "data"
+    / "cluster3_spatial_pipeline_fire_count_150m_0428"
+    / "gwr_local_diagnostics_by_cluster.csv"
+)
+MGWR_CLUSTER_INPUT_SOURCE = (
+    BASE
+    / "0424"
+    / "data"
+    / "cluster3_spatial_pipeline_fire_count_150m_0428"
+    / "최최최종0428변수테이블.csv"
+)
+DONG_BOUNDARY_SOURCE = (
+    BASE / "data" / "seoul_legal_dong_age_buckets_joined_0415.geojson"
+)
 GRID_250_SOURCE = BASE / "data" / "grid_spatial_dashboard" / "seoul_grid_250m.geojson"
 GRID_500_SOURCE = BASE / "data" / "grid_spatial_dashboard" / "seoul_grid_500m.geojson"
 
@@ -72,10 +86,21 @@ MODEL_IMAGE = DATA_DIR / "공간 모델 선택.png"
 FEATURE_IMAGE = DATA_DIR / "군집별 피처 평균값-중앙값 비교.png"
 ROUTE_SOURCE = BASE / "data" / "서울10구_숙소_소방거리_유클리드.csv"
 FIRE_FACILITY_SOURCE = BASE / "data" / "소방서_안전센터_구조대_위치정보_2025_wgs84.csv"
-ROAD_WIDTH_SOURCE = BASE / "road_width_10gu" / "data" / "seoul_road_width_10gu_official_only_roads.csv"
-ROAD_WIDTH_LINE_SOURCE = BASE / "road_width_10gu" / "data" / "seoul_road_width_10gu_official_complete_lines.geojson"
-ROAD_ROUTE_LINE_SOURCE = BASE / "road_width_10gu" / "data" / "seoul_road_width_10gu_osm_lines.geojson"
-ROAD_ROUTE_UNMATCHED_SOURCE = BASE / "road_width_10gu" / "data" / "seoul_road_width_10gu_osm_line_unmatched.csv"
+ROAD_WIDTH_SOURCE = (
+    BASE / "road_width_10gu" / "data" / "seoul_road_width_10gu_official_only_roads.csv"
+)
+ROAD_WIDTH_LINE_SOURCE = (
+    BASE
+    / "road_width_10gu"
+    / "data"
+    / "seoul_road_width_10gu_official_complete_lines.geojson"
+)
+ROAD_ROUTE_LINE_SOURCE = (
+    BASE / "road_width_10gu" / "data" / "seoul_road_width_10gu_osm_lines.geojson"
+)
+ROAD_ROUTE_UNMATCHED_SOURCE = (
+    BASE / "road_width_10gu" / "data" / "seoul_road_width_10gu_osm_line_unmatched.csv"
+)
 
 COLORS = {
     "blue": "#3267e8",
@@ -184,7 +209,11 @@ def load_0430() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]
     final_df["승인연도"] = final_df["승인연도"].astype("Int64")
 
     if "cluster_label" not in final_df.columns:
-        final_df["cluster_label"] = final_df["cluster"].map({0: "중위험군", 1: "저위험군", 2: "고위험군"}).fillna("미분류")
+        final_df["cluster_label"] = (
+            final_df["cluster"]
+            .map({0: "중위험군", 1: "저위험군", 2: "고위험군"})
+            .fillna("미분류")
+        )
 
     return final_df, score_df, model_df, compare_df
 
@@ -197,7 +226,11 @@ def load_gwr_local(final_df: pd.DataFrame) -> pd.DataFrame:
     gwr = read_csv(GWR_LOCAL_SOURCE)
     gwr.columns = [str(col).strip() for col in gwr.columns]
     for col in gwr.columns:
-        if col.startswith("coef_") or col.startswith("tval_") or col in ["위도", "경도", "local_R2", "bandwidth"]:
+        if (
+            col.startswith("coef_")
+            or col.startswith("tval_")
+            or col in ["위도", "경도", "local_R2", "bandwidth"]
+        ):
             gwr[col] = pd.to_numeric(gwr[col], errors="coerce")
 
     keys = ["위도", "경도"]
@@ -208,7 +241,15 @@ def load_gwr_local(final_df: pd.DataFrame) -> pd.DataFrame:
     left["_lat_key"] = left["위도"].round(6)
     left["_lon_key"] = left["경도"].round(6)
 
-    meta_cols = ["구", "동", "숙소명", "cluster_label", "최종위험점수_new", "위도", "경도"]
+    meta_cols = [
+        "구",
+        "동",
+        "숙소명",
+        "cluster_label",
+        "최종위험점수_new",
+        "위도",
+        "경도",
+    ]
     meta_cols = [col for col in meta_cols if col in final_df.columns]
     right = final_df[meta_cols].dropna(subset=["위도", "경도"]).copy()
     right["_lat_key"] = right["위도"].round(6)
@@ -224,7 +265,9 @@ def load_gwr_local(final_df: pd.DataFrame) -> pd.DataFrame:
     coef_cols = [col for col in merged.columns if col.startswith("coef_")]
     if coef_cols:
         abs_coef = merged[coef_cols].abs()
-        merged["주요설명변수"] = abs_coef.idxmax(axis=1).str.replace("coef_", "", regex=False)
+        merged["주요설명변수"] = abs_coef.idxmax(axis=1).str.replace(
+            "coef_", "", regex=False
+        )
         merged["주요설명계수"] = abs_coef.max(axis=1)
     return merged.drop(columns=["_lat_key", "_lon_key"], errors="ignore")
 
@@ -235,7 +278,15 @@ def load_mgwr_cluster_local() -> pd.DataFrame:
         mgwr = read_csv(MGWR_LOCAL_PARAM_SOURCE)
         mgwr.columns = [str(col).strip() for col in mgwr.columns]
         for col in mgwr.columns:
-            if col.startswith(("coef_", "tval_", "bw_", "z_", "contrib_")) or col in ["cluster", "x_5181", "y_5181", "위도", "경도", "local_R2", "residual"]:
+            if col.startswith(("coef_", "tval_", "bw_", "z_", "contrib_")) or col in [
+                "cluster",
+                "x_5181",
+                "y_5181",
+                "위도",
+                "경도",
+                "local_R2",
+                "residual",
+            ]:
                 mgwr[col] = pd.to_numeric(mgwr[col], errors="coerce")
         return mgwr
 
@@ -249,12 +300,22 @@ def load_mgwr_cluster_local() -> pd.DataFrame:
 
     for df in (local, source):
         for col in df.columns:
-            if col.startswith("coef_") or col in ["cluster", "x_5181", "y_5181", "위도", "경도", "local_R2", "residual"]:
+            if col.startswith("coef_") or col in [
+                "cluster",
+                "x_5181",
+                "y_5181",
+                "위도",
+                "경도",
+                "local_R2",
+                "residual",
+            ]:
                 df[col] = pd.to_numeric(df[col], errors="coerce")
 
     required_local = {"cluster", "x_5181", "y_5181"}
     required_source = {"cluster", "x_5181", "y_5181", "구", "동", "위도", "경도"}
-    if not required_local.issubset(local.columns) or not required_source.issubset(source.columns):
+    if not required_local.issubset(local.columns) or not required_source.issubset(
+        source.columns
+    ):
         return pd.DataFrame()
 
     left = local.copy()
@@ -279,12 +340,18 @@ def load_mgwr_cluster_local() -> pd.DataFrame:
     right = right[meta_cols].drop_duplicates(["cluster", "_x_key", "_y_key"])
 
     merged = left.merge(right, on=["cluster", "_x_key", "_y_key"], how="left")
-    merged["cluster_label"] = merged["cluster"].map({0: "저위험군", 1: "중위험군", 2: "고위험군"}).fillna("미분류")
+    merged["cluster_label"] = (
+        merged["cluster"]
+        .map({0: "저위험군", 1: "중위험군", 2: "고위험군"})
+        .fillna("미분류")
+    )
 
     coef_cols = [col for col in merged.columns if col.startswith("coef_")]
     if coef_cols:
         abs_coef = merged[coef_cols].abs()
-        merged["주요설명변수"] = abs_coef.idxmax(axis=1).str.replace("coef_", "", regex=False)
+        merged["주요설명변수"] = abs_coef.idxmax(axis=1).str.replace(
+            "coef_", "", regex=False
+        )
         merged["주요설명계수"] = abs_coef.max(axis=1)
 
     return merged.drop(columns=["_x_key", "_y_key"], errors="ignore")
@@ -313,8 +380,14 @@ def load_seoul_grid(cell_size_m: int = 500) -> dict:
         return {"type": "FeatureCollection", "features": []}
 
 
-def parse_bw_table(model_df: pd.DataFrame, risk_group: str | None = None) -> pd.DataFrame:
-    if model_df.empty or "BW" not in model_df.columns or "대표모형" not in model_df.columns:
+def parse_bw_table(
+    model_df: pd.DataFrame, risk_group: str | None = None
+) -> pd.DataFrame:
+    if (
+        model_df.empty
+        or "BW" not in model_df.columns
+        or "대표모형" not in model_df.columns
+    ):
         return pd.DataFrame()
 
     mgwr_rows = model_df[model_df["대표모형"].astype("string").str.upper() == "MGWR"]
@@ -346,13 +419,20 @@ def parse_bw_table(model_df: pd.DataFrame, risk_group: str | None = None) -> pd.
         else:
             scale = "광역"
             note = "구 이상 범위의 완만한 영향"
-        rows.append({"변수": variable, "BW": float(bw_num), "공간범위": scale, "해석": note})
+        rows.append(
+            {"변수": variable, "BW": float(bw_num), "공간범위": scale, "해석": note}
+        )
 
     return pd.DataFrame(rows).sort_values("BW", ascending=True).reset_index(drop=True)
 
 
 def extract_gu_dong(address: pd.Series) -> tuple[pd.Series, pd.Series]:
-    text = address.fillna("").astype("string").str.replace(r"\s+", " ", regex=True).str.strip()
+    text = (
+        address.fillna("")
+        .astype("string")
+        .str.replace(r"\s+", " ", regex=True)
+        .str.strip()
+    )
     gu = text.str.extract(r"서울특별시\s+(\S+구)", expand=False)
     dong_values = []
     for addr, gu_name in zip(text, gu):
@@ -399,7 +479,9 @@ def flatten_road_coordinates(geometry: dict) -> list[list[tuple[float, float]]]:
     return []
 
 
-def synthetic_road_line(lat: float, lon: float, length_m: float = 120, bearing_degrees: float = 32) -> list[tuple[float, float]]:
+def synthetic_road_line(
+    lat: float, lon: float, length_m: float = 120, bearing_degrees: float = 32
+) -> list[tuple[float, float]]:
     half = length_m / 2
     bearing = math.radians(bearing_degrees)
     dlat = math.cos(bearing) * half / 110_540
@@ -451,7 +533,15 @@ def load_road_width_lines() -> pd.DataFrame:
             }
         )
     road_line_df = pd.DataFrame(rows)
-    for col in ["공식도로폭m", "공식도로폭최소m", "공식도로폭최대m", "도로폭공식구간수", "공식선형길이m", "대표위도", "대표경도"]:
+    for col in [
+        "공식도로폭m",
+        "공식도로폭최소m",
+        "공식도로폭최대m",
+        "도로폭공식구간수",
+        "공식선형길이m",
+        "대표위도",
+        "대표경도",
+    ]:
         road_line_df[col] = pd.to_numeric(road_line_df[col], errors="coerce")
     unmatched = load_unmatched_road_points()
     if not unmatched.empty:
@@ -474,7 +564,9 @@ def load_road_width_lines() -> pd.DataFrame:
                     "대표경도": row["경도"],
                 }
             )
-        road_line_df = pd.concat([road_line_df, pd.DataFrame(supplemental)], ignore_index=True)
+        road_line_df = pd.concat(
+            [road_line_df, pd.DataFrame(supplemental)], ignore_index=True
+        )
     return road_line_df
 
 
@@ -516,12 +608,16 @@ def load_road_route_lines() -> pd.DataFrame:
                     "대표경도": row["경도"],
                 }
             )
-        road_route_df = pd.concat([road_route_df, pd.DataFrame(supplemental)], ignore_index=True)
+        road_route_df = pd.concat(
+            [road_route_df, pd.DataFrame(supplemental)], ignore_index=True
+        )
     return road_route_df
 
 
 @st.cache_data
-def load_route_sources() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def load_route_sources() -> tuple[
+    pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame
+]:
     route_df = read_csv(ROUTE_SOURCE)
     fire_df = read_csv(FIRE_FACILITY_SOURCE)
     road_width_df = read_csv(ROAD_WIDTH_SOURCE)
@@ -579,7 +675,10 @@ def build_yearly_top3(df: pd.DataFrame, gu: str) -> pd.DataFrame:
         .reset_index()
     )
     years = pd.DataFrame({"승인연도": range(2020, 2026)})
-    parts = [years.assign(동=dong).merge(yearly, on=["승인연도", "동"], how="left") for dong in top_dongs]
+    parts = [
+        years.assign(동=dong).merge(yearly, on=["승인연도", "동"], how="left")
+        for dong in top_dongs
+    ]
     if not parts:
         return pd.DataFrame(columns=["승인연도", "동", "신규 인허가 수"])
     return pd.concat(parts, ignore_index=True).fillna({"신규 인허가 수": 0})
@@ -606,7 +705,11 @@ def trend_chart(df: pd.DataFrame, gu: str) -> go.Figure:
 
 
 def new_license_pie(df: pd.DataFrame, gu: str) -> go.Figure:
-    pie = df[(df["구"] == gu) & (df["승인연도"] == 2025)]["동"].value_counts().reset_index()
+    pie = (
+        df[(df["구"] == gu) & (df["승인연도"] == 2025)]["동"]
+        .value_counts()
+        .reset_index()
+    )
     pie.columns = ["동", "신규 인허가 수"]
     if pie.empty:
         pie = pd.DataFrame({"동": ["2025년 데이터 없음"], "신규 인허가 수": [1]})
@@ -614,22 +717,45 @@ def new_license_pie(df: pd.DataFrame, gu: str) -> go.Figure:
         pie,
         names="동",
         values="신규 인허가 수",
-        color_discrete_sequence=[COLORS["blue"], COLORS["mint"], COLORS["coral"], COLORS["amber"], "#9aa8ff", "#8bd3ff"],
+        color_discrete_sequence=[
+            COLORS["blue"],
+            COLORS["mint"],
+            COLORS["coral"],
+            COLORS["amber"],
+            "#9aa8ff",
+            "#8bd3ff",
+        ],
         hole=0.36,
     )
-    fig.update_traces(textposition="outside", textinfo="label+percent", pull=[0.03] * len(pie))
+    fig.update_traces(
+        textposition="outside", textinfo="label+percent", pull=[0.03] * len(pie)
+    )
     fig.update_layout(title=f"{gu} 2025년 신규 인허가 동별 비중", showlegend=False)
     return apply_chart_style(fig)
 
 
 def license_cumulative_chart(license_df: pd.DataFrame, gu: str) -> go.Figure:
     years = list(range(2020, 2026))
-    foreign = license_df[(license_df["구"] == gu) & (license_df["분류"] == "외국인민박")].copy()
+    foreign = license_df[
+        (license_df["구"] == gu) & (license_df["분류"] == "외국인민박")
+    ].copy()
     rows = []
     for year in years:
         upto = foreign[foreign["인허가연도"] <= year]
-        rows.append({"연도": year, "상태": "영업중 누적", "건수": int((upto["영업상태명"] == "영업/정상").sum())})
-        rows.append({"연도": year, "상태": "폐업 누적", "건수": int((upto["영업상태명"] == "폐업").sum())})
+        rows.append(
+            {
+                "연도": year,
+                "상태": "영업중 누적",
+                "건수": int((upto["영업상태명"] == "영업/정상").sum()),
+            }
+        )
+        rows.append(
+            {
+                "연도": year,
+                "상태": "폐업 누적",
+                "건수": int((upto["영업상태명"] == "폐업").sum()),
+            }
+        )
     plot_df = pd.DataFrame(rows)
     fig = px.line(
         plot_df,
@@ -637,10 +763,18 @@ def license_cumulative_chart(license_df: pd.DataFrame, gu: str) -> go.Figure:
         y="건수",
         color="상태",
         markers=True,
-        color_discrete_map={"영업중 누적": COLORS["blue"], "폐업 누적": COLORS["coral"]},
+        color_discrete_map={
+            "영업중 누적": COLORS["blue"],
+            "폐업 누적": COLORS["coral"],
+        },
     )
     fig.update_traces(line=dict(width=3), marker=dict(size=8))
-    fig.update_layout(title=f"{gu} 외국인관광도시민박업 누적 현황", hovermode="x unified", xaxis=dict(dtick=1), yaxis_title="누적 업소 수")
+    fig.update_layout(
+        title=f"{gu} 외국인관광도시민박업 누적 현황",
+        hovermode="x unified",
+        xaxis=dict(dtick=1),
+        yaxis_title="누적 업소 수",
+    )
     return apply_chart_style(fig)
 
 
@@ -650,21 +784,36 @@ def license_dong_share_chart(license_df: pd.DataFrame, gu: str) -> go.Figure:
         & (license_df["분류"] == "외국인민박")
         & (license_df["인허가연도"].between(2020, 2025))
     ].copy()
-    latest = int(foreign["인허가연도"].max()) if foreign["인허가연도"].notna().any() else 2025
+    latest = (
+        int(foreign["인허가연도"].max())
+        if foreign["인허가연도"].notna().any()
+        else 2025
+    )
     counts = foreign[foreign["인허가연도"] == latest]["동"].value_counts()
     top = counts.head(7)
     other = counts.iloc[7:].sum()
     pie = top.reset_index()
     pie.columns = ["동", "건수"]
     if other > 0:
-        pie = pd.concat([pie, pd.DataFrame([{"동": "기타", "건수": int(other)}])], ignore_index=True)
+        pie = pd.concat(
+            [pie, pd.DataFrame([{"동": "기타", "건수": int(other)}])], ignore_index=True
+        )
     if pie.empty:
         pie = pd.DataFrame([{"동": "데이터 없음", "건수": 1}])
     fig = px.pie(
         pie,
         names="동",
         values="건수",
-        color_discrete_sequence=[COLORS["blue"], COLORS["mint"], COLORS["coral"], COLORS["amber"], "#a855f7", "#f97316", "#14b8a6", "#64748b"],
+        color_discrete_sequence=[
+            COLORS["blue"],
+            COLORS["mint"],
+            COLORS["coral"],
+            COLORS["amber"],
+            "#a855f7",
+            "#f97316",
+            "#14b8a6",
+            "#64748b",
+        ],
         hole=0.46,
     )
     fig.update_traces(
@@ -676,7 +825,14 @@ def license_dong_share_chart(license_df: pd.DataFrame, gu: str) -> go.Figure:
     fig.update_layout(
         title=f"{latest}년 신규 인허가 동별 비중",
         showlegend=True,
-        legend=dict(orientation="v", yanchor="middle", y=0.5, xanchor="left", x=1.02, font=dict(size=11)),
+        legend=dict(
+            orientation="v",
+            yanchor="middle",
+            y=0.5,
+            xanchor="left",
+            x=1.02,
+            font=dict(size=11),
+        ),
         margin=dict(l=4, r=112, t=58, b=8),
         height=390,
     )
@@ -685,24 +841,34 @@ def license_dong_share_chart(license_df: pd.DataFrame, gu: str) -> go.Figure:
 
 def license_category_year_chart(license_df: pd.DataFrame, gu: str) -> go.Figure:
     years = list(range(2020, 2026))
-    scoped = license_df[(license_df["구"] == gu) & (license_df["인허가연도"].between(2020, 2025))]
-    plot_df = (
-        scoped.groupby(["인허가연도", "분류"])
-        .size()
-        .rename("건수")
-        .reset_index()
+    scoped = license_df[
+        (license_df["구"] == gu) & (license_df["인허가연도"].between(2020, 2025))
+    ]
+    plot_df = scoped.groupby(["인허가연도", "분류"]).size().rename("건수").reset_index()
+    full = pd.MultiIndex.from_product(
+        [years, ["외국인민박", "숙박업", "관광숙박업"]], names=["인허가연도", "분류"]
+    ).to_frame(index=False)
+    plot_df = full.merge(plot_df, on=["인허가연도", "분류"], how="left").fillna(
+        {"건수": 0}
     )
-    full = pd.MultiIndex.from_product([years, ["외국인민박", "숙박업", "관광숙박업"]], names=["인허가연도", "분류"]).to_frame(index=False)
-    plot_df = full.merge(plot_df, on=["인허가연도", "분류"], how="left").fillna({"건수": 0})
     fig = px.bar(
         plot_df,
         x="인허가연도",
         y="건수",
         color="분류",
         barmode="group",
-        color_discrete_map={"외국인민박": COLORS["blue"], "숙박업": COLORS["mint"], "관광숙박업": COLORS["coral"]},
+        color_discrete_map={
+            "외국인민박": COLORS["blue"],
+            "숙박업": COLORS["mint"],
+            "관광숙박업": COLORS["coral"],
+        },
     )
-    fig.update_layout(title="업종별 신규 인허가 연도 비교", xaxis=dict(dtick=1), yaxis_title="건수", legend_title_text="")
+    fig.update_layout(
+        title="업종별 신규 인허가 연도 비교",
+        xaxis=dict(dtick=1),
+        yaxis_title="건수",
+        legend_title_text="",
+    )
     return apply_chart_style(fig)
 
 
@@ -736,13 +902,21 @@ def license_heatmap_chart(license_df: pd.DataFrame, gu: str) -> go.Figure:
 
 
 def risk_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
-    scoped = df[(df["구"] == gu) & (df["cluster_label"].isin(clusters))].dropna(subset=["위도", "경도"]).copy()
+    scoped = (
+        df[(df["구"] == gu) & (df["cluster_label"].isin(clusters))]
+        .dropna(subset=["위도", "경도"])
+        .copy()
+    )
     if scoped.empty:
         return go.Figure()
 
     scoped["위험도"] = scoped["최종위험점수_new"].round(2)
     scoped["소화용수등급"] = scoped["최근접_소화용수_거리등급"].fillna(-1).astype(int)
-    scoped["마커크기"] = scoped["최종위험점수_new"].fillna(scoped["최종위험점수_new"].median()).clip(8, 70)
+    scoped["마커크기"] = (
+        scoped["최종위험점수_new"]
+        .fillna(scoped["최종위험점수_new"].median())
+        .clip(8, 70)
+    )
 
     fig = go.Figure()
     for label, color in CLUSTER_COLORS.items():
@@ -755,8 +929,12 @@ def risk_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
                 lon=part["경도"],
                 mode="markers",
                 name=label,
-                marker=dict(size=(part["마커크기"] / 2.8).clip(7, 18), color=color, opacity=0.82),
-                customdata=part[["숙소명", "동", "위험도", "업종", "소화용수등급", "도로폭위험도"]],
+                marker=dict(
+                    size=(part["마커크기"] / 2.8).clip(7, 18), color=color, opacity=0.82
+                ),
+                customdata=part[
+                    ["숙소명", "동", "위험도", "업종", "소화용수등급", "도로폭위험도"]
+                ],
                 hovertemplate=(
                     "<b>%{customdata[0]}</b><br>"
                     "동: %{customdata[1]}<br>"
@@ -769,10 +947,22 @@ def risk_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
             )
         )
 
-    zoom = 12 if max(scoped["위도"].max() - scoped["위도"].min(), scoped["경도"].max() - scoped["경도"].min()) < 0.05 else 11
+    zoom = (
+        12
+        if max(
+            scoped["위도"].max() - scoped["위도"].min(),
+            scoped["경도"].max() - scoped["경도"].min(),
+        )
+        < 0.05
+        else 11
+    )
     fig.update_layout(
         title=f"{gu} 숙박시설 위험도 지도",
-        mapbox=dict(style="open-street-map", center=dict(lat=scoped["위도"].mean(), lon=scoped["경도"].mean()), zoom=zoom),
+        mapbox=dict(
+            style="open-street-map",
+            center=dict(lat=scoped["위도"].mean(), lon=scoped["경도"].mean()),
+            zoom=zoom,
+        ),
         margin=dict(l=0, r=0, t=54, b=0),
         height=610,
         legend=dict(orientation="h", yanchor="bottom", y=0.01, x=0.01),
@@ -787,7 +977,9 @@ def convex_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
     if len(unique) <= 2:
         return unique
 
-    def cross(o: tuple[float, float], a: tuple[float, float], b: tuple[float, float]) -> float:
+    def cross(
+        o: tuple[float, float], a: tuple[float, float], b: tuple[float, float]
+    ) -> float:
         return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
 
     lower: list[tuple[float, float]] = []
@@ -806,13 +998,19 @@ def convex_hull(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
 
 
 def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
-    scoped = df[(df["구"] == gu) & (df["cluster_label"].isin(clusters))].dropna(subset=["위도", "경도"]).copy()
+    scoped = (
+        df[(df["구"] == gu) & (df["cluster_label"].isin(clusters))]
+        .dropna(subset=["위도", "경도"])
+        .copy()
+    )
     if scoped.empty:
         return go.Figure()
     if not clusters:
         return go.Figure()
 
-    cluster_order = [label for label in ["저위험군", "중위험군", "고위험군"] if label in clusters]
+    cluster_order = [
+        label for label in ["저위험군", "중위험군", "고위험군"] if label in clusters
+    ]
     elegant_cluster_colors = {
         "저위험군": "#58C7A5",
         "중위험군": "#F2B84B",
@@ -835,7 +1033,13 @@ def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
         .sort_values(["숙박시설수", "평균위험도"], ascending=False)
     )
     cluster_counts = (
-        scoped.pivot_table(index="동", columns="cluster_label", values="숙소명", aggfunc="count", fill_value=0)
+        scoped.pivot_table(
+            index="동",
+            columns="cluster_label",
+            values="숙소명",
+            aggfunc="count",
+            fill_value=0,
+        )
         .reindex(columns=["저위험군", "중위험군", "고위험군"], fill_value=0)
         .reset_index()
     )
@@ -843,11 +1047,18 @@ def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
     for label in ["저위험군", "중위험군", "고위험군"]:
         if label not in dong_summary.columns:
             dong_summary[label] = 0
-    selected_cluster_order = [label for label in ["저위험군", "중위험군", "고위험군"] if label in clusters]
+    selected_cluster_order = [
+        label for label in ["저위험군", "중위험군", "고위험군"] if label in clusters
+    ]
     dong_summary["대표위험군"] = dong_summary[selected_cluster_order].idxmax(axis=1)
-    dong_summary["대표위험군수"] = dong_summary[selected_cluster_order].max(axis=1).astype(int)
+    dong_summary["대표위험군수"] = (
+        dong_summary[selected_cluster_order].max(axis=1).astype(int)
+    )
     dong_summary["위험군구성"] = dong_summary.apply(
-        lambda row: " / ".join(f"{label.replace('위험군', '')} {int(row[label])}개" for label in selected_cluster_order),
+        lambda row: " / ".join(
+            f"{label.replace('위험군', '')} {int(row[label])}개"
+            for label in selected_cluster_order
+        ),
         axis=1,
     )
 
@@ -884,7 +1095,9 @@ def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
                 y=ys,
                 mode="lines",
                 fill="toself",
-                fillcolor=elegant_cluster_fill.get(risk_group, "rgba(226,232,240,0.56)"),
+                fillcolor=elegant_cluster_fill.get(
+                    risk_group, "rgba(226,232,240,0.56)"
+                ),
                 line=dict(color="rgba(61,78,96,0.58)", width=0.75),
                 text=[hover_text] * len(xs),
                 hovertemplate="%{text}<extra></extra>",
@@ -894,7 +1107,14 @@ def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
         )
         try:
             centroid = shape(feature.get("geometry", {})).centroid
-            label_rows.append({"동": dong_name, "경도": centroid.x, "위도": centroid.y, "숙박시설수": row["숙박시설수"]})
+            label_rows.append(
+                {
+                    "동": dong_name,
+                    "경도": centroid.x,
+                    "위도": centroid.y,
+                    "숙박시설수": row["숙박시설수"],
+                }
+            )
         except Exception:
             pass
 
@@ -904,8 +1124,15 @@ def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
                 x=scoped["경도"],
                 y=scoped["위도"],
                 mode="markers",
-                marker=dict(size=7, color=scoped["cluster_label"].map(elegant_cluster_colors), opacity=0.78, line=dict(color="white", width=0.7)),
-                customdata=scoped[["숙소명", "동", "업종", "cluster_label", "최종위험점수_new"]],
+                marker=dict(
+                    size=7,
+                    color=scoped["cluster_label"].map(elegant_cluster_colors),
+                    opacity=0.78,
+                    line=dict(color="white", width=0.7),
+                ),
+                customdata=scoped[
+                    ["숙소명", "동", "업종", "cluster_label", "최종위험점수_new"]
+                ],
                 hovertemplate="<b>%{customdata[0]}</b><br>법정동: %{customdata[1]}<br>업종: %{customdata[2]}<br>위험군: %{customdata[3]}<br>위험도: %{customdata[4]:.2f}점<extra></extra>",
                 name="숙박시설 위치",
             )
@@ -916,15 +1143,24 @@ def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
                 x=scoped["경도"],
                 y=scoped["위도"],
                 mode="markers",
-                marker=dict(size=4.2, color="rgba(30,41,59,0.34)", line=dict(color="rgba(255,255,255,0.62)", width=0.4), opacity=0.78),
-                customdata=scoped[["숙소명", "동", "업종", "cluster_label", "최종위험점수_new"]],
+                marker=dict(
+                    size=4.2,
+                    color="rgba(30,41,59,0.34)",
+                    line=dict(color="rgba(255,255,255,0.62)", width=0.4),
+                    opacity=0.78,
+                ),
+                customdata=scoped[
+                    ["숙소명", "동", "업종", "cluster_label", "최종위험점수_new"]
+                ],
                 hovertemplate="<b>%{customdata[0]}</b><br>법정동: %{customdata[1]}<br>업종: %{customdata[2]}<br>위험군: %{customdata[3]}<br>위험도: %{customdata[4]:.2f}점<extra></extra>",
                 name="숙박시설 위치",
             )
         )
 
     if label_rows:
-        label_df = pd.DataFrame(label_rows).sort_values("숙박시설수", ascending=False).head(14)
+        label_df = (
+            pd.DataFrame(label_rows).sort_values("숙박시설수", ascending=False).head(14)
+        )
         fig.add_trace(
             go.Scatter(
                 x=label_df["경도"],
@@ -945,7 +1181,9 @@ def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
                 x=[None],
                 y=[None],
                 mode="markers",
-                marker=dict(size=13, color=elegant_cluster_colors[label], symbol="square"),
+                marker=dict(
+                    size=13, color=elegant_cluster_colors[label], symbol="square"
+                ),
                 name=f"{label} 우세 동",
                 hoverinfo="skip",
             )
@@ -1044,7 +1282,9 @@ def hex_to_rgba(hex_color: str, alpha: float) -> str:
     return f"rgba({red},{green},{blue},{alpha})"
 
 
-def sample_diverging_color(value: float, zmin: float, zmax: float, alpha: float = 0.62) -> str:
+def sample_diverging_color(
+    value: float, zmin: float, zmax: float, alpha: float = 0.62
+) -> str:
     if pd.isna(value) or zmax <= zmin:
         return f"rgba(226,232,240,{alpha})"
     norm = (value - zmin) / (zmax - zmin)
@@ -1068,7 +1308,9 @@ def infer_gu_name(props: dict) -> str | None:
     gu_name = props.get("구")
     if gu_name:
         return str(gu_name)
-    code = str(props.get("EMD_CD") or props.get("법정동코드") or props.get("join_code") or "")
+    code = str(
+        props.get("EMD_CD") or props.get("법정동코드") or props.get("join_code") or ""
+    )
     return SEOUL_SIGUNGU.get(code[:5])
 
 
@@ -1094,11 +1336,23 @@ def build_gu_boundaries(dong_boundaries: dict) -> dict:
             merged = unary_union(geometries)
         except Exception:
             merged = unary_union([geom.buffer(0) for geom in geometries])
-        features.append({"type": "Feature", "properties": {"구": gu_name}, "geometry": merged.__geo_interface__})
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {"구": gu_name},
+                "geometry": merged.__geo_interface__,
+            }
+        )
     return {"type": "FeatureCollection", "features": features}
 
 
-def add_gu_boundary_trace(fig: go.Figure, gu_boundaries: dict, *, width: float = 1.25, show_labels: bool = True) -> None:
+def add_gu_boundary_trace(
+    fig: go.Figure,
+    gu_boundaries: dict,
+    *,
+    width: float = 1.25,
+    show_labels: bool = True,
+) -> None:
     xs: list[float] = []
     ys: list[float] = []
     label_rows = []
@@ -1109,7 +1363,13 @@ def add_gu_boundary_trace(fig: go.Figure, gu_boundaries: dict, *, width: float =
         if show_labels:
             try:
                 centroid = shape(feature.get("geometry", {})).centroid
-                label_rows.append({"구": feature.get("properties", {}).get("구"), "경도": centroid.x, "위도": centroid.y})
+                label_rows.append(
+                    {
+                        "구": feature.get("properties", {}).get("구"),
+                        "경도": centroid.x,
+                        "위도": centroid.y,
+                    }
+                )
             except Exception:
                 pass
 
@@ -1139,7 +1399,9 @@ def add_gu_boundary_trace(fig: go.Figure, gu_boundaries: dict, *, width: float =
         )
 
 
-def grid_effect_rows(scoped: pd.DataFrame, grid_geo: dict, value_col: str) -> list[dict]:
+def grid_effect_rows(
+    scoped: pd.DataFrame, grid_geo: dict, value_col: str
+) -> list[dict]:
     points = [
         (float(row["경도"]), float(row["위도"]), float(row[value_col]))
         for _, row in scoped.dropna(subset=["경도", "위도", value_col]).iterrows()
@@ -1160,7 +1422,9 @@ def grid_effect_rows(scoped: pd.DataFrame, grid_geo: dict, value_col: str) -> li
         values = [
             value
             for lon, lat, value in points
-            if minx <= lon <= maxx and miny <= lat <= maxy and polygon.covers(Point(lon, lat))
+            if minx <= lon <= maxx
+            and miny <= lat <= maxy
+            and polygon.covers(Point(lon, lat))
         ]
         if not values:
             continue
@@ -1190,7 +1454,11 @@ def mgwr_grid_seoul_map(
 ) -> go.Figure:
     coef_col = f"coef_{variable}"
     contribution_col = f"contrib_{variable}"
-    value_col = contribution_col if metric == "contribution" and contribution_col in gwr_df.columns else coef_col
+    value_col = (
+        contribution_col
+        if metric == "contribution" and contribution_col in gwr_df.columns
+        else coef_col
+    )
     metric_label = "지역기여도" if value_col == contribution_col else "MGWR 계수"
     if value_col not in gwr_df.columns:
         return go.Figure()
@@ -1256,7 +1524,16 @@ def mgwr_grid_seoul_map(
                 fill="toself",
                 fillcolor=fill,
                 line=dict(color=border, width=0.45),
-                customdata=[[row["grid_id"], row["value"], row["abs_value"], row["sample_count"], row["color_value"]]] * len(xs),
+                customdata=[
+                    [
+                        row["grid_id"],
+                        row["value"],
+                        row["abs_value"],
+                        row["sample_count"],
+                        row["color_value"],
+                    ]
+                ]
+                * len(xs),
                 hovertemplate=(
                     "<b>격자 %{customdata[0]}</b><br>"
                     f"{variable} {metric_label}: " + "%{customdata[1]:.4f}<br>"
@@ -1275,7 +1552,11 @@ def mgwr_grid_seoul_map(
             x=scoped["경도"],
             y=scoped["위도"],
             mode="markers",
-            marker=dict(size=4, color="rgba(15,23,42,0.28)", line=dict(color="white", width=0.25)),
+            marker=dict(
+                size=4,
+                color="rgba(15,23,42,0.28)",
+                line=dict(color="white", width=0.25),
+            ),
             customdata=scoped[["구", "동", "숙소명", value_col]],
             hovertemplate=(
                 "<b>%{customdata[2]}</b><br>"
@@ -1321,17 +1602,39 @@ def mgwr_grid_seoul_map(
     bw_title = ""
     if bw_info:
         bw_title = f" | MGWR BW={bw_info.get('BW', '-'):.0f} NN ({bw_info.get('공간범위', '-')})"
-    grid_size = grid_geo.get("features", [{}])[0].get("properties", {}).get("cell_size_m", "-")
+    grid_size = (
+        grid_geo.get("features", [{}])[0].get("properties", {}).get("cell_size_m", "-")
+    )
     fig.update_layout(
         title=f"서울시 전체 법정동 경계 + {grid_size}m 격자 {risk_group or ''} {variable} MGWR {metric_label} ({color_label}){bw_title}",
-        xaxis=dict(title="", range=[min(xs) - pad_lon, max(xs) + pad_lon], showgrid=False, showticklabels=False, zeroline=False),
-        yaxis=dict(title="", range=[min(ys) - pad_lat, max(ys) + pad_lat], showgrid=False, showticklabels=False, zeroline=False, scaleanchor="x", scaleratio=1),
+        xaxis=dict(
+            title="",
+            range=[min(xs) - pad_lon, max(xs) + pad_lon],
+            showgrid=False,
+            showticklabels=False,
+            zeroline=False,
+        ),
+        yaxis=dict(
+            title="",
+            range=[min(ys) - pad_lat, max(ys) + pad_lat],
+            showgrid=False,
+            showticklabels=False,
+            zeroline=False,
+            scaleanchor="x",
+            scaleratio=1,
+        ),
         height=760,
         plot_bgcolor="#fbfcff",
         paper_bgcolor="white",
         margin=dict(l=8, r=8, t=66, b=8),
         font=dict(color=COLORS["ink"]),
-        legend=dict(orientation="h", yanchor="bottom", y=0.01, x=0.01, bgcolor="rgba(255,255,255,0.86)"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=0.01,
+            x=0.01,
+            bgcolor="rgba(255,255,255,0.86)",
+        ),
         uirevision="mgwr_grid_seoul_map",
     )
     return fig
@@ -1350,7 +1653,11 @@ def gwr_variable_seoul_map(
 ) -> go.Figure:
     coef_col = f"coef_{variable}"
     contribution_col = f"contrib_{variable}"
-    z_col = contribution_col if metric == "contribution" and contribution_col in gwr_df.columns else coef_col
+    z_col = (
+        contribution_col
+        if metric == "contribution" and contribution_col in gwr_df.columns
+        else coef_col
+    )
     metric_label = "지역기여도" if z_col == contribution_col else "평균계수"
     if z_col not in gwr_df.columns:
         return go.Figure()
@@ -1364,16 +1671,15 @@ def gwr_variable_seoul_map(
     if scoped.empty:
         return go.Figure()
 
-    dong_effect = (
-        scoped.groupby(["구", "동"], as_index=False)
-        .agg(
-            평균계수=(z_col, "mean"),
-            절대평균계수=(z_col, lambda s: s.abs().mean()),
-            평균MGWR계수=(coef_col, "mean") if coef_col in scoped.columns else (z_col, "mean"),
-            표본수=("동", "size"),
-            경도=("경도", "mean"),
-            위도=("위도", "mean"),
-        )
+    dong_effect = scoped.groupby(["구", "동"], as_index=False).agg(
+        평균계수=(z_col, "mean"),
+        절대평균계수=(z_col, lambda s: s.abs().mean()),
+        평균MGWR계수=(coef_col, "mean")
+        if coef_col in scoped.columns
+        else (z_col, "mean"),
+        표본수=("동", "size"),
+        경도=("경도", "mean"),
+        위도=("위도", "mean"),
     )
     fallback = (
         dong_effect.sort_values("표본수", ascending=False)
@@ -1438,7 +1744,18 @@ def gwr_variable_seoul_map(
                 fillcolor=fill,
                 line=dict(color=border, width=0.9),
                 name=f"{dong_name}",
-                customdata=[[row.get("구", gu_name), dong_name, value, row["절대평균계수"], row["표본수"], row["평균MGWR계수"], color_value]] * len(xs),
+                customdata=[
+                    [
+                        row.get("구", gu_name),
+                        dong_name,
+                        value,
+                        row["절대평균계수"],
+                        row["표본수"],
+                        row["평균MGWR계수"],
+                        color_value,
+                    ]
+                ]
+                * len(xs),
                 hovertemplate=(
                     "<b>%{customdata[0]} %{customdata[1]}</b><br>"
                     f"{variable} {metric_label}: " + "%{customdata[2]:.4f}<br>"
@@ -1477,16 +1794,13 @@ def gwr_variable_seoul_map(
     if gu_boundaries:
         add_gu_boundary_trace(fig, gu_boundaries, width=1.45, show_labels=True)
 
-    gu_summary = (
-        dong_effect.groupby("구", as_index=False)
-        .agg(
-            평균계수=("평균계수", "mean"),
-            평균절대계수=("절대평균계수", "mean"),
-            법정동수=("동", "nunique"),
-            표본수=("표본수", "sum"),
-            경도=("경도", "mean"),
-            위도=("위도", "mean"),
-        )
+    gu_summary = dong_effect.groupby("구", as_index=False).agg(
+        평균계수=("평균계수", "mean"),
+        평균절대계수=("절대평균계수", "mean"),
+        법정동수=("동", "nunique"),
+        표본수=("표본수", "sum"),
+        경도=("경도", "mean"),
+        위도=("위도", "mean"),
     )
     top_pos = (
         dong_effect.sort_values("평균계수", ascending=False)
@@ -1500,7 +1814,9 @@ def gwr_variable_seoul_map(
         .head(1)[["구", "동", "평균계수"]]
         .rename(columns={"동": "음의영향동", "평균계수": "음의영향계수"})
     )
-    gu_summary = gu_summary.merge(top_pos, on="구", how="left").merge(top_neg, on="구", how="left")
+    gu_summary = gu_summary.merge(top_pos, on="구", how="left").merge(
+        top_neg, on="구", how="left"
+    )
     gu_summary["표시크기"] = (gu_summary["표본수"] ** 0.5 * 2.2).clip(18, 48)
     fig.add_trace(
         go.Scatter(
@@ -1515,7 +1831,19 @@ def gwr_variable_seoul_map(
                 color="rgba(255,255,255,0.62)",
                 line=dict(color="rgba(15,23,42,0.55)", width=1.5),
             ),
-            customdata=gu_summary[["구", "법정동수", "표본수", "평균계수", "평균절대계수", "양의영향동", "양의영향계수", "음의영향동", "음의영향계수"]],
+            customdata=gu_summary[
+                [
+                    "구",
+                    "법정동수",
+                    "표본수",
+                    "평균계수",
+                    "평균절대계수",
+                    "양의영향동",
+                    "양의영향계수",
+                    "음의영향동",
+                    "음의영향계수",
+                ]
+            ],
             hovertemplate=(
                 "<b>%{customdata[0]}</b><br>"
                 f"선택 변수: {variable}<br>"
@@ -1550,7 +1878,9 @@ def gwr_variable_seoul_map(
             x=scoped["경도"],
             y=scoped["위도"],
             mode="markers",
-            marker=dict(size=4, color="rgba(31,43,61,0.26)", line=dict(color="white", width=0.3)),
+            marker=dict(
+                size=4, color="rgba(31,43,61,0.26)", line=dict(color="white", width=0.3)
+            ),
             customdata=scoped[["구", "동", "숙소명", z_col]],
             hovertemplate=(
                 "<b>%{customdata[2]}</b><br>"
@@ -1590,14 +1920,34 @@ def gwr_variable_seoul_map(
     group_title = f"{risk_group} " if risk_group else ""
     fig.update_layout(
         title=f"서울시 법정동별 {group_title}{variable} {model_label} {metric_label} ({color_label}){bw_title}",
-        xaxis=dict(title="", range=[scoped["경도"].min() - pad_lon, scoped["경도"].max() + pad_lon], showgrid=False, showticklabels=False, zeroline=False),
-        yaxis=dict(title="", range=[scoped["위도"].min() - pad_lat, scoped["위도"].max() + pad_lat], showgrid=False, showticklabels=False, zeroline=False, scaleanchor="x", scaleratio=1),
+        xaxis=dict(
+            title="",
+            range=[scoped["경도"].min() - pad_lon, scoped["경도"].max() + pad_lon],
+            showgrid=False,
+            showticklabels=False,
+            zeroline=False,
+        ),
+        yaxis=dict(
+            title="",
+            range=[scoped["위도"].min() - pad_lat, scoped["위도"].max() + pad_lat],
+            showgrid=False,
+            showticklabels=False,
+            zeroline=False,
+            scaleanchor="x",
+            scaleratio=1,
+        ),
         height=720,
         plot_bgcolor="#fbfcff",
         paper_bgcolor="white",
         margin=dict(l=8, r=8, t=62, b=8),
         font=dict(color=COLORS["ink"]),
-        legend=dict(orientation="h", yanchor="bottom", y=0.01, x=0.01, bgcolor="rgba(255,255,255,0.86)"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=0.01,
+            x=0.01,
+            bgcolor="rgba(255,255,255,0.86)",
+        ),
         uirevision="gwr_variable_seoul_map",
     )
     return fig
@@ -1632,7 +1982,9 @@ def gwr_mgwr_map(gwr_df: pd.DataFrame, gu: str, dong_boundaries: dict) -> go.Fig
             )
         )
 
-    hull_points = convex_hull(list(zip(scoped["경도"].tolist(), scoped["위도"].tolist())))
+    hull_points = convex_hull(
+        list(zip(scoped["경도"].tolist(), scoped["위도"].tolist()))
+    )
     if len(hull_points) >= 3:
         hull_x = [point[0] for point in hull_points] + [hull_points[0][0]]
         hull_y = [point[1] for point in hull_points] + [hull_points[0][1]]
@@ -1667,9 +2019,15 @@ def gwr_mgwr_map(gwr_df: pd.DataFrame, gu: str, dong_boundaries: dict) -> go.Fig
             .reset_index()
         )
         dong_summary = dong_summary.merge(dominant, on="동", how="left")
-        top_dongs = dong_summary.sort_values("표본수", ascending=False).head(12)["동"].tolist()
+        top_dongs = (
+            dong_summary.sort_values("표본수", ascending=False).head(12)["동"].tolist()
+        )
         dong_summary["표시크기"] = (dong_summary["표본수"] ** 0.5 * 11).clip(16, 54)
-        dong_variable = dict(zip(dong_summary["동"].astype(str), dong_summary["주요설명변수"].astype(str)))
+        dong_variable = dict(
+            zip(
+                dong_summary["동"].astype(str), dong_summary["주요설명변수"].astype(str)
+            )
+        )
 
         for feature in dong_boundaries.get("features", []):
             props = feature.get("properties", {})
@@ -1709,7 +2067,9 @@ def gwr_mgwr_map(gwr_df: pd.DataFrame, gu: str, dong_boundaries: dict) -> go.Fig
                 textfont=dict(size=12, color="#1f2b3d"),
                 marker=dict(
                     size=dong_summary["표시크기"],
-                    color=dong_summary["주요설명변수"].map(GWR_VARIABLE_COLORS).fillna("#b3b3b3"),
+                    color=dong_summary["주요설명변수"]
+                    .map(GWR_VARIABLE_COLORS)
+                    .fillna("#b3b3b3"),
                     line=dict(color="white", width=2),
                     opacity=0.9,
                 ),
@@ -1742,7 +2102,9 @@ def gwr_mgwr_map(gwr_df: pd.DataFrame, gu: str, dong_boundaries: dict) -> go.Fig
             x=scoped["경도"],
             y=scoped["위도"],
             mode="markers",
-            marker=dict(size=5, color="rgba(31,43,61,0.32)", line=dict(color="white", width=0.4)),
+            marker=dict(
+                size=5, color="rgba(31,43,61,0.32)", line=dict(color="white", width=0.4)
+            ),
             customdata=scoped[["동", "숙소명", "cluster_label"]],
             hovertemplate=(
                 "<b>%{customdata[1]}</b><br>"
@@ -1760,14 +2122,34 @@ def gwr_mgwr_map(gwr_df: pd.DataFrame, gu: str, dong_boundaries: dict) -> go.Fig
     pad_lat = max(lat_range * 0.08, 0.003)
     fig.update_layout(
         title=f"{gu} 동별 주요 설명 변수 및 MGWR BW 해석",
-        xaxis=dict(title="", range=[scoped["경도"].min() - pad_lon, scoped["경도"].max() + pad_lon], showgrid=False, showticklabels=False, zeroline=False),
-        yaxis=dict(title="", range=[scoped["위도"].min() - pad_lat, scoped["위도"].max() + pad_lat], showgrid=False, showticklabels=False, zeroline=False, scaleanchor="x", scaleratio=1),
+        xaxis=dict(
+            title="",
+            range=[scoped["경도"].min() - pad_lon, scoped["경도"].max() + pad_lon],
+            showgrid=False,
+            showticklabels=False,
+            zeroline=False,
+        ),
+        yaxis=dict(
+            title="",
+            range=[scoped["위도"].min() - pad_lat, scoped["위도"].max() + pad_lat],
+            showgrid=False,
+            showticklabels=False,
+            zeroline=False,
+            scaleanchor="x",
+            scaleratio=1,
+        ),
         height=650,
         plot_bgcolor="#fbfcff",
         paper_bgcolor="white",
         margin=dict(l=8, r=8, t=62, b=8),
         font=dict(color=COLORS["ink"]),
-        legend=dict(orientation="h", yanchor="bottom", y=0.01, x=0.01, bgcolor="rgba(255,255,255,0.86)"),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=0.01,
+            x=0.01,
+            bgcolor="rgba(255,255,255,0.86)",
+        ),
     )
     return fig
 
@@ -1784,7 +2166,14 @@ def cluster_top_areas(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def risk_factor_chart(df: pd.DataFrame, gu: str) -> go.Figure:
-    cols = ["소방위험도_점수", "단속위험도", "구조노후도", "도로폭위험도", "집중도", "주변건물수"]
+    cols = [
+        "소방위험도_점수",
+        "단속위험도",
+        "구조노후도",
+        "도로폭위험도",
+        "집중도",
+        "주변건물수",
+    ]
     scoped = df[df["구"] == gu].copy()
     rows = []
     for col in cols:
@@ -1827,13 +2216,23 @@ def risk_factor_chart(df: pd.DataFrame, gu: str) -> go.Figure:
         coloraxis_showscale=False,
         xaxis_title="전체 평균 대비 지수",
         yaxis_title="",
-        xaxis=dict(range=[0, max(160, factor_df["전체평균대비"].max() * 1.18)], gridcolor=COLORS["line"]),
+        xaxis=dict(
+            range=[0, max(160, factor_df["전체평균대비"].max() * 1.18)],
+            gridcolor=COLORS["line"],
+        ),
     )
     return apply_chart_style(fig)
 
 
 def risk_factor_table(df: pd.DataFrame, gu: str) -> pd.DataFrame:
-    cols = ["소방위험도_점수", "단속위험도", "구조노후도", "도로폭위험도", "집중도", "주변건물수"]
+    cols = [
+        "소방위험도_점수",
+        "단속위험도",
+        "구조노후도",
+        "도로폭위험도",
+        "집중도",
+        "주변건물수",
+    ]
     scoped = df[df["구"] == gu].copy()
     rows = []
     for col in cols:
@@ -1850,7 +2249,9 @@ def risk_factor_table(df: pd.DataFrame, gu: str) -> pd.DataFrame:
     return pd.DataFrame(rows).sort_values("전체평균대비", ascending=False)
 
 
-def point_segment_distance_m(lat: float, lon: float, a: tuple[float, float], b: tuple[float, float]) -> float:
+def point_segment_distance_m(
+    lat: float, lon: float, a: tuple[float, float], b: tuple[float, float]
+) -> float:
     mean_lat = math.radians((lat + a[0] + b[0]) / 3)
     px = lon * 111_320 * math.cos(mean_lat)
     py = lat * 110_540
@@ -1866,7 +2267,9 @@ def point_segment_distance_m(lat: float, lon: float, a: tuple[float, float], b: 
     return math.hypot(px - (ax + t * dx), py - (ay + t * dy))
 
 
-def nearest_point_on_segment(lat: float, lon: float, a: tuple[float, float], b: tuple[float, float]) -> tuple[float, float]:
+def nearest_point_on_segment(
+    lat: float, lon: float, a: tuple[float, float], b: tuple[float, float]
+) -> tuple[float, float]:
     mean_lat = math.radians((lat + a[0] + b[0]) / 3)
     scale_x = 111_320 * math.cos(mean_lat)
     scale_y = 110_540
@@ -1891,7 +2294,12 @@ def point_distance_m(a: tuple[float, float], b: tuple[float, float]) -> float:
     return math.hypot(dx, dy)
 
 
-def build_road_graph(road_line_df: pd.DataFrame, gu: str) -> tuple[dict[tuple[float, float], list[tuple[tuple[float, float], float]]], list[tuple[float, float]]]:
+def build_road_graph(
+    road_line_df: pd.DataFrame, gu: str
+) -> tuple[
+    dict[tuple[float, float], list[tuple[tuple[float, float], float]]],
+    list[tuple[float, float]],
+]:
     graph: dict[tuple[float, float], list[tuple[tuple[float, float], float]]] = {}
     for _, road in road_line_df[road_line_df["구"] == gu].iterrows():
         for line in road["road_lines"]:
@@ -1920,7 +2328,9 @@ def build_road_graph(road_line_df: pd.DataFrame, gu: str) -> tuple[dict[tuple[fl
     return graph, list(graph.keys())
 
 
-def nearest_graph_node(point: tuple[float, float], nodes: list[tuple[float, float]]) -> tuple[float, float] | None:
+def nearest_graph_node(
+    point: tuple[float, float], nodes: list[tuple[float, float]]
+) -> tuple[float, float] | None:
     if not nodes:
         return None
     return min(nodes, key=lambda node: point_distance_m(point, node))
@@ -1940,7 +2350,9 @@ def nearest_fire_center(row: pd.Series, fire_df: pd.DataFrame) -> pd.Series | No
             return matched.iloc[0]
 
     gu = str(row.get("구", ""))
-    same_gu = candidates[candidates.get("관할구역", "").astype(str).str.contains(gu, na=False)]
+    same_gu = candidates[
+        candidates.get("관할구역", "").astype(str).str.contains(gu, na=False)
+    ]
     if not same_gu.empty:
         candidates = same_gu
     if candidates.empty or pd.isna(row.get("위도")) or pd.isna(row.get("경도")):
@@ -1948,7 +2360,9 @@ def nearest_fire_center(row: pd.Series, fire_df: pd.DataFrame) -> pd.Series | No
 
     candidates = candidates.copy()
     candidates["_거리m"] = candidates.apply(
-        lambda center: point_distance_m((row["위도"], row["경도"]), (center["위도"], center["경도"])),
+        lambda center: point_distance_m(
+            (row["위도"], row["경도"]), (center["위도"], center["경도"])
+        ),
         axis=1,
     )
     return candidates.nsmallest(1, "_거리m").iloc[0]
@@ -2026,7 +2440,9 @@ def shortest_road_path(
     start_point = (row["위도"], row["경도"])
     end_point = (center_row["위도"], center_row["경도"])
     anchor = adjacent_road_anchor(row) or start_point
-    graph_path, graph_distance = shortest_graph_path(anchor, end_point, row["구"], road_line_df)
+    graph_path, graph_distance = shortest_graph_path(
+        anchor, end_point, row["구"], road_line_df
+    )
     if not graph_path:
         return [], None
     path = [start_point]
@@ -2055,7 +2471,12 @@ def nearest_road_width(row: pd.Series, road_line_df: pd.DataFrame) -> dict:
 
     candidates["대표거리"] = (
         ((candidates["대표위도"] - row["위도"]) * 110_540) ** 2
-        + ((candidates["대표경도"] - row["경도"]) * 111_320 * math.cos(math.radians(row["위도"]))) ** 2
+        + (
+            (candidates["대표경도"] - row["경도"])
+            * 111_320
+            * math.cos(math.radians(row["위도"]))
+        )
+        ** 2
     ) ** 0.5
     candidates = candidates.nsmallest(80, "대표거리")
 
@@ -2064,7 +2485,9 @@ def nearest_road_width(row: pd.Series, road_line_df: pd.DataFrame) -> dict:
     for _, road in candidates.iterrows():
         for line in road["road_lines"]:
             for start, end in zip(line, line[1:]):
-                distance = point_segment_distance_m(row["위도"], row["경도"], start, end)
+                distance = point_segment_distance_m(
+                    row["위도"], row["경도"], start, end
+                )
                 if distance < best_distance:
                     best = road
                     best_distance = distance
@@ -2085,7 +2508,9 @@ def nearest_road_width(row: pd.Series, road_line_df: pd.DataFrame) -> dict:
     }
 
 
-def enrich_representative_roads(representatives: pd.DataFrame, road_line_df: pd.DataFrame) -> pd.DataFrame:
+def enrich_representative_roads(
+    representatives: pd.DataFrame, road_line_df: pd.DataFrame
+) -> pd.DataFrame:
     enriched = representatives.copy().reset_index(drop=True)
     road_keys = [
         "인접도로명",
@@ -2132,8 +2557,12 @@ def representative_route_facilities(
         "도로폭_보정이동시간초",
         "도로폭_보정예상도착초",
     ]
-    route_lookup = route_df[[col for col in route_cols if col in route_df.columns]].copy()
-    width_lookup = road_width_df[["구", "도로명", "표시도로폭", "공식도로폭평균m", "공식구간수"]].copy()
+    route_lookup = route_df[
+        [col for col in route_cols if col in route_df.columns]
+    ].copy()
+    width_lookup = road_width_df[
+        ["구", "도로명", "표시도로폭", "공식도로폭평균m", "공식구간수"]
+    ].copy()
     width_lookup = width_lookup.rename(
         columns={
             "도로명": "인접도로명",
@@ -2142,7 +2571,9 @@ def representative_route_facilities(
             "공식구간수": "도로폭공식구간수",
         }
     )
-    scoped = final_df[(final_df["구"] == gu) & (final_df["cluster_label"] == cluster_label)].copy()
+    scoped = final_df[
+        (final_df["구"] == gu) & (final_df["cluster_label"] == cluster_label)
+    ].copy()
     if scoped.empty:
         return scoped
 
@@ -2163,7 +2594,11 @@ def representative_route_facilities(
         part["동시설수"] = int(facility_count)
         selected_parts.append(part)
 
-    scoped = pd.concat(selected_parts, ignore_index=True) if selected_parts else scoped.iloc[0:0].copy()
+    scoped = (
+        pd.concat(selected_parts, ignore_index=True)
+        if selected_parts
+        else scoped.iloc[0:0].copy()
+    )
     if scoped.empty:
         return scoped
 
@@ -2179,7 +2614,9 @@ def representative_route_facilities(
     if scoped.empty:
         return scoped
 
-    scoped = scoped.sort_values(["대표동순위", "최종위험점수_new"], ascending=[True, False]).reset_index(drop=True)
+    scoped = scoped.sort_values(
+        ["대표동순위", "최종위험점수_new"], ascending=[True, False]
+    ).reset_index(drop=True)
     scoped = enrich_representative_roads(scoped, road_line_df)
     scoped["선택라벨"] = (
         scoped["동"].fillna("")
@@ -2217,7 +2654,11 @@ def value_or_dash(value: object, suffix: str = "", decimals: int = 1) -> str:
     return f"{value}{suffix}"
 
 
-def road_width_adjusted_seconds(distance_m: float | int | None, speed_factor: float | int | None, arrival_buffer_seconds: float = 60) -> tuple[float | pd.NA, float | pd.NA]:
+def road_width_adjusted_seconds(
+    distance_m: float | int | None,
+    speed_factor: float | int | None,
+    arrival_buffer_seconds: float = 60,
+) -> tuple[float | pd.NA, float | pd.NA]:
     if pd.isna(distance_m):
         return pd.NA, pd.NA
     factor = 1 if pd.isna(speed_factor) else float(speed_factor)
@@ -2225,7 +2666,9 @@ def road_width_adjusted_seconds(distance_m: float | int | None, speed_factor: fl
     return move_seconds, move_seconds + arrival_buffer_seconds
 
 
-def selected_route_comparison(row: pd.Series, fire_df: pd.DataFrame, road_line_df: pd.DataFrame) -> dict:
+def selected_route_comparison(
+    row: pd.Series, fire_df: pd.DataFrame, road_line_df: pd.DataFrame
+) -> dict:
     center_row = nearest_fire_center(row, fire_df)
     straight = row.get("안전센터_유클리드m", row.get("최근접_거리m", pd.NA))
     if center_row is None:
@@ -2238,9 +2681,15 @@ def selected_route_comparison(row: pd.Series, fire_df: pd.DataFrame, road_line_d
             "도로망보정예상도착초": pd.NA,
         }
     _, road_distance = shortest_road_path(row, center_row, road_line_df)
-    ratio = (road_distance / straight) if road_distance and pd.notna(straight) and straight else pd.NA
+    ratio = (
+        (road_distance / straight)
+        if road_distance and pd.notna(straight) and straight
+        else pd.NA
+    )
     diff = (road_distance - straight) if road_distance and pd.notna(straight) else pd.NA
-    road_move_seconds, road_arrival_seconds = road_width_adjusted_seconds(road_distance, row.get("도로폭_속도계수", pd.NA))
+    road_move_seconds, road_arrival_seconds = road_width_adjusted_seconds(
+        road_distance, row.get("도로폭_속도계수", pd.NA)
+    )
     return {
         "도로망추정거리m": road_distance,
         "직선거리m": straight,
@@ -2251,11 +2700,15 @@ def selected_route_comparison(row: pd.Series, fire_df: pd.DataFrame, road_line_d
     }
 
 
-def route_width_markers(gu: str, path: list[tuple[float, float]], road_width_line_df: pd.DataFrame) -> pd.DataFrame:
+def route_width_markers(
+    gu: str, path: list[tuple[float, float]], road_width_line_df: pd.DataFrame
+) -> pd.DataFrame:
     if len(path) < 2:
         return pd.DataFrame()
 
-    segment_lengths = [point_distance_m(start, end) for start, end in zip(path, path[1:])]
+    segment_lengths = [
+        point_distance_m(start, end) for start, end in zip(path, path[1:])
+    ]
     total = sum(segment_lengths)
     if total <= 0:
         return pd.DataFrame()
@@ -2265,7 +2718,10 @@ def route_width_markers(gu: str, path: list[tuple[float, float]], road_width_lin
     passed = 0.0
     seg_idx = 0
     for target in targets:
-        while seg_idx < len(segment_lengths) - 1 and passed + segment_lengths[seg_idx] < target:
+        while (
+            seg_idx < len(segment_lengths) - 1
+            and passed + segment_lengths[seg_idx] < target
+        ):
             passed += segment_lengths[seg_idx]
             seg_idx += 1
         start = path[seg_idx]
@@ -2274,7 +2730,9 @@ def route_width_markers(gu: str, path: list[tuple[float, float]], road_width_lin
         t = max(0, min(1, (target - passed) / length))
         lat = start[0] + (end[0] - start[0]) * t
         lon = start[1] + (end[1] - start[1]) * t
-        width = nearest_road_width(pd.Series({"구": gu, "위도": lat, "경도": lon}), road_width_line_df)
+        width = nearest_road_width(
+            pd.Series({"구": gu, "위도": lat, "경도": lon}), road_width_line_df
+        )
         if not width:
             continue
         rows.append(
@@ -2290,14 +2748,28 @@ def route_width_markers(gu: str, path: list[tuple[float, float]], road_width_lin
     return pd.DataFrame(rows)
 
 
-def dispatch_route_map(route_df: pd.DataFrame, fire_df: pd.DataFrame, road_width_line_df: pd.DataFrame, road_route_df: pd.DataFrame, selected_row: pd.Series) -> go.Figure:
-    dong_points = route_df[
-        (route_df["구"] == selected_row["구"])
-        & (route_df["동"] == selected_row["동"])
-    ].dropna(subset=["위도", "경도"]).copy()
+def dispatch_route_map(
+    route_df: pd.DataFrame,
+    fire_df: pd.DataFrame,
+    road_width_line_df: pd.DataFrame,
+    road_route_df: pd.DataFrame,
+    selected_row: pd.Series,
+) -> go.Figure:
+    dong_points = (
+        route_df[
+            (route_df["구"] == selected_row["구"])
+            & (route_df["동"] == selected_row["동"])
+        ]
+        .dropna(subset=["위도", "경도"])
+        .copy()
+    )
     center_row = nearest_fire_center(selected_row, fire_df)
     center = pd.DataFrame([center_row]) if center_row is not None else pd.DataFrame()
-    center_name = center_row["시설명"] if center_row is not None else selected_row.get("최근접_안전센터", "-")
+    center_name = (
+        center_row["시설명"]
+        if center_row is not None
+        else selected_row.get("최근접_안전센터", "-")
+    )
 
     road_width = selected_row.get("공식도로폭m", pd.NA)
     if pd.isna(road_width):
@@ -2316,7 +2788,9 @@ def dispatch_route_map(route_df: pd.DataFrame, fire_df: pd.DataFrame, road_width
                 mode="markers",
                 name=f"{selected_row['동']} 숙박시설",
                 marker=dict(size=7, color="rgba(100,116,139,0.34)"),
-                customdata=dong_points[["업소명", "최근접_안전센터", "최근접_거리m", "공식도로폭m"]],
+                customdata=dong_points[
+                    ["업소명", "최근접_안전센터", "최근접_거리m", "공식도로폭m"]
+                ],
                 hovertemplate=(
                     "<b>%{customdata[0]}</b><br>"
                     "최근접 안전센터: %{customdata[1]}<br>"
@@ -2385,7 +2859,9 @@ def dispatch_route_map(route_df: pd.DataFrame, fire_df: pd.DataFrame, road_width
                     ),
                 )
             )
-        road_path, road_distance, road_anchor = dispatch_arrival_path(selected_row, center_row, road_route_df)
+        road_path, road_distance, road_anchor = dispatch_arrival_path(
+            selected_row, center_row, road_route_df
+        )
         if road_path:
             fig.add_trace(
                 go.Scattermapbox(
@@ -2421,7 +2897,11 @@ def dispatch_route_map(route_df: pd.DataFrame, fire_df: pd.DataFrame, road_width
                     ),
                 )
             )
-        width_markers = route_width_markers(selected_row["구"], road_path, road_width_line_df) if road_path else pd.DataFrame()
+        width_markers = (
+            route_width_markers(selected_row["구"], road_path, road_width_line_df)
+            if road_path
+            else pd.DataFrame()
+        )
         if not width_markers.empty:
             fig.add_trace(
                 go.Scattermapbox(
@@ -2469,7 +2949,9 @@ def dispatch_route_map(route_df: pd.DataFrame, fire_df: pd.DataFrame, road_width
                 name="인접 안전센터",
                 text=[center_name],
                 textposition="top right",
-                marker=dict(size=17, color="#059669", symbol="fire-station", opacity=0.95),
+                marker=dict(
+                    size=17, color="#059669", symbol="fire-station", opacity=0.95
+                ),
                 hovertemplate="<b>%{text}</b><br>인접 안전센터<extra></extra>",
             )
         )
@@ -2483,11 +2965,13 @@ def dispatch_route_map(route_df: pd.DataFrame, fire_df: pd.DataFrame, road_width
             text=[selected_row["업소명"]],
             textposition="bottom right",
             marker=dict(size=18, color="#e11d48", opacity=0.96),
-            customdata=[[
-                selected_row.get("최종위험점수_new", pd.NA),
-                selected_row.get("도로폭_보정예상도착초", pd.NA),
-                selected_row.get("최근접_거리m", pd.NA),
-            ]],
+            customdata=[
+                [
+                    selected_row.get("최종위험점수_new", pd.NA),
+                    selected_row.get("도로폭_보정예상도착초", pd.NA),
+                    selected_row.get("최근접_거리m", pd.NA),
+                ]
+            ],
             hovertemplate=(
                 "<b>%{text}</b><br>"
                 "위험도: %{customdata[0]:.2f}<br>"
@@ -2515,7 +2999,9 @@ def dispatch_route_map(route_df: pd.DataFrame, fire_df: pd.DataFrame, road_width
         lons.extend(dong_points["경도"].tolist())
 
     spread = max(max(lats) - min(lats), max(lons) - min(lons))
-    zoom = 15 if spread < 0.01 else 14 if spread < 0.025 else 13 if spread < 0.05 else 12
+    zoom = (
+        15 if spread < 0.01 else 14 if spread < 0.025 else 13 if spread < 0.05 else 12
+    )
     fig.update_layout(
         title=f"{selected_row['동']} 출동경로 및 도로폭",
         mapbox=dict(
@@ -2548,11 +3034,16 @@ gu_boundary_geo = build_gu_boundaries(dong_boundary_geo)
 grid_250_geo = load_seoul_grid(250)
 grid_500_geo = load_seoul_grid(500)
 license_df = load_license_sources()
-route_df, fire_facility_df, road_width_df, road_line_df, road_route_df = load_route_sources()
+route_df, fire_facility_df, road_width_df, road_line_df, road_route_df = (
+    load_route_sources()
+)
 gu_list = sorted(final_df["구"].dropna().unique())
 
 with st.sidebar:
-    st.markdown('<div class="sidebar-title">서울시 관광 지역 내 숙박 시설 화재 위험도 분석</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="sidebar-title">서울시 관광 지역 내 숙박 시설 화재 위험도 분석</div>',
+        unsafe_allow_html=True,
+    )
     st.header("필터")
     default_gu = gu_list.index("마포구") if "마포구" in gu_list else 0
     selected_gu = st.selectbox("구 선택", gu_list, index=default_gu)
@@ -2571,40 +3062,80 @@ selected_view = st.radio(
 )
 
 if selected_view == "개요":
-    st.markdown('<div class="section-title">선택 구 위험 프로파일</div>', unsafe_allow_html=True)
-    st.markdown('<div class="soft-note">0430 최종테이블의 선택 구 평균을 서울 10구 전체 평균과 비교합니다. 100보다 크면 전체 평균보다 높은 지표입니다.</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">선택 구 위험 프로파일</div>', unsafe_allow_html=True
+    )
+    st.markdown(
+        '<div class="soft-note">0430 최종테이블의 선택 구 평균을 서울 10구 전체 평균과 비교합니다. 100보다 크면 전체 평균보다 높은 지표입니다.</div>',
+        unsafe_allow_html=True,
+    )
     left, right = st.columns([1.1, 0.9])
     with left:
         st.plotly_chart(risk_factor_chart(final_df, selected_gu), width="stretch")
-        st.dataframe(risk_factor_table(final_df, selected_gu), hide_index=True, width="stretch")
+        st.dataframe(
+            risk_factor_table(final_df, selected_gu), hide_index=True, width="stretch"
+        )
     with right:
-        st.markdown('<div class="section-title">선택 구 위험시설 TOP 10</div>', unsafe_allow_html=True)
-        rank_cols = ["구", "동", "숙소명", "업종", "cluster_label", "최종위험점수_new", "최근접_소화용수_거리등급"]
-        st.dataframe(gu_df.sort_values("최종위험점수_new", ascending=False)[rank_cols].head(10), hide_index=True, width="stretch")
+        st.markdown(
+            '<div class="section-title">선택 구 위험시설 TOP 10</div>',
+            unsafe_allow_html=True,
+        )
+        rank_cols = [
+            "구",
+            "동",
+            "숙소명",
+            "업종",
+            "cluster_label",
+            "최종위험점수_new",
+            "최근접_소화용수_거리등급",
+        ]
+        st.dataframe(
+            gu_df.sort_values("최종위험점수_new", ascending=False)[rank_cols].head(10),
+            hide_index=True,
+            width="stretch",
+        )
 
 elif selected_view == "인허가":
-    st.markdown('<div class="section-title">신규 인허가 흐름</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">신규 인허가 흐름</div>', unsafe_allow_html=True
+    )
     top_left, top_mid, top_right = st.columns([1.25, 0.9, 0.95])
     with top_left:
-        st.plotly_chart(license_cumulative_chart(license_df, selected_gu), width="stretch")
+        st.plotly_chart(
+            license_cumulative_chart(license_df, selected_gu), width="stretch"
+        )
     with top_mid:
-        st.plotly_chart(license_dong_share_chart(license_df, selected_gu), width="stretch")
+        st.plotly_chart(
+            license_dong_share_chart(license_df, selected_gu), width="stretch"
+        )
     with top_right:
-        st.plotly_chart(license_category_year_chart(license_df, selected_gu), width="stretch")
+        st.plotly_chart(
+            license_category_year_chart(license_df, selected_gu), width="stretch"
+        )
     st.plotly_chart(license_heatmap_chart(license_df, selected_gu), width="stretch")
 
 elif selected_view == "위험지도":
-    st.markdown('<div class="section-title">법정동 중심 위험 지도</div>', unsafe_allow_html=True)
-    st.markdown('<div class="soft-note">선택 구의 법정동 경계를 기준으로 구역을 나누고, 각 법정동에서 가장 많이 나타나는 위험군 색으로 채웁니다. 점은 개별 숙박시설 위치이며, 마우스를 올리면 법정동별 위험군 구성과 평균 위험도를 확인할 수 있습니다.</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">법정동 중심 위험 지도</div>', unsafe_allow_html=True
+    )
+    st.markdown(
+        '<div class="soft-note">선택 구의 법정동 경계를 기준으로 구역을 나누고, 각 법정동에서 가장 많이 나타나는 위험군 색으로 채웁니다. 점은 개별 숙박시설 위치이며, 마우스를 올리면 법정동별 위험군 구성과 평균 위험도를 확인할 수 있습니다.</div>',
+        unsafe_allow_html=True,
+    )
     selected_clusters = st.multiselect(
         "지도 위험군",
         ["저위험군", "중위험군", "고위험군"],
         default=["저위험군", "중위험군", "고위험군"],
     )
-    st.plotly_chart(dong_focus_map(final_df, selected_gu, selected_clusters), width="stretch")
+    st.plotly_chart(
+        dong_focus_map(final_df, selected_gu, selected_clusters), width="stretch"
+    )
 
 elif selected_view == "클러스터":
-    st.markdown('<div class="section-title">클러스터별 숙박시설 개수 상위 지역</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">클러스터별 숙박시설 개수 상위 지역</div>',
+        unsafe_allow_html=True,
+    )
     top_area = cluster_top_areas(final_df)
     left, right = st.columns([0.95, 1.35])
     with left:
@@ -2621,29 +3152,49 @@ elif selected_view == "클러스터":
             facet_col="cluster_label",
             color_discrete_map=CLUSTER_COLORS,
         )
-        fig.update_layout(showlegend=False, plot_bgcolor="white", paper_bgcolor="white", margin=dict(l=0, r=0, t=36, b=0), xaxis_title="숙박시설 수", yaxis_title="")
+        fig.update_layout(
+            showlegend=False,
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            margin=dict(l=0, r=0, t=36, b=0),
+            xaxis_title="숙박시설 수",
+            yaxis_title="",
+        )
         st.plotly_chart(fig, width="stretch")
 
 elif selected_view == "GWR/MGWR":
-    st.markdown('<div class="section-title">저위험군/고위험군 MGWR 변수별 공간 패턴</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">저위험군/고위험군 MGWR 변수별 공간 패턴</div>',
+        unsafe_allow_html=True,
+    )
     st.markdown(
         '<div class="soft-note">서울시 전체 법정동 경계를 배경으로 깔고, 그 위에 격자를 올려 선택 변수의 MGWR 지역 기여도를 색칠합니다. 빨강은 평균보다 위험도를 더 올리는 방향, 파랑은 낮추는 방향이며, 선택 변수의 MGWR BW는 그 효과가 국소적으로 작동하는지 광역적으로 작동하는지 설명합니다.</div>',
         unsafe_allow_html=True,
     )
-    local_source_df = mgwr_cluster_local_df if not mgwr_cluster_local_df.empty else gwr_local_df
+    local_source_df = (
+        mgwr_cluster_local_df if not mgwr_cluster_local_df.empty else gwr_local_df
+    )
     if local_source_df.empty:
         st.warning("지역 계수 파일을 찾지 못했거나 좌표와 매칭하지 못했습니다.")
     else:
         control_l, control_r = st.columns([0.36, 0.64])
         with control_l:
             risk_group = st.selectbox("위험군", ["저위험군", "고위험군"], index=0)
-            scoped_local_df = local_source_df[local_source_df["cluster_label"] == risk_group].copy() if "cluster_label" in local_source_df.columns else local_source_df.copy()
+            scoped_local_df = (
+                local_source_df[local_source_df["cluster_label"] == risk_group].copy()
+                if "cluster_label" in local_source_df.columns
+                else local_source_df.copy()
+            )
             variable_options = [
                 col.replace("coef_", "")
                 for col in scoped_local_df.columns
                 if col.startswith("coef_") and col != "coef_intercept"
             ]
-            selected_variable = st.selectbox("영향도 변수", variable_options, index=0) if variable_options else None
+            selected_variable = (
+                st.selectbox("영향도 변수", variable_options, index=0)
+                if variable_options
+                else None
+            )
             display_metric = st.radio(
                 "지도 표시값",
                 ["지역 기여도", "MGWR 계수"],
@@ -2687,16 +3238,40 @@ elif selected_view == "GWR/MGWR":
                 st.markdown("**MGWR BW 해석**")
                 st.dataframe(bw_table, hide_index=True, width="stretch")
             if not mgwr_cluster_local_df.empty:
-                st.caption("지도 색은 기본적으로 MGWR 계수 × 지역 변수값(z-score)의 공간단위 평균입니다. BW는 법정동/격자별 값이 아니라 선택 위험군/변수의 MGWR 대역폭입니다.")
+                st.caption(
+                    "지도 색은 기본적으로 MGWR 계수 × 지역 변수값(z-score)의 공간단위 평균입니다. BW는 법정동/격자별 값이 아니라 선택 위험군/변수의 MGWR 대역폭입니다."
+                )
         with control_r:
             model_view = model_df.copy()
             if not model_view.empty:
-                display_cols = [col for col in ["위험군", "대표모형", "n", "R2", "Adj_R2", "AICc", "Residual_Moran_I", "Moran_p", "BW"] if col in model_view.columns]
-                st.dataframe(model_view[model_view["위험군"].isin(["저위험군", "고위험군"])][display_cols], hide_index=True, width="stretch")
+                display_cols = [
+                    col
+                    for col in [
+                        "위험군",
+                        "대표모형",
+                        "n",
+                        "R2",
+                        "Adj_R2",
+                        "AICc",
+                        "Residual_Moran_I",
+                        "Moran_p",
+                        "BW",
+                    ]
+                    if col in model_view.columns
+                ]
+                st.dataframe(
+                    model_view[model_view["위험군"].isin(["저위험군", "고위험군"])][
+                        display_cols
+                    ],
+                    hide_index=True,
+                    width="stretch",
+                )
         if scoped_local_df.empty or not variable_options:
             st.warning(f"{risk_group}에 표시할 지역 계수 데이터가 없습니다.")
         else:
-            metric_key = "coefficient" if display_metric == "MGWR 계수" else "contribution"
+            metric_key = (
+                "coefficient" if display_metric == "MGWR 계수" else "contribution"
+            )
             scale_key = "absolute" if color_scale_label == "0 기준" else "relative"
             if map_unit_label == "법정동":
                 st.plotly_chart(
@@ -2714,7 +3289,9 @@ elif selected_view == "GWR/MGWR":
                     width="stretch",
                 )
             else:
-                selected_grid_geo = grid_250_geo if grid_size_label == "250m" else grid_500_geo
+                selected_grid_geo = (
+                    grid_250_geo if grid_size_label == "250m" else grid_500_geo
+                )
                 st.plotly_chart(
                     mgwr_grid_seoul_map(
                         scoped_local_df,
@@ -2731,7 +3308,10 @@ elif selected_view == "GWR/MGWR":
                 )
 
 elif selected_view == "공간모형":
-    st.markdown('<div class="section-title">구별 상위 대표 숙박시설 출동경로</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">구별 상위 대표 숙박시설 출동경로</div>',
+        unsafe_allow_html=True,
+    )
     control_l, control_r = st.columns([0.32, 0.68])
     with control_l:
         route_cluster = st.selectbox(
@@ -2740,9 +3320,13 @@ elif selected_view == "공간모형":
             key="route_cluster",
         )
 
-    representatives = representative_route_facilities(final_df, route_df, road_width_df, road_line_df, selected_gu, route_cluster)
+    representatives = representative_route_facilities(
+        final_df, route_df, road_width_df, road_line_df, selected_gu, route_cluster
+    )
     if representatives.empty:
-        st.info("선택한 구와 군집에서 상위 2개 동 대표 숙박시설 출동경로 데이터가 없습니다.")
+        st.info(
+            "선택한 구와 군집에서 상위 2개 동 대표 숙박시설 출동경로 데이터가 없습니다."
+        )
     else:
         with control_r:
             selected_label = st.selectbox(
@@ -2750,61 +3334,182 @@ elif selected_view == "공간모형":
                 representatives["선택라벨"].tolist(),
                 key=f"route_facility_{selected_gu}_{route_cluster}",
             )
-        selected_route = representatives[representatives["선택라벨"] == selected_label].iloc[0]
-        route_compare = selected_route_comparison(selected_route, fire_facility_df, road_route_df)
+        selected_route = representatives[
+            representatives["선택라벨"] == selected_label
+        ].iloc[0]
+        route_compare = selected_route_comparison(
+            selected_route, fire_facility_df, road_route_df
+        )
 
         map_col, info_col = st.columns([1.2, 0.8])
         with map_col:
-            st.plotly_chart(dispatch_route_map(route_df, fire_facility_df, road_line_df, road_route_df, selected_route), width="stretch")
+            st.plotly_chart(
+                dispatch_route_map(
+                    route_df,
+                    fire_facility_df,
+                    road_line_df,
+                    road_route_df,
+                    selected_route,
+                ),
+                width="stretch",
+            )
             compare_df_view = pd.DataFrame(
                 [
-                    {"구분": "유클리드 직선거리", "거리(m)": route_compare["직선거리m"]},
-                    {"구분": "공식 도로망 추정거리", "거리(m)": route_compare["도로망추정거리m"]},
-                    {"구분": "도로망-유클리드 차이", "거리(m)": route_compare["거리차m"]},
+                    {
+                        "구분": "유클리드 직선거리",
+                        "거리(m)": route_compare["직선거리m"],
+                    },
+                    {
+                        "구분": "공식 도로망 추정거리",
+                        "거리(m)": route_compare["도로망추정거리m"],
+                    },
+                    {
+                        "구분": "도로망-유클리드 차이",
+                        "거리(m)": route_compare["거리차m"],
+                    },
                 ]
             )
             st.dataframe(
-                compare_df_view.assign(**{"거리(m)": compare_df_view["거리(m)"].map(lambda v: value_or_dash(v, "", 0))}),
+                compare_df_view.assign(
+                    **{
+                        "거리(m)": compare_df_view["거리(m)"].map(
+                            lambda v: value_or_dash(v, "", 0)
+                        )
+                    }
+                ),
                 hide_index=True,
                 width="stretch",
             )
         with info_col:
             metric_cols = st.columns(2)
-            metric_cols[0].metric("최종위험점수", f"{selected_route.get('최종위험점수_new', 0):.2f}점")
-            metric_cols[1].metric("직선거리", value_or_dash(route_compare["직선거리m"], "m", 0))
-            metric_cols[0].metric("도로폭 보정 예상도착", route_seconds_only_label(selected_route.get("도로폭_보정예상도착초")))
-            metric_cols[1].metric("도로망 추정거리", value_or_dash(route_compare["도로망추정거리m"], "m", 0))
-            metric_cols[0].metric("공식 도로폭", value_or_dash(selected_route.get("공식도로폭m"), "m", 1))
-            metric_cols[1].metric("우회율", "-" if pd.isna(route_compare["우회율"]) else f"{route_compare['우회율']:.2f}배")
+            metric_cols[0].metric(
+                "최종위험점수", f"{selected_route.get('최종위험점수_new', 0):.2f}점"
+            )
+            metric_cols[1].metric(
+                "직선거리", value_or_dash(route_compare["직선거리m"], "m", 0)
+            )
+            metric_cols[0].metric(
+                "도로폭 보정 예상도착",
+                route_seconds_only_label(selected_route.get("도로폭_보정예상도착초")),
+            )
+            metric_cols[1].metric(
+                "도로망 추정거리",
+                value_or_dash(route_compare["도로망추정거리m"], "m", 0),
+            )
+            metric_cols[0].metric(
+                "공식 도로폭", value_or_dash(selected_route.get("공식도로폭m"), "m", 1)
+            )
+            metric_cols[1].metric(
+                "우회율",
+                "-"
+                if pd.isna(route_compare["우회율"])
+                else f"{route_compare['우회율']:.2f}배",
+            )
 
             route_info = pd.DataFrame(
                 [
                     {"항목": "법정동", "값": selected_route.get("동", "-")},
-                    {"항목": "인접 안전센터", "값": selected_route.get("최근접_안전센터", "-")},
-                    {"항목": "담당 안전센터", "값": selected_route.get("담당_안전센터", "-")},
+                    {
+                        "항목": "인접 안전센터",
+                        "값": selected_route.get("최근접_안전센터", "-"),
+                    },
+                    {
+                        "항목": "담당 안전센터",
+                        "값": selected_route.get("담당_안전센터", "-"),
+                    },
                     {"항목": "인접도로명", "값": selected_route.get("인접도로명", "-")},
-                    {"항목": "도로폭 구간", "값": selected_route.get("도로폭표시", "-")},
-                    {"항목": "공식 도로폭 평균", "값": value_or_dash(selected_route.get("공식도로폭m"), "m", 2)},
-                    {"항목": "공식 도로폭 구간수", "값": value_or_dash(selected_route.get("도로폭공식구간수"), "개", 0)},
-                    {"항목": "숙소-도로 매칭거리", "값": value_or_dash(selected_route.get("도로폭매칭거리m"), "m", 0)},
-                    {"항목": "직선거리(유클리드)", "값": value_or_dash(route_compare["직선거리m"], "m", 0)},
-                    {"항목": "도로망 추정거리", "값": value_or_dash(route_compare["도로망추정거리m"], "m", 0)},
-                    {"항목": "도로망/직선 거리비", "값": "-" if pd.isna(route_compare["우회율"]) else f"{route_compare['우회율']:.2f}배"},
-                    {"항목": "도로폭 보정 이동시간", "값": route_seconds_only_label(selected_route.get("도로폭_보정이동시간초"))},
-                    {"항목": "도로폭 보정 예상도착", "값": route_seconds_only_label(selected_route.get("도로폭_보정예상도착초"))},
-                    {"항목": "도로망 기준 보정 이동시간", "값": route_seconds_only_label(route_compare["도로망보정이동시간초"])},
-                    {"항목": "도로망 기준 보정 예상도착", "값": route_seconds_only_label(route_compare["도로망보정예상도착초"])},
+                    {
+                        "항목": "도로폭 구간",
+                        "값": selected_route.get("도로폭표시", "-"),
+                    },
+                    {
+                        "항목": "공식 도로폭 평균",
+                        "값": value_or_dash(selected_route.get("공식도로폭m"), "m", 2),
+                    },
+                    {
+                        "항목": "공식 도로폭 구간수",
+                        "값": value_or_dash(
+                            selected_route.get("도로폭공식구간수"), "개", 0
+                        ),
+                    },
+                    {
+                        "항목": "숙소-도로 매칭거리",
+                        "값": value_or_dash(
+                            selected_route.get("도로폭매칭거리m"), "m", 0
+                        ),
+                    },
+                    {
+                        "항목": "직선거리(유클리드)",
+                        "값": value_or_dash(route_compare["직선거리m"], "m", 0),
+                    },
+                    {
+                        "항목": "도로망 추정거리",
+                        "값": value_or_dash(route_compare["도로망추정거리m"], "m", 0),
+                    },
+                    {
+                        "항목": "도로망/직선 거리비",
+                        "값": "-"
+                        if pd.isna(route_compare["우회율"])
+                        else f"{route_compare['우회율']:.2f}배",
+                    },
+                    {
+                        "항목": "도로폭 보정 이동시간",
+                        "값": route_seconds_only_label(
+                            selected_route.get("도로폭_보정이동시간초")
+                        ),
+                    },
+                    {
+                        "항목": "도로폭 보정 예상도착",
+                        "값": route_seconds_only_label(
+                            selected_route.get("도로폭_보정예상도착초")
+                        ),
+                    },
+                    {
+                        "항목": "도로망 기준 보정 이동시간",
+                        "값": route_seconds_only_label(
+                            route_compare["도로망보정이동시간초"]
+                        ),
+                    },
+                    {
+                        "항목": "도로망 기준 보정 예상도착",
+                        "값": route_seconds_only_label(
+                            route_compare["도로망보정예상도착초"]
+                        ),
+                    },
                     {"항목": "도로폭 출처", "값": "road_width_10gu 공식 도로폭 선형"},
                 ]
             )
             st.dataframe(route_info, hide_index=True, width="stretch")
 
         preview_compare = [
-            selected_route_comparison(row, fire_facility_df, road_route_df)["도로망보정예상도착초"]
+            selected_route_comparison(row, fire_facility_df, road_route_df)[
+                "도로망보정예상도착초"
+            ]
             for _, row in representatives.iterrows()
         ]
-        preview_cols = ["동", "숙소명", "최근접_안전센터", "최근접_거리m", "도로폭표시", "공식도로폭m", "도로폭_보정예상도착초", "최종위험점수_new"]
+        preview_cols = [
+            "동",
+            "숙소명",
+            "최근접_안전센터",
+            "최근접_거리m",
+            "도로폭표시",
+            "공식도로폭m",
+            "도로폭_보정예상도착초",
+            "최종위험점수_new",
+        ]
         preview = representatives[preview_cols].copy()
-        preview["도로망예상도착"] = [route_seconds_only_label(value) for value in preview_compare]
-        preview.columns = ["동", "숙소명", "인접 안전센터", "거리(m)", "도로폭구간", "공식도로폭(m)", "보정예상도착(초)", "최종위험점수", "도로망예상도착"]
+        preview["도로망예상도착"] = [
+            route_seconds_only_label(value) for value in preview_compare
+        ]
+        preview.columns = [
+            "동",
+            "숙소명",
+            "인접 안전센터",
+            "거리(m)",
+            "도로폭구간",
+            "공식도로폭(m)",
+            "보정예상도착(초)",
+            "최종위험점수",
+            "도로망예상도착",
+        ]
         st.dataframe(preview, hide_index=True, width="stretch")

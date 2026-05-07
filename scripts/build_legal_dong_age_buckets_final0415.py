@@ -12,6 +12,7 @@
       data/jscode20200515/jscode20200515/KIKmix.20200515.xlsx (법정동 코드 매핑)
 출력: data/자치구_법정동별_사용승인연한구간_최종안0415.csv
 """
+
 from __future__ import annotations
 
 import csv
@@ -65,7 +66,10 @@ def load_legal_dong_mapping(path: Path) -> dict[str, dict[str, str]]:
             if not header or len(values) < 6:
                 continue
 
-            record = {header[i]: values[i] if i < len(values) else "" for i in range(len(header))}
+            record = {
+                header[i]: values[i] if i < len(values) else ""
+                for i in range(len(header))
+            }
             if record.get("시도명") != "서울특별시":
                 continue
             if record.get("말소일자"):
@@ -148,7 +152,9 @@ def main() -> None:
                 grouped[key]["50년이상건물수"] += 1
 
     rows_out: list[dict[str, object]] = []
-    for (gu_name, legal_code, legal_dong_name), stats in sorted(grouped.items(), key=lambda item: (item[0][0], item[0][2])):
+    for (gu_name, legal_code, legal_dong_name), stats in sorted(
+        grouped.items(), key=lambda item: (item[0][0], item[0][2])
+    ):
         rows_out.append(
             {
                 "기준일": AS_OF_DATE.isoformat(),

@@ -75,7 +75,12 @@ def main() -> None:
     df = pd.read_csv(DATA_PATH, encoding="utf-8-sig")
     df.columns = df.columns.str.strip()
 
-    score_x = df[["최종위험점수_new"]].apply(pd.to_numeric, errors="coerce").fillna(0).to_numpy()
+    score_x = (
+        df[["최종위험점수_new"]]
+        .apply(pd.to_numeric, errors="coerce")
+        .fillna(0)
+        .to_numpy()
+    )
     feature_x = df[FEATURES].apply(pd.to_numeric, errors="coerce").fillna(0)
     feature_x = MinMaxScaler().fit_transform(feature_x)
     stored_labels = df["cluster"].astype(int).to_numpy()
@@ -83,8 +88,12 @@ def main() -> None:
     score_metrics = kmeans_metrics(score_x, range(2, 9))
     feature_metrics = kmeans_metrics(feature_x, range(2, 9))
 
-    score_k3_labels = KMeans(n_clusters=3, random_state=42, n_init=10, init="k-means++").fit_predict(score_x)
-    feature_k3_labels = KMeans(n_clusters=3, random_state=42, n_init=10, init="k-means++").fit_predict(feature_x)
+    score_k3_labels = KMeans(
+        n_clusters=3, random_state=42, n_init=10, init="k-means++"
+    ).fit_predict(score_x)
+    feature_k3_labels = KMeans(
+        n_clusters=3, random_state=42, n_init=10, init="k-means++"
+    ).fit_predict(feature_x)
     ari_score = adjusted_rand_score(stored_labels, score_k3_labels)
     ari_feature = adjusted_rand_score(stored_labels, feature_k3_labels)
 
@@ -103,7 +112,9 @@ def main() -> None:
 
     fig = plt.figure(figsize=(18, 10.2), dpi=180)
     fig.patch.set_facecolor("#f5f7fb")
-    gs = fig.add_gridspec(3, 4, height_ratios=[0.92, 1.35, 1.15], hspace=0.42, wspace=0.28)
+    gs = fig.add_gridspec(
+        3, 4, height_ratios=[0.92, 1.35, 1.15], hspace=0.42, wspace=0.28
+    )
 
     ax_title = fig.add_subplot(gs[0, :])
     ax_title.axis("off")
@@ -144,7 +155,11 @@ def main() -> None:
         f"검증 메모\n저장 cluster vs 점수 1D KMeans ARI = {ari_score:.3f}\n저장 cluster vs 10변수 KMeans ARI = {ari_feature:.3f}\n=> 최종 cluster 생성 스크립트/입력공간 확인 필요",
         fontsize=12,
         color="#7a2e0e",
-        bbox=dict(boxstyle="round,pad=0.55,rounding_size=0.12", facecolor="#fff4e5", edgecolor="#ffd8a8"),
+        bbox=dict(
+            boxstyle="round,pad=0.55,rounding_size=0.12",
+            facecolor="#fff4e5",
+            edgecolor="#ffd8a8",
+        ),
         va="top",
     )
 
@@ -166,26 +181,67 @@ def main() -> None:
         ax.set_ylabel(ylabel)
         ax.grid(True, alpha=0.26)
         ax.set_facecolor("#ffffff")
-        ax.text(0.02, 0.04, better_note, transform=ax.transAxes, fontsize=9.5, color="#667085")
+        ax.text(
+            0.02,
+            0.04,
+            better_note,
+            transform=ax.transAxes,
+            fontsize=9.5,
+            color="#667085",
+        )
 
     ax1 = fig.add_subplot(gs[1, 0])
-    lineplot(ax1, score_metrics, "inertia", "Elbow: SSE / Inertia", "작을수록 좋음", "급격한 감소 후 완만해지는 지점 확인", "#2563eb")
+    lineplot(
+        ax1,
+        score_metrics,
+        "inertia",
+        "Elbow: SSE / Inertia",
+        "작을수록 좋음",
+        "급격한 감소 후 완만해지는 지점 확인",
+        "#2563eb",
+    )
 
     ax2 = fig.add_subplot(gs[1, 1])
-    lineplot(ax2, score_metrics, "silhouette", "Silhouette Score", "클수록 좋음", "분리도와 응집도 균형", "#059669")
+    lineplot(
+        ax2,
+        score_metrics,
+        "silhouette",
+        "Silhouette Score",
+        "클수록 좋음",
+        "분리도와 응집도 균형",
+        "#059669",
+    )
 
     ax3 = fig.add_subplot(gs[1, 2])
-    lineplot(ax3, score_metrics, "calinski_harabasz", "Calinski-Harabasz", "클수록 좋음", "군집 간 분산 / 군집 내 분산", "#dc6803")
+    lineplot(
+        ax3,
+        score_metrics,
+        "calinski_harabasz",
+        "Calinski-Harabasz",
+        "클수록 좋음",
+        "군집 간 분산 / 군집 내 분산",
+        "#dc6803",
+    )
 
     ax4 = fig.add_subplot(gs[1, 3])
-    lineplot(ax4, score_metrics, "davies_bouldin", "Davies-Bouldin", "작을수록 좋음", "군집 간 겹침이 작을수록 양호", "#c11574")
+    lineplot(
+        ax4,
+        score_metrics,
+        "davies_bouldin",
+        "Davies-Bouldin",
+        "작을수록 좋음",
+        "군집 간 겹침이 작을수록 양호",
+        "#c11574",
+    )
 
     ax_table = fig.add_subplot(gs[2, 0:2])
     ax_table.axis("off")
     table_df = score_metrics.copy()
     for col in ["inertia", "silhouette", "calinski_harabasz", "davies_bouldin"]:
         table_df[col] = table_df[col].map(lambda v: f"{v:,.3f}")
-    cell_text = table_df[["k", "inertia", "silhouette", "calinski_harabasz", "davies_bouldin"]].values
+    cell_text = table_df[
+        ["k", "inertia", "silhouette", "calinski_harabasz", "davies_bouldin"]
+    ].values
     table = ax_table.table(
         cellText=cell_text,
         colLabels=["K", "Inertia", "Silhouette", "CH", "DB"],
@@ -202,13 +258,32 @@ def main() -> None:
             cell.set_text_props(weight="bold", color="#101828")
         elif int(table_df.iloc[r - 1]["k"]) == 3:
             cell.set_facecolor("#fff4cc")
-    ax_table.set_title("K 후보별 튜닝 지표: 최종위험점수_new 1D 기준", fontsize=13, fontweight="bold", pad=12)
+    ax_table.set_title(
+        "K 후보별 튜닝 지표: 최종위험점수_new 1D 기준",
+        fontsize=13,
+        fontweight="bold",
+        pad=12,
+    )
 
     ax_bar = fig.add_subplot(gs[2, 2])
     colors = ["#60a5fa", "#fbbf24", "#ef4444"]
-    ax_bar.bar(summary["cluster_label"], summary["count"], color=colors, edgecolor="#ffffff", linewidth=1.2)
+    ax_bar.bar(
+        summary["cluster_label"],
+        summary["count"],
+        color=colors,
+        edgecolor="#ffffff",
+        linewidth=1.2,
+    )
     for i, row in enumerate(summary.itertuples()):
-        ax_bar.text(i, row.count + 35, f"{row.count:,}", ha="center", fontsize=11, fontweight="bold", color="#101828")
+        ax_bar.text(
+            i,
+            row.count + 35,
+            f"{row.count:,}",
+            ha="center",
+            fontsize=11,
+            fontweight="bold",
+            color="#101828",
+        )
     ax_bar.set_title("최종 저장 군집 규모", fontsize=13, fontweight="bold")
     ax_bar.set_ylabel("시설 수")
     ax_bar.grid(axis="y", alpha=0.25)
@@ -233,7 +308,11 @@ def main() -> None:
         linespacing=1.62,
         color="#1d2939",
         va="top",
-        bbox=dict(boxstyle="round,pad=0.72,rounding_size=0.12", facecolor="#ffffff", edgecolor="#d0d5dd"),
+        bbox=dict(
+            boxstyle="round,pad=0.72,rounding_size=0.12",
+            facecolor="#ffffff",
+            edgecolor="#d0d5dd",
+        ),
     )
 
     fig.text(

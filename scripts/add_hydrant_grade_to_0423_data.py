@@ -10,7 +10,7 @@ from scipy.spatial import cKDTree
 
 
 BASE = Path(__file__).resolve().parents[1]
-TARGET_PATH = BASE / "data" / "분석변수_최종테이블0423.csv"
+TARGET_PATH = BASE / "0424" / "data" / "분석변수_최종테이블0423.csv"
 HYDRANT_PATH = BASE / "0424" / "서울시 소화용수 위치정보 (좌표계_ ITRF2000).csv"
 
 
@@ -33,7 +33,11 @@ def main() -> None:
     )
     target_xy = np.column_stack([x_5181, y_5181])
 
-    hydrant_xy = hydrant.loc[valid_hydrant, ["X좌표", "Y좌표"]].drop_duplicates().to_numpy(dtype=float)
+    hydrant_xy = (
+        hydrant.loc[valid_hydrant, ["X좌표", "Y좌표"]]
+        .drop_duplicates()
+        .to_numpy(dtype=float)
+    )
     nearest_dist, _ = cKDTree(hydrant_xy).query(target_xy, k=1)
 
     target["소화용수"] = pd.NA
@@ -58,7 +62,9 @@ def main() -> None:
     print(f"rows={len(target)} valid_target_coords={int(valid_target.sum())}")
     print(f"unique_hydrant_xy={len(hydrant_xy)}")
     print(target["소화용수"].value_counts(dropna=False).sort_index().to_string())
-    print(target[["숙소명", "위도", "경도", "소화용수"]].head(10).to_string(index=False))
+    print(
+        target[["숙소명", "위도", "경도", "소화용수"]].head(10).to_string(index=False)
+    )
 
 
 if __name__ == "__main__":

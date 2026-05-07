@@ -14,7 +14,9 @@ from shapely.geometry import MultiPolygon, mapping
 BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_DIR = BASE_DIR / "data"
 INPUT_CSV = next(DATA_DIR.glob("seoul_road_width_viRoutDt_10*.csv"))
-MANAGE_SHP = DATA_DIR / "official_road_shape_202603_seoul" / "11000" / "TL_SPRD_MANAGE.shp"
+MANAGE_SHP = (
+    DATA_DIR / "official_road_shape_202603_seoul" / "11000" / "TL_SPRD_MANAGE.shp"
+)
 RW_SHP = DATA_DIR / "official_road_shape_202603_seoul" / "11000" / "TL_SPRD_RW.shp"
 
 OUTPUT_HTML = DATA_DIR / "seoul_road_width_10gu_rw_polygon_map.html"
@@ -40,7 +42,18 @@ SIG_TO_GU = {
     "11710": "송파구",
 }
 
-GU_ORDER = ["강남구", "강서구", "마포구", "서초구", "성동구", "송파구", "영등포구", "용산구", "종로구", "중구"]
+GU_ORDER = [
+    "강남구",
+    "강서구",
+    "마포구",
+    "서초구",
+    "성동구",
+    "송파구",
+    "영등포구",
+    "용산구",
+    "종로구",
+    "중구",
+]
 WIDTH_ORDER = [
     "6m미만",
     "폭6-8m",
@@ -162,7 +175,9 @@ def geometry_to_lines(geom: Any) -> list[list[list[float]]]:
     return []
 
 
-def choose_endpoints(lines: list[list[list[float]]]) -> tuple[list[float], list[float]] | tuple[None, None]:
+def choose_endpoints(
+    lines: list[list[list[float]]],
+) -> tuple[list[float], list[float]] | tuple[None, None]:
     endpoints = []
     for line in lines:
         if len(line) >= 2:
@@ -209,7 +224,9 @@ def clean_json_value(value: Any) -> Any:
 
 def load_input() -> pd.DataFrame:
     df = pd.read_csv(INPUT_CSV, encoding="utf-8-sig", dtype=str).fillna("")
-    seq_col, gu_col, road_col, kind_col, function_col, scale_col, width_col = df.columns[:7]
+    seq_col, gu_col, road_col, kind_col, function_col, scale_col, width_col = (
+        df.columns[:7]
+    )
     df = df.rename(
         columns={
             seq_col: "순번",
@@ -231,7 +248,9 @@ def load_manage() -> gpd.GeoDataFrame:
     gdf["도로구"] = gdf["SIG_CD"].astype(str).map(SIG_TO_GU).fillna("")
     gdf = gdf[gdf["도로구"] != ""].copy().reset_index(drop=True)
     gdf["mg_idx"] = range(len(gdf))
-    gdf["_line_key"] = gdf["도로구"].map(normalize_name) + "|" + gdf["RN"].map(normalize_name)
+    gdf["_line_key"] = (
+        gdf["도로구"].map(normalize_name) + "|" + gdf["RN"].map(normalize_name)
+    )
     gdf["ROAD_BT_NUM"] = pd.to_numeric(gdf["ROAD_BT"], errors="coerce")
     gdf["ROAD_LT_NUM"] = pd.to_numeric(gdf["ROAD_LT"], errors="coerce")
     return gdf
@@ -245,7 +264,9 @@ def load_rw() -> gpd.GeoDataFrame:
     gdf["구"] = gdf["SIG_CD"].astype(str).map(SIG_TO_GU).fillna("")
     gdf = gdf[gdf["구"] != ""].copy().reset_index(drop=True)
     gdf["geometry"] = gdf.geometry.make_valid().map(extract_polygonal)
-    gdf = gdf[gdf.geometry.notna() & ~gdf.geometry.is_empty].copy().reset_index(drop=True)
+    gdf = (
+        gdf[gdf.geometry.notna() & ~gdf.geometry.is_empty].copy().reset_index(drop=True)
+    )
     gdf["rw_idx"] = range(len(gdf))
     return gdf
 
@@ -254,18 +275,22 @@ def build_match_table(rw: gpd.GeoDataFrame, manage: gpd.GeoDataFrame) -> pd.Data
     rw_key = rw[["rw_idx", "geometry"]]
     manage_key = manage[["mg_idx", "geometry"]]
 
-    direct = gpd.sjoin(rw_key, manage_key, predicate="intersects", how="inner").reset_index(drop=True)
+    direct = gpd.sjoin(
+        rw_key, manage_key, predicate="intersects", how="inner"
+    ).reset_index(drop=True)
     line_lookup = manage.set_index("mg_idx").geometry
-    line_geoms = gpd.GeoSeries(line_lookup.reindex(direct["mg_idx"]).to_numpy(), crs=SRC_CRS)
+    line_geoms = gpd.GeoSeries(
+        line_lookup.reindex(direct["mg_idx"]).to_numpy(), crs=SRC_CRS
+    )
     poly_geoms = gpd.GeoSeries(direct.geometry.to_numpy(), crs=SRC_CRS)
     direct["_intersect_len"] = poly_geoms.intersection(line_geoms).length
     direct["_distance_m"] = 0.0
     direct["매칭방식"] = "교차"
-    direct_best = (
-        direct.sort_values(["rw_idx", "_intersect_len"], ascending=[True, False])
-        .drop_duplicates("rw_idx", keep="first")
-        [["rw_idx", "mg_idx", "_intersect_len", "_distance_m", "매칭방식"]]
-    )
+    direct_best = direct.sort_values(
+        ["rw_idx", "_intersect_len"], ascending=[True, False]
+    ).drop_duplicates("rw_idx", keep="first")[
+        ["rw_idx", "mg_idx", "_intersect_len", "_distance_m", "매칭방식"]
+    ]
 
     direct_ids = set(direct_best["rw_idx"])
     unmatched = rw[~rw["rw_idx"].isin(direct_ids)].copy()
@@ -280,11 +305,11 @@ def build_match_table(rw: gpd.GeoDataFrame, manage: gpd.GeoDataFrame) -> pd.Data
     nearest["mg_idx"] = nearest["mg_idx"].astype(int)
     nearest["_intersect_len"] = 0.0
     nearest["매칭방식"] = "근접"
-    nearest_best = (
-        nearest.sort_values(["rw_idx", "_distance_m"], ascending=[True, True])
-        .drop_duplicates("rw_idx", keep="first")
-        [["rw_idx", "mg_idx", "_intersect_len", "_distance_m", "매칭방식"]]
-    )
+    nearest_best = nearest.sort_values(
+        ["rw_idx", "_distance_m"], ascending=[True, True]
+    ).drop_duplicates("rw_idx", keep="first")[
+        ["rw_idx", "mg_idx", "_intersect_len", "_distance_m", "매칭방식"]
+    ]
 
     return pd.concat([direct_best, nearest_best], ignore_index=True)
 
@@ -328,20 +353,30 @@ def enrich_polygons(
             "_line_key",
         ]
     ].copy()
-    gdf = rw.merge(match_table, on="rw_idx", how="left").merge(line_attrs, on="mg_idx", how="left")
+    gdf = rw.merge(match_table, on="rw_idx", how="left").merge(
+        line_attrs, on="mg_idx", how="left"
+    )
 
     rows: list[dict[str, Any]] = []
     for _, row in gdf.iterrows():
         has_line = pd.notna(row.get("mg_idx"))
-        road_name = str(row["RN"]).strip() if has_line and pd.notna(row["RN"]) else "미매칭 실폭도로"
+        road_name = (
+            str(row["RN"]).strip()
+            if has_line and pd.notna(row["RN"])
+            else "미매칭 실폭도로"
+        )
         rw_gu = str(row["구"])
-        line_gu = str(row["도로구"]).strip() if has_line and pd.notna(row["도로구"]) else ""
+        line_gu = (
+            str(row["도로구"]).strip() if has_line and pd.notna(row["도로구"]) else ""
+        )
         road_key = normalize_name(road_name)
         key_candidates = [
             f"{normalize_name(line_gu)}|{road_key}",
             f"{normalize_name(rw_gu)}|{road_key}",
         ]
-        meta = next((meta_by_key[key] for key in key_candidates if key in meta_by_key), None)
+        meta = next(
+            (meta_by_key[key] for key in key_candidates if key in meta_by_key), None
+        )
 
         official_width = as_float(row.get("ROAD_BT_NUM")) if has_line else None
         fallback_width = official_width_bucket(official_width)
@@ -372,8 +407,14 @@ def enrich_polygons(
             road_scale = ""
 
         mg_idx = int(row["mg_idx"]) if has_line else None
-        endpoints = endpoint_lookup.get(mg_idx, {"start": None, "end": None}) if mg_idx is not None else {"start": None, "end": None}
-        match_method = str(row["매칭방식"]) if has_line and pd.notna(row["매칭방식"]) else "미매칭"
+        endpoints = (
+            endpoint_lookup.get(mg_idx, {"start": None, "end": None})
+            if mg_idx is not None
+            else {"start": None, "end": None}
+        )
+        match_method = (
+            str(row["매칭방식"]) if has_line and pd.notna(row["매칭방식"]) else "미매칭"
+        )
         rows.append(
             {
                 "id": int(row["rw_idx"]),
@@ -388,12 +429,22 @@ def enrich_polygons(
                 "apiWidth": api_width,
                 "widthSource": width_source,
                 "matchMethod": match_method,
-                "matchDistanceM": round(float(row["_distance_m"]), 2) if has_line and pd.notna(row["_distance_m"]) else None,
-                "intersectLengthM": round(float(row["_intersect_len"]), 2) if has_line and pd.notna(row["_intersect_len"]) else None,
-                "officialWidthM": round(float(official_width), 2) if official_width is not None else None,
-                "officialLengthM": round(float(row["ROAD_LT_NUM"]), 1) if has_line and pd.notna(row["ROAD_LT_NUM"]) else None,
+                "matchDistanceM": round(float(row["_distance_m"]), 2)
+                if has_line and pd.notna(row["_distance_m"])
+                else None,
+                "intersectLengthM": round(float(row["_intersect_len"]), 2)
+                if has_line and pd.notna(row["_intersect_len"])
+                else None,
+                "officialWidthM": round(float(official_width), 2)
+                if official_width is not None
+                else None,
+                "officialLengthM": round(float(row["ROAD_LT_NUM"]), 1)
+                if has_line and pd.notna(row["ROAD_LT_NUM"])
+                else None,
                 "rdsManNo": clean_json_value(row.get("RDS_MAN_NO")),
-                "rnCd": str(row["RN_CD"]) if has_line and pd.notna(row["RN_CD"]) else "",
+                "rnCd": str(row["RN_CD"])
+                if has_line and pd.notna(row["RN_CD"])
+                else "",
                 "start": endpoints["start"],
                 "end": endpoints["end"],
                 "color": WIDTH_COLORS.get(display_width, WIDTH_COLORS["불가"]),
@@ -401,7 +452,9 @@ def enrich_polygons(
         )
 
     props = pd.DataFrame(rows)
-    enriched = pd.concat([gdf.reset_index(drop=True), props.reset_index(drop=True)], axis=1)
+    enriched = pd.concat(
+        [gdf.reset_index(drop=True), props.reset_index(drop=True)], axis=1
+    )
 
     matched_manage_keys = set(manage["_line_key"])
     api_only = input_df[~input_df["_key"].isin(matched_manage_keys)].copy()
@@ -412,8 +465,12 @@ def enrich_polygons(
 def build_unmatched_rw_csv(enriched: gpd.GeoDataFrame) -> pd.DataFrame:
     unmatched = enriched[enriched["matchMethod"] == "미매칭"].copy()
     if unmatched.empty:
-        return pd.DataFrame(columns=["실폭도로일련번호", "시군구코드", "구", "중심위도", "중심경도"])
-    centroids = gpd.GeoSeries(unmatched.geometry.centroid, crs=SRC_CRS).to_crs("EPSG:4326")
+        return pd.DataFrame(
+            columns=["실폭도로일련번호", "시군구코드", "구", "중심위도", "중심경도"]
+        )
+    centroids = gpd.GeoSeries(unmatched.geometry.centroid, crs=SRC_CRS).to_crs(
+        "EPSG:4326"
+    )
     return pd.DataFrame(
         {
             "실폭도로일련번호": unmatched["RW_SN"].to_numpy(),
@@ -430,7 +487,9 @@ def build_summary(enriched: gpd.GeoDataFrame) -> pd.DataFrame:
         enriched.groupby(["gu", "matchMethod", "widthSource"], dropna=False)
         .size()
         .reset_index(name="폴리곤수")
-        .rename(columns={"gu": "구", "matchMethod": "매칭방식", "widthSource": "폭출처"})
+        .rename(
+            columns={"gu": "구", "matchMethod": "매칭방식", "widthSource": "폭출처"}
+        )
         .sort_values(["구", "매칭방식", "폭출처"])
     )
     return summary
@@ -438,7 +497,9 @@ def build_summary(enriched: gpd.GeoDataFrame) -> pd.DataFrame:
 
 def build_geojson(enriched: gpd.GeoDataFrame) -> dict[str, Any]:
     out = enriched.copy()
-    out["geometry"] = out.geometry.simplify(SIMPLIFY_TOLERANCE_M, preserve_topology=True)
+    out["geometry"] = out.geometry.simplify(
+        SIMPLIFY_TOLERANCE_M, preserve_topology=True
+    )
     out["geometry"] = out.geometry.make_valid().map(extract_polygonal)
     out = out[out.geometry.notna() & ~out.geometry.is_empty].copy()
     out = out.to_crs("EPSG:4326")
@@ -837,12 +898,18 @@ def main() -> int:
     manage = load_manage()
     rw = load_rw()
     match_table = build_match_table(rw, manage)
-    enriched, api_only, unmatched_rw = enrich_polygons(rw, manage, input_df, match_table)
+    enriched, api_only, unmatched_rw = enrich_polygons(
+        rw, manage, input_df, match_table
+    )
     geojson = build_geojson(enriched)
 
-    OUTPUT_GEOJSON.write_text(json.dumps(geojson, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    OUTPUT_GEOJSON.write_text(
+        json.dumps(geojson, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
+    )
     OUTPUT_HTML.write_text(build_html(enriched, geojson), encoding="utf-8")
-    build_summary(enriched).to_csv(OUTPUT_SUMMARY_CSV, index=False, encoding="utf-8-sig")
+    build_summary(enriched).to_csv(
+        OUTPUT_SUMMARY_CSV, index=False, encoding="utf-8-sig"
+    )
     unmatched_rw.to_csv(OUTPUT_UNMATCHED_RW_CSV, index=False, encoding="utf-8-sig")
     api_only.drop(columns=[col for col in ["_key"] if col in api_only.columns]).to_csv(
         OUTPUT_API_ONLY_CSV, index=False, encoding="utf-8-sig"
@@ -852,7 +919,9 @@ def main() -> int:
     m_counts = match_counts(enriched)
     print(f"RW polygons: {len(enriched)}")
     print(f"Direct matched polygons: {m_counts['교차']}")
-    print(f"Nearest matched polygons: {m_counts['근접']} (<= {NEAREST_MAX_DISTANCE_M:g}m)")
+    print(
+        f"Nearest matched polygons: {m_counts['근접']} (<= {NEAREST_MAX_DISTANCE_M:g}m)"
+    )
     print(f"Unmatched RW polygons: {m_counts['미매칭']}")
     print(
         "Width sources: "
