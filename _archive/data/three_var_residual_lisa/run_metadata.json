@@ -1,0 +1,75 @@
+{
+  "ols": {
+    "model": "OLS",
+    "rows": 4246,
+    "R2": 0.7638714415168716
+  },
+  "mgwr": [
+    {
+      "model": "MGWR",
+      "cluster": 0,
+      "cluster_label": "중위험군",
+      "rows": 1465,
+      "bandwidths": [
+        43.0,
+        1463.0,
+        1464.0,
+        55.0
+      ],
+      "R2": 0.5843980862128286,
+      "adj_R2": 0.5342094484750475
+    },
+    {
+      "model": "MGWR",
+      "cluster": 1,
+      "cluster_label": "저위험군",
+      "rows": 1326,
+      "bandwidths": [
+        44.0,
+        111.0,
+        56.0,
+        59.0
+      ],
+      "R2": 0.7420190864021929,
+      "adj_R2": 0.6966893948793276
+    },
+    {
+      "model": "MGWR",
+      "cluster": 2,
+      "cluster_label": "고위험군",
+      "rows": 1455,
+      "bandwidths": [
+        43.0,
+        1454.0,
+        431.0,
+        95.0
+      ],
+      "R2": 0.7168374899877099,
+      "adj_R2": 0.688499970238514
+    }
+  ],
+  "lisa": [
+    {
+      "model": "OLS",
+      "dong_count": 207,
+      "global_moran_i": 0.2375441053048674,
+      "global_moran_p": 0.001,
+      "HH": 12,
+      "LL": 19,
+      "HL": 5,
+      "LH": 4,
+      "Not Sig": 167
+    },
+    {
+      "model": "MGWR",
+      "dong_count": 207,
+      "global_moran_i": 0.036842226202206896,
+      "global_moran_p": 0.215,
+      "HH": 6,
+      "LL": 6,
+      "HL": 11,
+      "LH": 3,
+      "Not Sig": 181
+    }
+  ]
+}

@@ -12,10 +12,9 @@ import pandas as pd
 sys.stdout.reconfigure(encoding="utf-8")
 
 BASE_DIR = Path(__file__).resolve().parents[1]
-REPO_DIR = BASE_DIR.parent
 
 LODGING_CSV = BASE_DIR / "data" / "서울10구_숙소_소방거리_유클리드.csv"
-ROAD_GEOJSON = REPO_DIR / "data" / "seoul_road_width_10gu_rw_polygons.geojson"
+ROAD_GEOJSON = BASE_DIR / "road_width_10gu" / "data" / "seoul_road_width_10gu_rw_polygons.geojson"
 
 OUT_FEATURES = BASE_DIR / "data" / "서울10구_숙소_도로폭_공간매칭.csv"
 OUT_JOINED = BASE_DIR / "data" / "서울10구_숙소_소방거리_유클리드_도로폭추가.csv"
