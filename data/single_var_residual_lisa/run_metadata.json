@@ -1,0 +1,197 @@
+[
+  {
+    "model": "OLS",
+    "variable": "구조노후도",
+    "rows": 4246,
+    "R2": 0.47867961307188145,
+    "dong_count": 207,
+    "global_moran_i": 0.15877423636026772,
+    "global_moran_p": 0.002,
+    "HH": 8,
+    "LL": 9,
+    "HL": 2,
+    "LH": 6,
+    "Not Sig": 182
+  },
+  {
+    "model": "MGWR",
+    "variable": "구조노후도",
+    "cluster": 0,
+    "cluster_label": "중위험군",
+    "rows": 1465,
+    "bandwidths": [
+      43.0,
+      83.0
+    ],
+    "R2": 0.36724756203590414,
+    "adj_R2": 0.3023795214895465
+  },
+  {
+    "model": "MGWR",
+    "variable": "구조노후도",
+    "cluster": 1,
+    "cluster_label": "저위험군",
+    "rows": 1326,
+    "bandwidths": [
+      44.0,
+      140.0
+    ],
+    "R2": 0.5676722074077106,
+    "adj_R2": 0.5312104395688761
+  },
+  {
+    "model": "MGWR",
+    "variable": "구조노후도",
+    "cluster": 2,
+    "cluster_label": "고위험군",
+    "rows": 1455,
+    "bandwidths": [
+      43.0,
+      435.0
+    ],
+    "R2": 0.4943635960477678,
+    "adj_R2": 0.4574591871708781
+  },
+  {
+    "model": "MGWR",
+    "variable": "구조노후도",
+    "dong_count": 207,
+    "global_moran_i": -0.022136342547997918,
+    "global_moran_p": 0.361,
+    "HH": 7,
+    "LL": 4,
+    "HL": 4,
+    "LH": 7,
+    "Not Sig": 185
+  },
+  {
+    "model": "OLS",
+    "variable": "도로폭위험도",
+    "rows": 4246,
+    "R2": 0.30814924013712375,
+    "dong_count": 207,
+    "global_moran_i": 0.28741374146058213,
+    "global_moran_p": 0.001,
+    "HH": 9,
+    "LL": 20,
+    "HL": 6,
+    "LH": 6,
+    "Not Sig": 166
+  },
+  {
+    "model": "MGWR",
+    "variable": "도로폭위험도",
+    "cluster": 0,
+    "cluster_label": "중위험군",
+    "rows": 1465,
+    "bandwidths": [
+      46.0,
+      1464.0
+    ],
+    "R2": 0.45060387760291565,
+    "adj_R2": 0.4146606163497457
+  },
+  {
+    "model": "MGWR",
+    "variable": "도로폭위험도",
+    "cluster": 1,
+    "cluster_label": "저위험군",
+    "rows": 1326,
+    "bandwidths": [
+      44.0,
+      171.0
+    ],
+    "R2": 0.30245251829577635,
+    "adj_R2": 0.24720840595147842
+  },
+  {
+    "model": "MGWR",
+    "variable": "도로폭위험도",
+    "cluster": 2,
+    "cluster_label": "고위험군",
+    "rows": 1455,
+    "bandwidths": [
+      43.0,
+      125.0
+    ],
+    "R2": 0.36137605936642603,
+    "adj_R2": 0.30497062298884126
+  },
+  {
+    "model": "MGWR",
+    "variable": "도로폭위험도",
+    "dong_count": 207,
+    "global_moran_i": 0.03178482719811475,
+    "global_moran_p": 0.256,
+    "HH": 7,
+    "LL": 0,
+    "HL": 6,
+    "LH": 6,
+    "Not Sig": 188
+  },
+  {
+    "model": "OLS",
+    "variable": "단속위험도",
+    "rows": 4246,
+    "R2": 0.03119705270078832,
+    "dong_count": 207,
+    "global_moran_i": 0.32087789672524325,
+    "global_moran_p": 0.001,
+    "HH": 16,
+    "LL": 19,
+    "HL": 5,
+    "LH": 4,
+    "Not Sig": 163
+  },
+  {
+    "model": "MGWR",
+    "variable": "단속위험도",
+    "cluster": 0,
+    "cluster_label": "중위험군",
+    "rows": 1465,
+    "bandwidths": [
+      43.0,
+      65.0
+    ],
+    "R2": 0.36461179471444327,
+    "adj_R2": 0.2943059568475894
+  },
+  {
+    "model": "MGWR",
+    "variable": "단속위험도",
+    "cluster": 1,
+    "cluster_label": "저위험군",
+    "rows": 1326,
+    "bandwidths": [
+      52.0,
+      1006.0
+    ],
+    "R2": 0.26737881090468973,
+    "adj_R2": 0.22594948297965678
+  },
+  {
+    "model": "MGWR",
+    "variable": "단속위험도",
+    "cluster": 2,
+    "cluster_label": "고위험군",
+    "rows": 1455,
+    "bandwidths": [
+      46.0,
+      165.0
+    ],
+    "R2": 0.25359543222038283,
+    "adj_R2": 0.19548008668119898
+  },
+  {
+    "model": "MGWR",
+    "variable": "단속위험도",
+    "dong_count": 207,
+    "global_moran_i": -0.03860557340895532,
+    "global_moran_p": 0.237,
+    "HH": 4,
+    "LL": 3,
+    "HL": 4,
+    "LH": 4,
+    "Not Sig": 192
+  }
+]

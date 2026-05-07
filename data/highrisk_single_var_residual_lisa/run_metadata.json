@@ -1,0 +1,134 @@
+[
+  {
+    "model": "OLS",
+    "variable": "구조노후도",
+    "rows": 1455,
+    "R2": 0.2944184427948606,
+    "dong_count": 134,
+    "global_moran_i": 0.2608211726823203,
+    "global_moran_p": 0.001,
+    "HH": 6,
+    "LL": 9,
+    "HL": 4,
+    "LH": 3,
+    "Not Sig": 112
+  },
+  {
+    "model": "MGWR",
+    "variable": "구조노후도",
+    "rows": 1455,
+    "bandwidths": [
+      43.0,
+      435.0
+    ],
+    "R2": 0.4943635960477678,
+    "adj_R2": 0.4574591871708781,
+    "dong_count": 134,
+    "global_moran_i": 0.03614304212882336,
+    "global_moran_p": 0.283,
+    "HH": 3,
+    "LL": 2,
+    "HL": 4,
+    "LH": 4,
+    "Not Sig": 121
+  },
+  {
+    "model": "OLS",
+    "variable": "단속위험도",
+    "rows": 1455,
+    "R2": 0.030927846427169725,
+    "dong_count": 134,
+    "global_moran_i": 0.30269280106996405,
+    "global_moran_p": 0.001,
+    "HH": 9,
+    "LL": 8,
+    "HL": 3,
+    "LH": 2,
+    "Not Sig": 112
+  },
+  {
+    "model": "MGWR",
+    "variable": "단속위험도",
+    "rows": 1455,
+    "bandwidths": [
+      46.0,
+      165.0
+    ],
+    "R2": 0.25359543222038283,
+    "adj_R2": 0.19548008668119898,
+    "dong_count": 134,
+    "global_moran_i": 0.010638218404233542,
+    "global_moran_p": 0.396,
+    "HH": 1,
+    "LL": 5,
+    "HL": 3,
+    "LH": 4,
+    "Not Sig": 121
+  },
+  {
+    "model": "OLS",
+    "variable": "최근접_소화용수_거리등급",
+    "rows": 1455,
+    "R2": 0.3157833679977139,
+    "dong_count": 134,
+    "global_moran_i": 0.3334225710594091,
+    "global_moran_p": 0.001,
+    "HH": 8,
+    "LL": 4,
+    "HL": 2,
+    "LH": 3,
+    "Not Sig": 117
+  },
+  {
+    "model": "MGWR",
+    "variable": "최근접_소화용수_거리등급",
+    "rows": 1455,
+    "bandwidths": [
+      43.0,
+      806.0
+    ],
+    "R2": 0.4930772443584537,
+    "adj_R2": 0.4576247335933742,
+    "dong_count": 134,
+    "global_moran_i": 0.11110665668980806,
+    "global_moran_p": 0.06,
+    "HH": 4,
+    "LL": 4,
+    "HL": 2,
+    "LH": 3,
+    "Not Sig": 121
+  },
+  {
+    "model": "OLS",
+    "variable": "도로폭위험도",
+    "rows": 1455,
+    "R2": 0.09448677004307315,
+    "dong_count": 134,
+    "global_moran_i": 0.33805881387656633,
+    "global_moran_p": 0.001,
+    "HH": 6,
+    "LL": 7,
+    "HL": 4,
+    "LH": 3,
+    "Not Sig": 114
+  },
+  {
+    "model": "MGWR",
+    "variable": "도로폭위험도",
+    "rows": 1455,
+    "bandwidths": [
+      43.0,
+      125.0
+    ],
+    "R2": 0.36137605936642603,
+    "adj_R2": 0.30497062298884126,
+    "dong_count": 134,
+    "global_moran_i": 0.03820304802958098,
+    "global_moran_p": 0.258,
+    "HH": 2,
+    "LL": 5,
+    "HL": 3,
+    "LH": 3,
+    "Not Sig": 121
+  }
+]

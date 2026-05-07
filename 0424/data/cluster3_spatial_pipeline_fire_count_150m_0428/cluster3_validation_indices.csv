@@ -1,0 +1,4 @@
+﻿basis,n,k,calinski_harabasz_index,silhouette_score,davies_bouldin_index
+KMeans risk 9 variables + MinMax,4246,3,1565.5302413373297,0.23922033657725658,1.5179704247423735
+Spatial model 10 variables + StandardScaler,4246,3,509.5217498787029,0.10700140625788719,2.7190530073737142
+Spatial model 10 variables + MinMax,4246,3,1454.8658460375866,0.22707269430952717,1.5753071656523556

@@ -80,15 +80,14 @@ print(f"  최종 변수: {FINAL_VARS}")
 # ─────────────────────────────────────────────
 # 공통 샘플 (2000개, GWR용)
 # ─────────────────────────────────────────────
-N_GWR = 2000
 rng = np.random.RandomState(42)
-idx = rng.choice(len(df_reg), min(N_GWR, len(df_reg)), replace=False)
+idx = np.arange(len(df_reg))
 
 coords = df_reg[['위도', '경도']].values[idx]
 yr     = df_reg['Y_fire'].values[idx].reshape(-1, 1)
 Xr     = StandardScaler().fit_transform(df_reg[FINAL_VARS].values[idx])
 
-print(f"\n  GWR 샘플: {len(idx):,}개  변수: {FINAL_VARS}")
+print(f"\n  GWR full rows: {len(idx):,} / variables: {FINAL_VARS}")
 
 # ─────────────────────────────────────────────
 # STEP 2 │ GWR Bandwidth 비교 (54 / 80 / 100 / 120)
@@ -135,14 +134,13 @@ print("\n" + "━"*60)
 print("STEP 4 │ MGWR — 변수별 최적 Bandwidth")
 print("━"*60)
 
-# MGWR는 느림 → 500개 샘플로 먼저 탐색
-N_MGWR = min(500, len(idx))
-m_idx  = rng.choice(len(idx), N_MGWR, replace=False)
+# MGWR can be very slow; use all rows for final full-coverage run.
+m_idx  = np.arange(len(idx))
 c_mgwr = coords[m_idx]
 y_mgwr = yr[m_idx]  # log(화재수+1)
 X_mgwr = Xr[m_idx]
 
-print(f"\n  MGWR 샘플: {N_MGWR}개 (속도상 제한)")
+print(f"\n  MGWR full rows: {len(m_idx):,} (no sampling)")
 
 try:
     t0 = time.time()
@@ -168,6 +166,24 @@ try:
     for i, v in enumerate(FINAL_VARS):
         p = mgwr_res.params[:, i+1]
         print(f"    {v:<20} mean={p.mean():+.4f}  std={p.std():.4f}")
+
+    mgwr_out = pd.DataFrame({
+        '위도': c_mgwr[:, 0],
+        '경도': c_mgwr[:, 1],
+    })
+    try:
+        mgwr_out['local_R2'] = mgwr_res.localR2.flatten()
+    except Exception:
+        mgwr_out['local_R2'] = np.nan
+    mgwr_out['bandwidth'] = str([float(v) for v in bws_final])
+    for i, v in enumerate(FINAL_VARS):
+        mgwr_out[f'coef_{v}'] = mgwr_res.params[:, i+1]
+        if hasattr(mgwr_res, 'tvalues'):
+            mgwr_out[f'tval_{v}'] = mgwr_res.tvalues[:, i+1]
+        if i + 1 < len(bws_final):
+            mgwr_out[f'bw_{v}'] = float(bws_final[i+1])
+    mgwr_out.to_csv('data/mgwr_results.csv', index=False, encoding='utf-8-sig')
+    print(f"\n  저장: data/mgwr_results.csv  ({len(mgwr_out)}행)")
 
     MGWR_OK = True
 except Exception as e:

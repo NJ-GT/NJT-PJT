@@ -4,12 +4,16 @@ from __future__ import annotations
 import json
 import math
 import heapq
+import ast
+import re
 from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from shapely.geometry import Point, shape
+from shapely.ops import unary_union
 
 
 st.set_page_config(
@@ -29,6 +33,41 @@ FINAL_TABLE = DATA_DIR / "최종테이블0429.csv"
 SCORE_TABLE = DATA_DIR / "시설별_화재위험_성적표_0429_v3.csv"
 MODEL_SUMMARY = DATA_DIR / "가중치군집_대표모형_최종결과표.csv"
 MODEL_COMPARE = DATA_DIR / "가중치군집_공간모형_비교표.csv"
+GWR_LOCAL_SOURCE = BASE / "data" / "gwr_results.csv"
+MGWR_LOCAL_PARAM_SOURCE = BASE / "data" / "mgwr_local_params_low_high.csv"
+MGWR_CLUSTER_LOCAL_SOURCE = BASE / "0424" / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428" / "gwr_local_diagnostics_by_cluster.csv"
+MGWR_CLUSTER_INPUT_SOURCE = BASE / "0424" / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428" / "최최최종0428변수테이블.csv"
+DONG_BOUNDARY_SOURCE = BASE / "data" / "seoul_legal_dong_age_buckets_joined_0415.geojson"
+GRID_250_SOURCE = BASE / "data" / "grid_spatial_dashboard" / "seoul_grid_250m.geojson"
+GRID_500_SOURCE = BASE / "data" / "grid_spatial_dashboard" / "seoul_grid_500m.geojson"
+
+SEOUL_SIGUNGU = {
+    "11110": "종로구",
+    "11140": "중구",
+    "11170": "용산구",
+    "11200": "성동구",
+    "11215": "광진구",
+    "11230": "동대문구",
+    "11260": "중랑구",
+    "11290": "성북구",
+    "11305": "강북구",
+    "11320": "도봉구",
+    "11350": "노원구",
+    "11380": "은평구",
+    "11410": "서대문구",
+    "11440": "마포구",
+    "11470": "양천구",
+    "11500": "강서구",
+    "11530": "구로구",
+    "11545": "금천구",
+    "11560": "영등포구",
+    "11590": "동작구",
+    "11620": "관악구",
+    "11650": "서초구",
+    "11680": "강남구",
+    "11710": "송파구",
+    "11740": "강동구",
+}
 MODEL_IMAGE = DATA_DIR / "공간 모델 선택.png"
 FEATURE_IMAGE = DATA_DIR / "군집별 피처 평균값-중앙값 비교.png"
 ROUTE_SOURCE = BASE / "data" / "서울10구_숙소_소방거리_유클리드.csv"
@@ -148,6 +187,168 @@ def load_0430() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]
         final_df["cluster_label"] = final_df["cluster"].map({0: "중위험군", 1: "저위험군", 2: "고위험군"}).fillna("미분류")
 
     return final_df, score_df, model_df, compare_df
+
+
+@st.cache_data
+def load_gwr_local(final_df: pd.DataFrame) -> pd.DataFrame:
+    if not GWR_LOCAL_SOURCE.exists():
+        return pd.DataFrame()
+
+    gwr = read_csv(GWR_LOCAL_SOURCE)
+    gwr.columns = [str(col).strip() for col in gwr.columns]
+    for col in gwr.columns:
+        if col.startswith("coef_") or col.startswith("tval_") or col in ["위도", "경도", "local_R2", "bandwidth"]:
+            gwr[col] = pd.to_numeric(gwr[col], errors="coerce")
+
+    keys = ["위도", "경도"]
+    if not set(keys).issubset(gwr.columns) or not set(keys).issubset(final_df.columns):
+        return pd.DataFrame()
+
+    left = gwr.copy()
+    left["_lat_key"] = left["위도"].round(6)
+    left["_lon_key"] = left["경도"].round(6)
+
+    meta_cols = ["구", "동", "숙소명", "cluster_label", "최종위험점수_new", "위도", "경도"]
+    meta_cols = [col for col in meta_cols if col in final_df.columns]
+    right = final_df[meta_cols].dropna(subset=["위도", "경도"]).copy()
+    right["_lat_key"] = right["위도"].round(6)
+    right["_lon_key"] = right["경도"].round(6)
+    right = right.drop_duplicates(["_lat_key", "_lon_key"])
+
+    merged = left.merge(
+        right.drop(columns=["위도", "경도"], errors="ignore"),
+        on=["_lat_key", "_lon_key"],
+        how="left",
+    )
+
+    coef_cols = [col for col in merged.columns if col.startswith("coef_")]
+    if coef_cols:
+        abs_coef = merged[coef_cols].abs()
+        merged["주요설명변수"] = abs_coef.idxmax(axis=1).str.replace("coef_", "", regex=False)
+        merged["주요설명계수"] = abs_coef.max(axis=1)
+    return merged.drop(columns=["_lat_key", "_lon_key"], errors="ignore")
+
+
+@st.cache_data
+def load_mgwr_cluster_local() -> pd.DataFrame:
+    if MGWR_LOCAL_PARAM_SOURCE.exists():
+        mgwr = read_csv(MGWR_LOCAL_PARAM_SOURCE)
+        mgwr.columns = [str(col).strip() for col in mgwr.columns]
+        for col in mgwr.columns:
+            if col.startswith(("coef_", "tval_", "bw_", "z_", "contrib_")) or col in ["cluster", "x_5181", "y_5181", "위도", "경도", "local_R2", "residual"]:
+                mgwr[col] = pd.to_numeric(mgwr[col], errors="coerce")
+        return mgwr
+
+    if not MGWR_CLUSTER_LOCAL_SOURCE.exists() or not MGWR_CLUSTER_INPUT_SOURCE.exists():
+        return pd.DataFrame()
+
+    local = read_csv(MGWR_CLUSTER_LOCAL_SOURCE)
+    source = read_csv(MGWR_CLUSTER_INPUT_SOURCE)
+    local.columns = [str(col).strip() for col in local.columns]
+    source.columns = [str(col).strip() for col in source.columns]
+
+    for df in (local, source):
+        for col in df.columns:
+            if col.startswith("coef_") or col in ["cluster", "x_5181", "y_5181", "위도", "경도", "local_R2", "residual"]:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    required_local = {"cluster", "x_5181", "y_5181"}
+    required_source = {"cluster", "x_5181", "y_5181", "구", "동", "위도", "경도"}
+    if not required_local.issubset(local.columns) or not required_source.issubset(source.columns):
+        return pd.DataFrame()
+
+    left = local.copy()
+    right = source.copy()
+    for df in (left, right):
+        df["_x_key"] = df["x_5181"].round(3)
+        df["_y_key"] = df["y_5181"].round(3)
+
+    meta_cols = [
+        "cluster",
+        "_x_key",
+        "_y_key",
+        "구",
+        "동",
+        "숙소명",
+        "위도",
+        "경도",
+        "최종_화재위험점수",
+        "fire_count_150m",
+    ]
+    meta_cols = [col for col in meta_cols if col in right.columns]
+    right = right[meta_cols].drop_duplicates(["cluster", "_x_key", "_y_key"])
+
+    merged = left.merge(right, on=["cluster", "_x_key", "_y_key"], how="left")
+    merged["cluster_label"] = merged["cluster"].map({0: "저위험군", 1: "중위험군", 2: "고위험군"}).fillna("미분류")
+
+    coef_cols = [col for col in merged.columns if col.startswith("coef_")]
+    if coef_cols:
+        abs_coef = merged[coef_cols].abs()
+        merged["주요설명변수"] = abs_coef.idxmax(axis=1).str.replace("coef_", "", regex=False)
+        merged["주요설명계수"] = abs_coef.max(axis=1)
+
+    return merged.drop(columns=["_x_key", "_y_key"], errors="ignore")
+
+
+@st.cache_data
+def load_dong_boundaries() -> dict:
+    if not DONG_BOUNDARY_SOURCE.exists():
+        return {"type": "FeatureCollection", "features": []}
+    try:
+        with DONG_BOUNDARY_SOURCE.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        return {"type": "FeatureCollection", "features": []}
+
+
+@st.cache_data
+def load_seoul_grid(cell_size_m: int = 500) -> dict:
+    source = GRID_250_SOURCE if cell_size_m == 250 else GRID_500_SOURCE
+    if not source.exists():
+        return {"type": "FeatureCollection", "features": []}
+    try:
+        with source.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        return {"type": "FeatureCollection", "features": []}
+
+
+def parse_bw_table(model_df: pd.DataFrame, risk_group: str | None = None) -> pd.DataFrame:
+    if model_df.empty or "BW" not in model_df.columns or "대표모형" not in model_df.columns:
+        return pd.DataFrame()
+
+    mgwr_rows = model_df[model_df["대표모형"].astype("string").str.upper() == "MGWR"]
+    if risk_group and "위험군" in mgwr_rows.columns:
+        mgwr_rows = mgwr_rows[mgwr_rows["위험군"].astype("string") == risk_group]
+    if mgwr_rows.empty:
+        return pd.DataFrame()
+
+    try:
+        bw_values = ast.literal_eval(str(mgwr_rows.iloc[0]["BW"]))
+    except (ValueError, SyntaxError):
+        return pd.DataFrame()
+    if not isinstance(bw_values, dict):
+        return pd.DataFrame()
+
+    rows = []
+    for variable, bw in bw_values.items():
+        if variable == "Intercept":
+            continue
+        bw_num = pd.to_numeric(pd.Series([bw]), errors="coerce").iloc[0]
+        if pd.isna(bw_num):
+            continue
+        if bw_num <= 250:
+            scale = "국소"
+            note = "동/골목 단위 영향"
+        elif bw_num <= 700:
+            scale = "중간"
+            note = "인접 동까지 확산"
+        else:
+            scale = "광역"
+            note = "구 이상 범위의 완만한 영향"
+        rows.append({"변수": variable, "BW": float(bw_num), "공간범위": scale, "해석": note})
+
+    return pd.DataFrame(rows).sort_values("BW", ascending=True).reset_index(drop=True)
 
 
 def extract_gu_dong(address: pd.Series) -> tuple[pd.Series, pd.Series]:
@@ -608,139 +809,175 @@ def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
     scoped = df[(df["구"] == gu) & (df["cluster_label"].isin(clusters))].dropna(subset=["위도", "경도"]).copy()
     if scoped.empty:
         return go.Figure()
+    if not clusters:
+        return go.Figure()
 
-    fig = go.Figure()
-
-    fig.add_trace(
-        go.Histogram2dContour(
-            x=scoped["경도"],
-            y=scoped["위도"],
-            z=scoped["최종위험점수_new"],
-            histfunc="avg",
-            nbinsx=28,
-            nbinsy=28,
-            colorscale=[
-                [0.0, "rgba(103,200,162,0.00)"],
-                [0.35, "rgba(103,200,162,0.22)"],
-                [0.65, "rgba(243,189,79,0.30)"],
-                [1.0, "rgba(239,119,119,0.42)"],
-            ],
-            contours=dict(coloring="heatmap", showlines=False),
-            hoverinfo="skip",
-            showscale=False,
-            name="위험 밀도",
-        )
-    )
+    cluster_order = [label for label in ["저위험군", "중위험군", "고위험군"] if label in clusters]
+    elegant_cluster_colors = {
+        "저위험군": "#58C7A5",
+        "중위험군": "#F2B84B",
+        "고위험군": "#E96B6C",
+    }
+    elegant_cluster_fill = {
+        "저위험군": "rgba(88,199,165,0.62)",
+        "중위험군": "rgba(242,184,75,0.64)",
+        "고위험군": "rgba(233,107,108,0.66)",
+    }
 
     dong_summary = (
         scoped.groupby("동", as_index=False)
         .agg(
-            경도=("경도", "mean"),
-            위도=("위도", "mean"),
             숙박시설수=("숙소명", "count"),
             평균위험도=("최종위험점수_new", "mean"),
-            고위험시설=("cluster_label", lambda s: int((s == "고위험군").sum())),
+            최고위험도=("최종위험점수_new", "max"),
             평균소화용수등급=("최근접_소화용수_거리등급", "mean"),
         )
         .sort_values(["숙박시설수", "평균위험도"], ascending=False)
     )
     cluster_counts = (
         scoped.pivot_table(index="동", columns="cluster_label", values="숙소명", aggfunc="count", fill_value=0)
-        .reindex(columns=["고위험군", "중위험군", "저위험군"], fill_value=0)
+        .reindex(columns=["저위험군", "중위험군", "고위험군"], fill_value=0)
         .reset_index()
     )
-    dong_summary = dong_summary.merge(cluster_counts, on="동", how="left").fillna({"고위험군": 0, "중위험군": 0, "저위험군": 0})
-    selected_cluster_order = [label for label in ["고위험군", "중위험군", "저위험군"] if label in clusters]
+    dong_summary = dong_summary.merge(cluster_counts, on="동", how="left")
+    for label in ["저위험군", "중위험군", "고위험군"]:
+        if label not in dong_summary.columns:
+            dong_summary[label] = 0
+    selected_cluster_order = [label for label in ["저위험군", "중위험군", "고위험군"] if label in clusters]
     dong_summary["대표위험군"] = dong_summary[selected_cluster_order].idxmax(axis=1)
     dong_summary["대표위험군수"] = dong_summary[selected_cluster_order].max(axis=1).astype(int)
     dong_summary["위험군구성"] = dong_summary.apply(
         lambda row: " / ".join(f"{label.replace('위험군', '')} {int(row[label])}개" for label in selected_cluster_order),
         axis=1,
     )
-    top_dongs = dong_summary.head(12)["동"].tolist()
-    dong_summary["표시크기"] = (dong_summary["숙박시설수"] ** 0.5 * 10).clip(14, 56)
 
-    fig.add_trace(
-        go.Scatter(
-            x=scoped["경도"],
-            y=scoped["위도"],
-            mode="markers",
-            marker=dict(
-                size=6,
-                color="rgba(31,43,61,0.34)",
-                line=dict(color="white", width=0.5),
-                opacity=0.72,
-            ),
-            customdata=scoped[["숙소명", "동", "업종", "cluster_label", "최종위험점수_new", "최근접_소화용수_거리등급"]],
-            hovertemplate=(
-                "<b>%{customdata[0]}</b><br>"
-                "법정동: %{customdata[1]}<br>"
-                "업종: %{customdata[2]}<br>"
-                "위험군: %{customdata[3]}<br>"
-                "위험도: %{customdata[4]:.2f}점<br>"
-                "소화용수 거리등급: %{customdata[5]}"
-                "<extra></extra>"
-            ),
-            name="숙박시설 위치",
-        )
-    )
+    summary_by_dong = {str(row["동"]): row for _, row in dong_summary.iterrows()}
+    fig = go.Figure()
 
-    fig.add_trace(
-        go.Scatter(
-            x=dong_summary["경도"],
-            y=dong_summary["위도"],
-            mode="markers+text",
-            text=dong_summary["동"].where(dong_summary["동"].isin(top_dongs), ""),
-            textposition="top center",
-            textfont=dict(size=12, color="#1f2b3d"),
-            marker=dict(
-                size=dong_summary["표시크기"],
-                color=dong_summary["대표위험군"].map(CLUSTER_COLORS),
-                line=dict(color="white", width=2),
-                opacity=0.86,
-            ),
-            customdata=dong_summary[["동", "숙박시설수", "평균위험도", "고위험시설", "평균소화용수등급", "위험군구성", "대표위험군", "대표위험군수"]],
-            hovertemplate=(
-                "<b>%{customdata[0]}</b><br>"
-                "숙박시설: %{customdata[1]:,}개<br>"
-                "위험군 구성: %{customdata[5]}<br>"
-                "대표 위험군: %{customdata[6]} %{customdata[7]:,}개<br>"
-                "평균 위험도: %{customdata[2]:.2f}점<br>"
-                "고위험 시설: %{customdata[3]:,}개<br>"
-                "평균 소화용수 거리등급: %{customdata[4]:.2f}"
-                "<extra></extra>"
-            ),
-            name="법정동 요약",
+    boundary_features = []
+    for feature in dong_boundary_geo.get("features", []):
+        props = feature.get("properties", {})
+        feature_gu = infer_gu_name(props)
+        dong_name = props.get("법정동명") or props.get("EMD_KOR_NM")
+        if feature_gu == gu and dong_name in summary_by_dong:
+            boundary_features.append((feature, str(dong_name)))
+
+    label_rows = []
+    for feature, dong_name in boundary_features:
+        row = summary_by_dong[dong_name]
+        xs, ys = polygon_line_coords(feature.get("geometry", {}))
+        if not xs:
+            continue
+        risk_group = row["대표위험군"]
+        hover_text = (
+            f"<b>{dong_name}</b><br>"
+            f"대표 위험군: {risk_group}<br>"
+            f"숙박시설: {int(row['숙박시설수']):,}개<br>"
+            f"위험군 구성: {row['위험군구성']}<br>"
+            f"평균 위험도: {float(row['평균위험도']):.2f}점<br>"
+            f"최고 위험도: {float(row['최고위험도']):.2f}점<br>"
+            f"평균 소화용수 거리등급: {float(row['평균소화용수등급']):.2f}"
         )
-    )
-    for label in selected_cluster_order:
+        fig.add_trace(
+            go.Scatter(
+                x=xs,
+                y=ys,
+                mode="lines",
+                fill="toself",
+                fillcolor=elegant_cluster_fill.get(risk_group, "rgba(226,232,240,0.56)"),
+                line=dict(color="rgba(61,78,96,0.58)", width=0.75),
+                text=[hover_text] * len(xs),
+                hovertemplate="%{text}<extra></extra>",
+                name=dong_name,
+                showlegend=False,
+            )
+        )
+        try:
+            centroid = shape(feature.get("geometry", {})).centroid
+            label_rows.append({"동": dong_name, "경도": centroid.x, "위도": centroid.y, "숙박시설수": row["숙박시설수"]})
+        except Exception:
+            pass
+
+    if not boundary_features:
+        fig.add_trace(
+            go.Scatter(
+                x=scoped["경도"],
+                y=scoped["위도"],
+                mode="markers",
+                marker=dict(size=7, color=scoped["cluster_label"].map(elegant_cluster_colors), opacity=0.78, line=dict(color="white", width=0.7)),
+                customdata=scoped[["숙소명", "동", "업종", "cluster_label", "최종위험점수_new"]],
+                hovertemplate="<b>%{customdata[0]}</b><br>법정동: %{customdata[1]}<br>업종: %{customdata[2]}<br>위험군: %{customdata[3]}<br>위험도: %{customdata[4]:.2f}점<extra></extra>",
+                name="숙박시설 위치",
+            )
+        )
+    else:
+        fig.add_trace(
+            go.Scatter(
+                x=scoped["경도"],
+                y=scoped["위도"],
+                mode="markers",
+                marker=dict(size=4.2, color="rgba(30,41,59,0.34)", line=dict(color="rgba(255,255,255,0.62)", width=0.4), opacity=0.78),
+                customdata=scoped[["숙소명", "동", "업종", "cluster_label", "최종위험점수_new"]],
+                hovertemplate="<b>%{customdata[0]}</b><br>법정동: %{customdata[1]}<br>업종: %{customdata[2]}<br>위험군: %{customdata[3]}<br>위험도: %{customdata[4]:.2f}점<extra></extra>",
+                name="숙박시설 위치",
+            )
+        )
+
+    if label_rows:
+        label_df = pd.DataFrame(label_rows).sort_values("숙박시설수", ascending=False).head(14)
+        fig.add_trace(
+            go.Scatter(
+                x=label_df["경도"],
+                y=label_df["위도"],
+                mode="text",
+                text=label_df["동"],
+                textfont=dict(size=11, color="#223044"),
+                textposition="middle center",
+                hoverinfo="skip",
+                name="법정동명",
+                showlegend=False,
+            )
+        )
+
+    for label in cluster_order:
         fig.add_trace(
             go.Scatter(
                 x=[None],
                 y=[None],
                 mode="markers",
-                marker=dict(size=12, color=CLUSTER_COLORS[label]),
+                marker=dict(size=13, color=elegant_cluster_colors[label], symbol="square"),
                 name=f"{label} 우세 동",
                 hoverinfo="skip",
             )
         )
 
-    lon_range = scoped["경도"].max() - scoped["경도"].min()
-    lat_range = scoped["위도"].max() - scoped["위도"].min()
+    lon_values = []
+    lat_values = []
+    for trace in fig.data:
+        xs = [v for v in getattr(trace, "x", []) if v is not None]
+        ys = [v for v in getattr(trace, "y", []) if v is not None]
+        lon_values.extend(xs)
+        lat_values.extend(ys)
+    if not lon_values or not lat_values:
+        lon_values = scoped["경도"].tolist()
+        lat_values = scoped["위도"].tolist()
+    lon_range = max(lon_values) - min(lon_values)
+    lat_range = max(lat_values) - min(lat_values)
     pad_lon = max(lon_range * 0.08, 0.003)
     pad_lat = max(lat_range * 0.08, 0.003)
+
     fig.update_layout(
-        title=f"{gu} 법정동별 위험도 버블맵",
+        title=f"{gu} 법정동별 위험군 구역도",
         xaxis=dict(
             title="",
-            range=[scoped["경도"].min() - pad_lon, scoped["경도"].max() + pad_lon],
+            range=[min(lon_values) - pad_lon, max(lon_values) + pad_lon],
             showgrid=False,
             showticklabels=False,
             zeroline=False,
         ),
         yaxis=dict(
             title="",
-            range=[scoped["위도"].min() - pad_lat, scoped["위도"].max() + pad_lat],
+            range=[min(lat_values) - pad_lat, max(lat_values) + pad_lat],
             showgrid=False,
             showticklabels=False,
             zeroline=False,
@@ -748,11 +985,789 @@ def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
             scaleratio=1,
         ),
         height=620,
-        plot_bgcolor="#fbfcff",
+        plot_bgcolor="#f8fafc",
         paper_bgcolor="white",
         margin=dict(l=8, r=8, t=58, b=8),
         font=dict(color=COLORS["ink"]),
-        legend=dict(orientation="h", yanchor="bottom", y=0.01, x=0.01),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=0.01,
+            x=0.01,
+            bgcolor="rgba(255,255,255,0.86)",
+            bordercolor="#e5edf5",
+            borderwidth=1,
+        ),
+    )
+    return fig
+
+
+GWR_VARIABLE_COLORS = {
+    "구조노후도": "#66c2a5",
+    "단속위험도": "#fc8d62",
+    "도로폭위험도": "#8da0cb",
+    "집중도": "#e78ac3",
+    "주변건물수": "#a6d854",
+    "소방위험도_점수": "#ffd92f",
+}
+
+
+def polygon_line_coords(geometry: dict) -> tuple[list[float], list[float]]:
+    xs: list[float] = []
+    ys: list[float] = []
+    if not geometry:
+        return xs, ys
+
+    polygons = []
+    if geometry.get("type") == "Polygon":
+        polygons = [geometry.get("coordinates", [])]
+    elif geometry.get("type") == "MultiPolygon":
+        polygons = geometry.get("coordinates", [])
+
+    for polygon in polygons:
+        for ring in polygon[:1]:
+            for lon, lat, *_ in ring:
+                xs.append(lon)
+                ys.append(lat)
+            xs.append(None)
+            ys.append(None)
+    return xs, ys
+
+
+def hex_to_rgba(hex_color: str, alpha: float) -> str:
+    value = hex_color.lstrip("#")
+    if len(value) != 6:
+        return f"rgba(179,179,179,{alpha})"
+    red = int(value[0:2], 16)
+    green = int(value[2:4], 16)
+    blue = int(value[4:6], 16)
+    return f"rgba({red},{green},{blue},{alpha})"
+
+
+def sample_diverging_color(value: float, zmin: float, zmax: float, alpha: float = 0.62) -> str:
+    if pd.isna(value) or zmax <= zmin:
+        return f"rgba(226,232,240,{alpha})"
+    norm = (value - zmin) / (zmax - zmin)
+    norm = min(1.0, max(0.0, float(norm)))
+    rgb = px.colors.sample_colorscale("RdBu_r", [norm])[0]
+    nums = [int(float(part)) for part in re.findall(r"[\d.]+", rgb)[:3]]
+    return f"rgba({nums[0]},{nums[1]},{nums[2]},{alpha})"
+
+
+def full_boundary_coords(boundaries: dict) -> tuple[list[float], list[float]]:
+    xs: list[float] = []
+    ys: list[float] = []
+    for feature in boundaries.get("features", []):
+        bx, by = polygon_line_coords(feature.get("geometry", {}))
+        xs.extend(bx)
+        ys.extend(by)
+    return xs, ys
+
+
+def infer_gu_name(props: dict) -> str | None:
+    gu_name = props.get("구")
+    if gu_name:
+        return str(gu_name)
+    code = str(props.get("EMD_CD") or props.get("법정동코드") or props.get("join_code") or "")
+    return SEOUL_SIGUNGU.get(code[:5])
+
+
+def build_gu_boundaries(dong_boundaries: dict) -> dict:
+    grouped: dict[str, list] = {}
+    for feature in dong_boundaries.get("features", []):
+        gu_name = infer_gu_name(feature.get("properties", {}))
+        if not gu_name:
+            continue
+        try:
+            geom = shape(feature.get("geometry", {}))
+        except Exception:
+            continue
+        if geom.is_empty:
+            continue
+        if not geom.is_valid:
+            geom = geom.buffer(0)
+        grouped.setdefault(gu_name, []).append(geom)
+
+    features = []
+    for gu_name, geometries in grouped.items():
+        try:
+            merged = unary_union(geometries)
+        except Exception:
+            merged = unary_union([geom.buffer(0) for geom in geometries])
+        features.append({"type": "Feature", "properties": {"구": gu_name}, "geometry": merged.__geo_interface__})
+    return {"type": "FeatureCollection", "features": features}
+
+
+def add_gu_boundary_trace(fig: go.Figure, gu_boundaries: dict, *, width: float = 1.25, show_labels: bool = True) -> None:
+    xs: list[float] = []
+    ys: list[float] = []
+    label_rows = []
+    for feature in gu_boundaries.get("features", []):
+        bx, by = polygon_line_coords(feature.get("geometry", {}))
+        xs.extend(bx)
+        ys.extend(by)
+        if show_labels:
+            try:
+                centroid = shape(feature.get("geometry", {})).centroid
+                label_rows.append({"구": feature.get("properties", {}).get("구"), "경도": centroid.x, "위도": centroid.y})
+            except Exception:
+                pass
+
+    if xs:
+        fig.add_trace(
+            go.Scatter(
+                x=xs,
+                y=ys,
+                mode="lines",
+                line=dict(color="rgba(15,23,42,0.70)", width=width),
+                name="서울시 구 경계",
+                hoverinfo="skip",
+            )
+        )
+    if label_rows:
+        labels = pd.DataFrame(label_rows)
+        fig.add_trace(
+            go.Scatter(
+                x=labels["경도"],
+                y=labels["위도"],
+                mode="text",
+                text=labels["구"],
+                textfont=dict(size=11, color="#0f172a"),
+                hoverinfo="skip",
+                showlegend=False,
+            )
+        )
+
+
+def grid_effect_rows(scoped: pd.DataFrame, grid_geo: dict, value_col: str) -> list[dict]:
+    points = [
+        (float(row["경도"]), float(row["위도"]), float(row[value_col]))
+        for _, row in scoped.dropna(subset=["경도", "위도", value_col]).iterrows()
+    ]
+    if not points:
+        return []
+
+    rows = []
+    for feature in grid_geo.get("features", []):
+        geometry = feature.get("geometry", {})
+        if not geometry:
+            continue
+        try:
+            polygon = shape(geometry)
+        except Exception:
+            continue
+        minx, miny, maxx, maxy = polygon.bounds
+        values = [
+            value
+            for lon, lat, value in points
+            if minx <= lon <= maxx and miny <= lat <= maxy and polygon.covers(Point(lon, lat))
+        ]
+        if not values:
+            continue
+        props = feature.get("properties", {})
+        rows.append(
+            {
+                "feature": feature,
+                "grid_id": props.get("grid_id", "-"),
+                "value": float(pd.Series(values).mean()),
+                "abs_value": float(pd.Series(values).abs().mean()),
+                "sample_count": len(values),
+            }
+        )
+    return rows
+
+
+def mgwr_grid_seoul_map(
+    gwr_df: pd.DataFrame,
+    variable: str,
+    dong_boundaries: dict,
+    grid_geo: dict,
+    gu_boundaries: dict,
+    bw_info: dict | None = None,
+    risk_group: str | None = None,
+    metric: str = "contribution",
+    color_scale_mode: str = "relative",
+) -> go.Figure:
+    coef_col = f"coef_{variable}"
+    contribution_col = f"contrib_{variable}"
+    value_col = contribution_col if metric == "contribution" and contribution_col in gwr_df.columns else coef_col
+    metric_label = "지역기여도" if value_col == contribution_col else "MGWR 계수"
+    if value_col not in gwr_df.columns:
+        return go.Figure()
+
+    scoped = gwr_df.dropna(subset=["위도", "경도", value_col]).copy()
+    if scoped.empty:
+        return go.Figure()
+    scoped[value_col] = pd.to_numeric(scoped[value_col], errors="coerce")
+    scoped = scoped.dropna(subset=[value_col])
+    if scoped.empty:
+        return go.Figure()
+
+    grid_rows = grid_effect_rows(scoped, grid_geo, value_col)
+    if not grid_rows:
+        return go.Figure()
+
+    values = pd.Series([row["value"] for row in grid_rows])
+    if color_scale_mode == "relative":
+        center_value = float(values.median())
+        color_values = values - center_value
+        color_label = "평균 대비"
+    else:
+        center_value = 0.0
+        color_values = values
+        color_label = "0 기준"
+
+    q = color_values.abs().quantile(0.95)
+    z_abs = float(q) if pd.notna(q) and q > 0 else float(color_values.abs().max())
+    if not z_abs or pd.isna(z_abs):
+        z_abs = 1.0
+    zmin, zmax = -z_abs, z_abs
+    for row, color_value in zip(grid_rows, color_values):
+        row["color_value"] = float(color_value)
+
+    fig = go.Figure()
+
+    boundary_x, boundary_y = full_boundary_coords(dong_boundaries)
+    if boundary_x:
+        fig.add_trace(
+            go.Scatter(
+                x=boundary_x,
+                y=boundary_y,
+                mode="lines",
+                line=dict(color="rgba(51,65,85,0.28)", width=0.55),
+                name="서울시 법정동 경계",
+                hoverinfo="skip",
+            )
+        )
+
+    add_gu_boundary_trace(fig, gu_boundaries, width=1.35, show_labels=True)
+
+    for row in grid_rows:
+        xs, ys = polygon_line_coords(row["feature"].get("geometry", {}))
+        if not xs:
+            continue
+        fill = sample_diverging_color(row["color_value"], zmin, zmax, alpha=0.62)
+        border = sample_diverging_color(row["color_value"], zmin, zmax, alpha=0.84)
+        fig.add_trace(
+            go.Scatter(
+                x=xs,
+                y=ys,
+                mode="lines",
+                fill="toself",
+                fillcolor=fill,
+                line=dict(color=border, width=0.45),
+                customdata=[[row["grid_id"], row["value"], row["abs_value"], row["sample_count"], row["color_value"]]] * len(xs),
+                hovertemplate=(
+                    "<b>격자 %{customdata[0]}</b><br>"
+                    f"{variable} {metric_label}: " + "%{customdata[1]:.4f}<br>"
+                    f"색상값({color_label}): " + "%{customdata[4]:.4f}<br>"
+                    f"절대 {metric_label}: " + "%{customdata[2]:.4f}<br>"
+                    "MGWR 표본수: %{customdata[3]:,}"
+                    "<extra></extra>"
+                ),
+                showlegend=False,
+                name="MGWR 격자",
+            )
+        )
+
+    fig.add_trace(
+        go.Scatter(
+            x=scoped["경도"],
+            y=scoped["위도"],
+            mode="markers",
+            marker=dict(size=4, color="rgba(15,23,42,0.28)", line=dict(color="white", width=0.25)),
+            customdata=scoped[["구", "동", "숙소명", value_col]],
+            hovertemplate=(
+                "<b>%{customdata[2]}</b><br>"
+                "%{customdata[0]} %{customdata[1]}<br>"
+                f"{variable} {metric_label}: " + "%{customdata[3]:.4f}"
+                "<extra></extra>"
+            ),
+            name="MGWR 표본 위치",
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=[None],
+            y=[None],
+            mode="markers",
+            marker=dict(
+                colorscale="RdBu_r",
+                cmin=zmin,
+                cmax=zmax,
+                color=[zmin, zmax],
+                showscale=True,
+                colorbar=dict(title=f"{variable}<br>{color_label}"),
+            ),
+            hoverinfo="skip",
+            showlegend=False,
+        )
+    )
+
+    xs = []
+    ys = []
+    for feature in grid_geo.get("features", []):
+        gx, gy = polygon_line_coords(feature.get("geometry", {}))
+        xs.extend([x for x in gx if x is not None])
+        ys.extend([y for y in gy if y is not None])
+    if not xs or not ys:
+        xs = scoped["경도"].tolist()
+        ys = scoped["위도"].tolist()
+    lon_range = max(xs) - min(xs)
+    lat_range = max(ys) - min(ys)
+    pad_lon = max(lon_range * 0.025, 0.01)
+    pad_lat = max(lat_range * 0.025, 0.01)
+    bw_title = ""
+    if bw_info:
+        bw_title = f" | MGWR BW={bw_info.get('BW', '-'):.0f} NN ({bw_info.get('공간범위', '-')})"
+    grid_size = grid_geo.get("features", [{}])[0].get("properties", {}).get("cell_size_m", "-")
+    fig.update_layout(
+        title=f"서울시 전체 법정동 경계 + {grid_size}m 격자 {risk_group or ''} {variable} MGWR {metric_label} ({color_label}){bw_title}",
+        xaxis=dict(title="", range=[min(xs) - pad_lon, max(xs) + pad_lon], showgrid=False, showticklabels=False, zeroline=False),
+        yaxis=dict(title="", range=[min(ys) - pad_lat, max(ys) + pad_lat], showgrid=False, showticklabels=False, zeroline=False, scaleanchor="x", scaleratio=1),
+        height=760,
+        plot_bgcolor="#fbfcff",
+        paper_bgcolor="white",
+        margin=dict(l=8, r=8, t=66, b=8),
+        font=dict(color=COLORS["ink"]),
+        legend=dict(orientation="h", yanchor="bottom", y=0.01, x=0.01, bgcolor="rgba(255,255,255,0.86)"),
+        uirevision="mgwr_grid_seoul_map",
+    )
+    return fig
+
+
+def gwr_variable_seoul_map(
+    gwr_df: pd.DataFrame,
+    variable: str,
+    dong_boundaries: dict,
+    gu_boundaries: dict | None = None,
+    bw_info: dict | None = None,
+    risk_group: str | None = None,
+    model_label: str = "MGWR",
+    metric: str = "contribution",
+    color_scale_mode: str = "relative",
+) -> go.Figure:
+    coef_col = f"coef_{variable}"
+    contribution_col = f"contrib_{variable}"
+    z_col = contribution_col if metric == "contribution" and contribution_col in gwr_df.columns else coef_col
+    metric_label = "지역기여도" if z_col == contribution_col else "평균계수"
+    if z_col not in gwr_df.columns:
+        return go.Figure()
+
+    scoped = gwr_df.dropna(subset=["위도", "경도", "구", "동", z_col]).copy()
+    if scoped.empty:
+        return go.Figure()
+
+    scoped[z_col] = pd.to_numeric(scoped[z_col], errors="coerce")
+    scoped = scoped.dropna(subset=[z_col])
+    if scoped.empty:
+        return go.Figure()
+
+    dong_effect = (
+        scoped.groupby(["구", "동"], as_index=False)
+        .agg(
+            평균계수=(z_col, "mean"),
+            절대평균계수=(z_col, lambda s: s.abs().mean()),
+            평균MGWR계수=(coef_col, "mean") if coef_col in scoped.columns else (z_col, "mean"),
+            표본수=("동", "size"),
+            경도=("경도", "mean"),
+            위도=("위도", "mean"),
+        )
+    )
+    fallback = (
+        dong_effect.sort_values("표본수", ascending=False)
+        .drop_duplicates("동")
+        .set_index("동")
+        .to_dict("index")
+    )
+    effect_by_key = {(row["구"], row["동"]): row for _, row in dong_effect.iterrows()}
+
+    values = dong_effect["평균계수"]
+    if color_scale_mode == "relative":
+        center_value = float(values.median())
+        color_values = values - center_value
+        color_label = "평균 대비"
+    else:
+        center_value = 0.0
+        color_values = values
+        color_label = "0 기준"
+    dong_effect["색상값"] = color_values
+    effect_by_key = {(row["구"], row["동"]): row for _, row in dong_effect.iterrows()}
+    fallback = (
+        dong_effect.sort_values("표본수", ascending=False)
+        .drop_duplicates("동")
+        .set_index("동")
+        .to_dict("index")
+    )
+
+    q = color_values.abs().quantile(0.95)
+    z_abs = float(q) if pd.notna(q) and q > 0 else float(color_values.abs().max())
+    if not z_abs or pd.isna(z_abs):
+        z_abs = 1.0
+    zmin, zmax = -z_abs, z_abs
+
+    fig = go.Figure()
+    used_dongs = set()
+    for feature in dong_boundaries.get("features", []):
+        props = feature.get("properties", {})
+        gu_name = props.get("구")
+        dong_name = props.get("법정동명") or props.get("EMD_KOR_NM")
+        if not dong_name:
+            continue
+        row = effect_by_key.get((gu_name, dong_name))
+        if row is None:
+            row = fallback.get(dong_name)
+        if row is None:
+            continue
+
+        xs, ys = polygon_line_coords(feature.get("geometry", {}))
+        if not xs:
+            continue
+        used_dongs.add(dong_name)
+        value = float(row["평균계수"])
+        color_value = float(row["색상값"])
+        fill = sample_diverging_color(color_value, zmin, zmax, alpha=0.58)
+        border = sample_diverging_color(color_value, zmin, zmax, alpha=0.86)
+        fig.add_trace(
+            go.Scatter(
+                x=xs,
+                y=ys,
+                mode="lines",
+                fill="toself",
+                fillcolor=fill,
+                line=dict(color=border, width=0.9),
+                name=f"{dong_name}",
+                customdata=[[row.get("구", gu_name), dong_name, value, row["절대평균계수"], row["표본수"], row["평균MGWR계수"], color_value]] * len(xs),
+                hovertemplate=(
+                    "<b>%{customdata[0]} %{customdata[1]}</b><br>"
+                    f"{variable} {metric_label}: " + "%{customdata[2]:.4f}<br>"
+                    f"색상값({color_label}): " + "%{customdata[6]:.4f}<br>"
+                    f"절대{metric_label}: " + "%{customdata[3]:.4f}<br>"
+                    "MGWR 계수: %{customdata[5]:.4f}<br>"
+                    "표본수: %{customdata[4]:,}"
+                    "<extra></extra>"
+                ),
+                showlegend=False,
+            )
+        )
+
+    boundary_x: list[float] = []
+    boundary_y: list[float] = []
+    for feature in dong_boundaries.get("features", []):
+        props = feature.get("properties", {})
+        dong_name = props.get("법정동명") or props.get("EMD_KOR_NM")
+        if dong_name not in used_dongs:
+            continue
+        xs, ys = polygon_line_coords(feature.get("geometry", {}))
+        boundary_x.extend(xs)
+        boundary_y.extend(ys)
+    if boundary_x:
+        fig.add_trace(
+            go.Scatter(
+                x=boundary_x,
+                y=boundary_y,
+                mode="lines",
+                line=dict(color="rgba(30,41,59,0.45)", width=0.7),
+                name="법정동 경계",
+                hoverinfo="skip",
+            )
+        )
+
+    if gu_boundaries:
+        add_gu_boundary_trace(fig, gu_boundaries, width=1.45, show_labels=True)
+
+    gu_summary = (
+        dong_effect.groupby("구", as_index=False)
+        .agg(
+            평균계수=("평균계수", "mean"),
+            평균절대계수=("절대평균계수", "mean"),
+            법정동수=("동", "nunique"),
+            표본수=("표본수", "sum"),
+            경도=("경도", "mean"),
+            위도=("위도", "mean"),
+        )
+    )
+    top_pos = (
+        dong_effect.sort_values("평균계수", ascending=False)
+        .groupby("구")
+        .head(1)[["구", "동", "평균계수"]]
+        .rename(columns={"동": "양의영향동", "평균계수": "양의영향계수"})
+    )
+    top_neg = (
+        dong_effect.sort_values("평균계수", ascending=True)
+        .groupby("구")
+        .head(1)[["구", "동", "평균계수"]]
+        .rename(columns={"동": "음의영향동", "평균계수": "음의영향계수"})
+    )
+    gu_summary = gu_summary.merge(top_pos, on="구", how="left").merge(top_neg, on="구", how="left")
+    gu_summary["표시크기"] = (gu_summary["표본수"] ** 0.5 * 2.2).clip(18, 48)
+    fig.add_trace(
+        go.Scatter(
+            x=gu_summary["경도"],
+            y=gu_summary["위도"],
+            mode="markers+text",
+            text=gu_summary["구"],
+            textposition="middle center",
+            textfont=dict(size=13, color="#0f172a"),
+            marker=dict(
+                size=gu_summary["표시크기"],
+                color="rgba(255,255,255,0.62)",
+                line=dict(color="rgba(15,23,42,0.55)", width=1.5),
+            ),
+            customdata=gu_summary[["구", "법정동수", "표본수", "평균계수", "평균절대계수", "양의영향동", "양의영향계수", "음의영향동", "음의영향계수"]],
+            hovertemplate=(
+                "<b>%{customdata[0]}</b><br>"
+                f"선택 변수: {variable}<br>"
+                f"표시값: {metric_label}<br>"
+                "법정동 수: %{customdata[1]:,}<br>"
+                f"{model_label} 표본수: " + "%{customdata[2]:,}<br>"
+                "구 평균계수: %{customdata[3]:.4f}<br>"
+                "구 평균 절대계수: %{customdata[4]:.4f}<br>"
+                "양의 영향 최대 동: %{customdata[5]} (%{customdata[6]:.4f})<br>"
+                "음의 영향 최대 동: %{customdata[7]} (%{customdata[8]:.4f})"
+                "<extra></extra>"
+            ),
+            name="구별 요약",
+        )
+    )
+
+    top_labels = dong_effect.sort_values("표본수", ascending=False).head(25)
+    fig.add_trace(
+        go.Scatter(
+            x=top_labels["경도"],
+            y=top_labels["위도"],
+            mode="text",
+            text=top_labels["동"],
+            textfont=dict(size=10, color="#1f2b3d"),
+            hoverinfo="skip",
+            showlegend=False,
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=scoped["경도"],
+            y=scoped["위도"],
+            mode="markers",
+            marker=dict(size=4, color="rgba(31,43,61,0.26)", line=dict(color="white", width=0.3)),
+            customdata=scoped[["구", "동", "숙소명", z_col]],
+            hovertemplate=(
+                "<b>%{customdata[2]}</b><br>"
+                "%{customdata[0]} %{customdata[1]}<br>"
+                f"{variable} {metric_label}: " + "%{customdata[3]:.4f}"
+                "<extra></extra>"
+            ),
+            name=f"{model_label} 표본 위치",
+        )
+    )
+
+    fig.add_trace(
+        go.Scatter(
+            x=[None],
+            y=[None],
+            mode="markers",
+            marker=dict(
+                colorscale="RdBu_r",
+                cmin=zmin,
+                cmax=zmax,
+                color=[zmin, zmax],
+                showscale=True,
+                colorbar=dict(title=f"{variable}<br>{color_label}"),
+            ),
+            hoverinfo="skip",
+            showlegend=False,
+        )
+    )
+
+    lon_range = scoped["경도"].max() - scoped["경도"].min()
+    lat_range = scoped["위도"].max() - scoped["위도"].min()
+    pad_lon = max(lon_range * 0.04, 0.01)
+    pad_lat = max(lat_range * 0.04, 0.01)
+    bw_title = ""
+    if bw_info:
+        bw_title = f" | MGWR BW={bw_info.get('BW', '-'):.0f} NN ({bw_info.get('공간범위', '-')})"
+    group_title = f"{risk_group} " if risk_group else ""
+    fig.update_layout(
+        title=f"서울시 법정동별 {group_title}{variable} {model_label} {metric_label} ({color_label}){bw_title}",
+        xaxis=dict(title="", range=[scoped["경도"].min() - pad_lon, scoped["경도"].max() + pad_lon], showgrid=False, showticklabels=False, zeroline=False),
+        yaxis=dict(title="", range=[scoped["위도"].min() - pad_lat, scoped["위도"].max() + pad_lat], showgrid=False, showticklabels=False, zeroline=False, scaleanchor="x", scaleratio=1),
+        height=720,
+        plot_bgcolor="#fbfcff",
+        paper_bgcolor="white",
+        margin=dict(l=8, r=8, t=62, b=8),
+        font=dict(color=COLORS["ink"]),
+        legend=dict(orientation="h", yanchor="bottom", y=0.01, x=0.01, bgcolor="rgba(255,255,255,0.86)"),
+        uirevision="gwr_variable_seoul_map",
+    )
+    return fig
+
+
+def gwr_mgwr_map(gwr_df: pd.DataFrame, gu: str, dong_boundaries: dict) -> go.Figure:
+    scoped = gwr_df[gwr_df["구"] == gu].dropna(subset=["위도", "경도"]).copy()
+    if scoped.empty:
+        return go.Figure()
+
+    fig = go.Figure()
+    scoped_dongs = set(scoped["동"].dropna().astype(str))
+    boundary_x: list[float] = []
+    boundary_y: list[float] = []
+    for feature in dong_boundaries.get("features", []):
+        props = feature.get("properties", {})
+        dong_name = props.get("법정동명") or props.get("EMD_KOR_NM")
+        if dong_name not in scoped_dongs:
+            continue
+        xs, ys = polygon_line_coords(feature.get("geometry", {}))
+        boundary_x.extend(xs)
+        boundary_y.extend(ys)
+    if boundary_x:
+        fig.add_trace(
+            go.Scatter(
+                x=boundary_x,
+                y=boundary_y,
+                mode="lines",
+                line=dict(color="rgba(51,65,85,0.50)", width=1.1),
+                name="법정동 경계",
+                hoverinfo="skip",
+            )
+        )
+
+    hull_points = convex_hull(list(zip(scoped["경도"].tolist(), scoped["위도"].tolist())))
+    if len(hull_points) >= 3:
+        hull_x = [point[0] for point in hull_points] + [hull_points[0][0]]
+        hull_y = [point[1] for point in hull_points] + [hull_points[0][1]]
+        fig.add_trace(
+            go.Scatter(
+                x=hull_x,
+                y=hull_y,
+                mode="lines",
+                fill="toself",
+                fillcolor="rgba(148,163,184,0.10)",
+                line=dict(color="rgba(71,85,105,0.55)", width=1.4),
+                name=f"{gu} 분석 범위",
+                hoverinfo="skip",
+            )
+        )
+
+    coef_cols = [col for col in scoped.columns if col.startswith("coef_")]
+    dong_summary = (
+        scoped.groupby("동", as_index=False)
+        .agg(
+            경도=("경도", "mean"),
+            위도=("위도", "mean"),
+            표본수=("동", "size"),
+        )
+        .dropna(subset=["동"])
+    )
+    if coef_cols and not dong_summary.empty:
+        dominant = (
+            scoped.groupby("동")[coef_cols]
+            .apply(lambda frame: frame.abs().mean().idxmax().replace("coef_", ""))
+            .rename("주요설명변수")
+            .reset_index()
+        )
+        dong_summary = dong_summary.merge(dominant, on="동", how="left")
+        top_dongs = dong_summary.sort_values("표본수", ascending=False).head(12)["동"].tolist()
+        dong_summary["표시크기"] = (dong_summary["표본수"] ** 0.5 * 11).clip(16, 54)
+        dong_variable = dict(zip(dong_summary["동"].astype(str), dong_summary["주요설명변수"].astype(str)))
+
+        for feature in dong_boundaries.get("features", []):
+            props = feature.get("properties", {})
+            dong_name = props.get("법정동명") or props.get("EMD_KOR_NM")
+            if dong_name not in dong_variable:
+                continue
+            variable = dong_variable[dong_name]
+            color = GWR_VARIABLE_COLORS.get(variable, "#b3b3b3")
+            xs, ys = polygon_line_coords(feature.get("geometry", {}))
+            if not xs:
+                continue
+            fig.add_trace(
+                go.Scatter(
+                    x=xs,
+                    y=ys,
+                    mode="lines",
+                    fill="toself",
+                    fillcolor=hex_to_rgba(color, 0.24),
+                    line=dict(color=hex_to_rgba(color, 0.52), width=0.8),
+                    name=f"{dong_name} {variable}",
+                    hovertemplate=(
+                        f"<b>{dong_name}</b><br>"
+                        f"주요 설명 변수: {variable}"
+                        "<extra></extra>"
+                    ),
+                    showlegend=False,
+                )
+            )
+
+        fig.add_trace(
+            go.Scatter(
+                x=dong_summary["경도"],
+                y=dong_summary["위도"],
+                mode="markers+text",
+                text=dong_summary["동"].where(dong_summary["동"].isin(top_dongs), ""),
+                textposition="top center",
+                textfont=dict(size=12, color="#1f2b3d"),
+                marker=dict(
+                    size=dong_summary["표시크기"],
+                    color=dong_summary["주요설명변수"].map(GWR_VARIABLE_COLORS).fillna("#b3b3b3"),
+                    line=dict(color="white", width=2),
+                    opacity=0.9,
+                ),
+                customdata=dong_summary[["동", "주요설명변수", "표본수"]],
+                hovertemplate=(
+                    "<b>%{customdata[0]}</b><br>"
+                    "주요 설명 변수: %{customdata[1]}<br>"
+                    "표본수: %{customdata[2]:,}"
+                    "<extra></extra>"
+                ),
+                name="법정동 주요 설명 변수",
+            )
+        )
+
+        for variable, color in GWR_VARIABLE_COLORS.items():
+            if variable in dong_summary["주요설명변수"].dropna().unique():
+                fig.add_trace(
+                    go.Scatter(
+                        x=[None],
+                        y=[None],
+                        mode="markers",
+                        marker=dict(size=12, color=color),
+                        name=variable,
+                        hoverinfo="skip",
+                    )
+                )
+
+    fig.add_trace(
+        go.Scatter(
+            x=scoped["경도"],
+            y=scoped["위도"],
+            mode="markers",
+            marker=dict(size=5, color="rgba(31,43,61,0.32)", line=dict(color="white", width=0.4)),
+            customdata=scoped[["동", "숙소명", "cluster_label"]],
+            hovertemplate=(
+                "<b>%{customdata[1]}</b><br>"
+                "법정동: %{customdata[0]}<br>"
+                "위험군: %{customdata[2]}"
+                "<extra></extra>"
+            ),
+            name="GWR 표본 위치",
+        )
+    )
+
+    lon_range = scoped["경도"].max() - scoped["경도"].min()
+    lat_range = scoped["위도"].max() - scoped["위도"].min()
+    pad_lon = max(lon_range * 0.08, 0.003)
+    pad_lat = max(lat_range * 0.08, 0.003)
+    fig.update_layout(
+        title=f"{gu} 동별 주요 설명 변수 및 MGWR BW 해석",
+        xaxis=dict(title="", range=[scoped["경도"].min() - pad_lon, scoped["경도"].max() + pad_lon], showgrid=False, showticklabels=False, zeroline=False),
+        yaxis=dict(title="", range=[scoped["위도"].min() - pad_lat, scoped["위도"].max() + pad_lat], showgrid=False, showticklabels=False, zeroline=False, scaleanchor="x", scaleratio=1),
+        height=650,
+        plot_bgcolor="#fbfcff",
+        paper_bgcolor="white",
+        margin=dict(l=8, r=8, t=62, b=8),
+        font=dict(color=COLORS["ink"]),
+        legend=dict(orientation="h", yanchor="bottom", y=0.01, x=0.01, bgcolor="rgba(255,255,255,0.86)"),
     )
     return fig
 
@@ -1128,6 +2143,30 @@ def representative_route_facilities(
         }
     )
     scoped = final_df[(final_df["구"] == gu) & (final_df["cluster_label"] == cluster_label)].copy()
+    if scoped.empty:
+        return scoped
+
+    top_dongs = scoped["동"].dropna().value_counts().head(2)
+    if top_dongs.empty:
+        return scoped.iloc[0:0].copy()
+
+    selected_parts = []
+    for rank, (dong, facility_count) in enumerate(top_dongs.items(), start=1):
+        take_n = 3 if rank == 1 else 2
+        part = (
+            scoped[scoped["동"] == dong]
+            .sort_values(["최종위험점수_new"], ascending=False)
+            .head(take_n)
+            .copy()
+        )
+        part["대표동순위"] = rank
+        part["동시설수"] = int(facility_count)
+        selected_parts.append(part)
+
+    scoped = pd.concat(selected_parts, ignore_index=True) if selected_parts else scoped.iloc[0:0].copy()
+    if scoped.empty:
+        return scoped
+
     scoped = scoped.merge(
         route_lookup,
         left_on=["구", "동", "숙소명"],
@@ -1140,11 +2179,13 @@ def representative_route_facilities(
     if scoped.empty:
         return scoped
 
-    scoped = scoped.sort_values(["최종위험점수_new", "최근접_거리m"], ascending=[False, False]).head(5).reset_index(drop=True)
+    scoped = scoped.sort_values(["대표동순위", "최종위험점수_new"], ascending=[True, False]).reset_index(drop=True)
     scoped = enrich_representative_roads(scoped, road_line_df)
     scoped["선택라벨"] = (
         scoped["동"].fillna("")
-        + " · "
+        + "("
+        + scoped["동시설수"].astype("string")
+        + "개 시설) · "
         + scoped["숙소명"].fillna("")
         + " · "
         + scoped["최종위험점수_new"].round(1).astype("string")
@@ -1500,6 +2541,12 @@ def dispatch_route_map(route_df: pd.DataFrame, fire_df: pd.DataFrame, road_width
 
 
 final_df, score_df, model_df, compare_df = load_0430()
+gwr_local_df = load_gwr_local(final_df)
+mgwr_cluster_local_df = load_mgwr_cluster_local()
+dong_boundary_geo = load_dong_boundaries()
+gu_boundary_geo = build_gu_boundaries(dong_boundary_geo)
+grid_250_geo = load_seoul_grid(250)
+grid_500_geo = load_seoul_grid(500)
 license_df = load_license_sources()
 route_df, fire_facility_df, road_width_df, road_line_df, road_route_df = load_route_sources()
 gu_list = sorted(final_df["구"].dropna().unique())
@@ -1518,14 +2565,14 @@ max_risk = gu_df["최종위험점수_new"].max()
 
 selected_view = st.radio(
     "화면 선택",
-    ["개요", "인허가", "위험지도", "클러스터", "공간모형"],
+    ["개요", "인허가", "위험지도", "클러스터", "공간모형", "GWR/MGWR"],
     horizontal=True,
     label_visibility="collapsed",
 )
 
 if selected_view == "개요":
     st.markdown('<div class="section-title">선택 구 위험 프로파일</div>', unsafe_allow_html=True)
-    st.markdown('<div class="soft-note">0430 최종테이블의 선택 구 평균을 서울 10구 전체 평균과 비교했습니다. 100보다 크면 전체 평균보다 높은 지표입니다.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="soft-note">0430 최종테이블의 선택 구 평균을 서울 10구 전체 평균과 비교합니다. 100보다 크면 전체 평균보다 높은 지표입니다.</div>', unsafe_allow_html=True)
     left, right = st.columns([1.1, 0.9])
     with left:
         st.plotly_chart(risk_factor_chart(final_df, selected_gu), width="stretch")
@@ -1548,7 +2595,7 @@ elif selected_view == "인허가":
 
 elif selected_view == "위험지도":
     st.markdown('<div class="section-title">법정동 중심 위험 지도</div>', unsafe_allow_html=True)
-    st.markdown('<div class="soft-note">0430 파일의 숙소 좌표만 사용해 선택 구 안의 법정동별 분포를 근사 표시합니다. 실제 법정동 경계선은 0430에 없어 포함하지 않았습니다.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="soft-note">선택 구의 법정동 경계를 기준으로 구역을 나누고, 각 법정동에서 가장 많이 나타나는 위험군 색으로 채웁니다. 점은 개별 숙박시설 위치이며, 마우스를 올리면 법정동별 위험군 구성과 평균 위험도를 확인할 수 있습니다.</div>', unsafe_allow_html=True)
     selected_clusters = st.multiselect(
         "지도 위험군",
         ["저위험군", "중위험군", "고위험군"],
@@ -1577,8 +2624,114 @@ elif selected_view == "클러스터":
         fig.update_layout(showlegend=False, plot_bgcolor="white", paper_bgcolor="white", margin=dict(l=0, r=0, t=36, b=0), xaxis_title="숙박시설 수", yaxis_title="")
         st.plotly_chart(fig, width="stretch")
 
+elif selected_view == "GWR/MGWR":
+    st.markdown('<div class="section-title">저위험군/고위험군 MGWR 변수별 공간 패턴</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="soft-note">서울시 전체 법정동 경계를 배경으로 깔고, 그 위에 격자를 올려 선택 변수의 MGWR 지역 기여도를 색칠합니다. 빨강은 평균보다 위험도를 더 올리는 방향, 파랑은 낮추는 방향이며, 선택 변수의 MGWR BW는 그 효과가 국소적으로 작동하는지 광역적으로 작동하는지 설명합니다.</div>',
+        unsafe_allow_html=True,
+    )
+    local_source_df = mgwr_cluster_local_df if not mgwr_cluster_local_df.empty else gwr_local_df
+    if local_source_df.empty:
+        st.warning("지역 계수 파일을 찾지 못했거나 좌표와 매칭하지 못했습니다.")
+    else:
+        control_l, control_r = st.columns([0.36, 0.64])
+        with control_l:
+            risk_group = st.selectbox("위험군", ["저위험군", "고위험군"], index=0)
+            scoped_local_df = local_source_df[local_source_df["cluster_label"] == risk_group].copy() if "cluster_label" in local_source_df.columns else local_source_df.copy()
+            variable_options = [
+                col.replace("coef_", "")
+                for col in scoped_local_df.columns
+                if col.startswith("coef_") and col != "coef_intercept"
+            ]
+            selected_variable = st.selectbox("영향도 변수", variable_options, index=0) if variable_options else None
+            display_metric = st.radio(
+                "지도 표시값",
+                ["지역 기여도", "MGWR 계수"],
+                index=0,
+                horizontal=True,
+                help="계수가 거의 일정하면 MGWR 계수 지도는 같은 색으로 보입니다. 지역 기여도는 MGWR 계수에 해당 지점의 변수값(z-score)을 곱해 공간적 차이를 보여줍니다.",
+            )
+            map_unit_label = st.radio(
+                "집계 단위",
+                ["법정동", "격자"],
+                index=0,
+                horizontal=True,
+                help="법정동은 행정구역별 해석에 좋고, 격자는 더 세밀한 공간 패턴 확인에 좋습니다.",
+            )
+            grid_size_label = st.radio(
+                "격자 크기",
+                ["500m", "250m"],
+                index=0,
+                horizontal=True,
+                help="250m는 더 촘촘하지만 브라우저 렌더링이 무거울 수 있습니다.",
+                disabled=(map_unit_label == "법정동"),
+            )
+            color_scale_label = st.radio(
+                "색상 스케일",
+                ["평균 대비", "0 기준"],
+                index=0,
+                horizontal=True,
+                help="평균 대비는 같은 위험군 안에서 상대적으로 높은/낮은 지역을 보여줍니다. 0 기준은 계수나 기여도의 양/음 방향을 그대로 보여줍니다.",
+            )
+            bw_table = parse_bw_table(model_df, risk_group)
+            selected_bw = None
+            if selected_variable and not bw_table.empty:
+                selected_rows = bw_table[bw_table["변수"] == selected_variable]
+                if not selected_rows.empty:
+                    selected_bw = selected_rows.iloc[0].to_dict()
+                    st.metric(
+                        "선택 변수 MGWR BW",
+                        f"{selected_bw['BW']:.0f} NN",
+                        f"{selected_bw['공간범위']} - {selected_bw['해석']}",
+                    )
+                st.markdown("**MGWR BW 해석**")
+                st.dataframe(bw_table, hide_index=True, width="stretch")
+            if not mgwr_cluster_local_df.empty:
+                st.caption("지도 색은 기본적으로 MGWR 계수 × 지역 변수값(z-score)의 공간단위 평균입니다. BW는 법정동/격자별 값이 아니라 선택 위험군/변수의 MGWR 대역폭입니다.")
+        with control_r:
+            model_view = model_df.copy()
+            if not model_view.empty:
+                display_cols = [col for col in ["위험군", "대표모형", "n", "R2", "Adj_R2", "AICc", "Residual_Moran_I", "Moran_p", "BW"] if col in model_view.columns]
+                st.dataframe(model_view[model_view["위험군"].isin(["저위험군", "고위험군"])][display_cols], hide_index=True, width="stretch")
+        if scoped_local_df.empty or not variable_options:
+            st.warning(f"{risk_group}에 표시할 지역 계수 데이터가 없습니다.")
+        else:
+            metric_key = "coefficient" if display_metric == "MGWR 계수" else "contribution"
+            scale_key = "absolute" if color_scale_label == "0 기준" else "relative"
+            if map_unit_label == "법정동":
+                st.plotly_chart(
+                    gwr_variable_seoul_map(
+                        scoped_local_df,
+                        selected_variable,
+                        dong_boundary_geo,
+                        gu_boundary_geo,
+                        selected_bw,
+                        risk_group=risk_group,
+                        model_label="MGWR",
+                        metric=metric_key,
+                        color_scale_mode=scale_key,
+                    ),
+                    width="stretch",
+                )
+            else:
+                selected_grid_geo = grid_250_geo if grid_size_label == "250m" else grid_500_geo
+                st.plotly_chart(
+                    mgwr_grid_seoul_map(
+                        scoped_local_df,
+                        selected_variable,
+                        dong_boundary_geo,
+                        selected_grid_geo,
+                        gu_boundary_geo,
+                        selected_bw,
+                        risk_group=risk_group,
+                        metric=metric_key,
+                        color_scale_mode=scale_key,
+                    ),
+                    width="stretch",
+                )
+
 elif selected_view == "공간모형":
-    st.markdown('<div class="section-title">군집 대표 숙박시설 출동경로</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">구별 상위 대표 숙박시설 출동경로</div>', unsafe_allow_html=True)
     control_l, control_r = st.columns([0.32, 0.68])
     with control_l:
         route_cluster = st.selectbox(
@@ -1589,11 +2742,11 @@ elif selected_view == "공간모형":
 
     representatives = representative_route_facilities(final_df, route_df, road_width_df, road_line_df, selected_gu, route_cluster)
     if representatives.empty:
-        st.info("선택한 구와 군집에 표시할 출동경로 데이터가 없습니다.")
+        st.info("선택한 구와 군집에서 상위 2개 동 대표 숙박시설 출동경로 데이터가 없습니다.")
     else:
         with control_r:
             selected_label = st.selectbox(
-                "숙박시설 선택",
+                "상위 동 대표 숙박시설 선택",
                 representatives["선택라벨"].tolist(),
                 key=f"route_facility_{selected_gu}_{route_cluster}",
             )
