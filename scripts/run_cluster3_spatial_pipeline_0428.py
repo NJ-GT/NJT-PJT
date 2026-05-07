@@ -30,7 +30,7 @@ except Exception:
     pass
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1] / "0424"
 DEFAULT_DATA_PATH = ROOT / "data" / "최최최종0428변수테이블.csv"
 BUNDLE_DIR_150M = ROOT / "data" / "cluster3_spatial_pipeline_fire_count_150m_0428"
 DATA_PATH = DEFAULT_DATA_PATH

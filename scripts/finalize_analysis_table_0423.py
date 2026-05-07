@@ -7,7 +7,7 @@ import pandas as pd
 from build_building_feature_probe import build_probe
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 PROBE_PATH = (
     ROOT / "0424" / "분석" / "tables" / "분석변수_최종테이블0423_건물특성_probe.csv"
 )

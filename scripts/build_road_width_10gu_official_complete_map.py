@@ -9,18 +9,18 @@ import pandas as pd
 from shapely.geometry import LineString, MultiLineString
 
 
-BASE_DIR = Path(__file__).resolve().parents[1]
-INPUT_CSV = BASE_DIR / "data" / "seoul_road_width_viRoutDt_10개구_대표좌표.csv"
+BASE_DIR = Path(__file__).resolve().parents[1] / "road_width_10gu"
+DATA_DIR = BASE_DIR / "data"
+INPUT_CSV = next(DATA_DIR.glob("seoul_road_width_viRoutDt_10*.csv"))
 OFFICIAL_SHP = (
-    BASE_DIR
-    / "data"
-    / "official_road_shape_202603_seoul"
-    / "11000"
-    / "TL_SPRD_MANAGE.shp"
+    DATA_DIR / "official_road_shape_202603_seoul" / "11000" / "TL_SPRD_MANAGE.shp"
 )
-OUTPUT_HTML = BASE_DIR / "data" / "seoul_road_width_10gu_official_line_map.html"
-OUTPUT_GEOJSON = BASE_DIR / "data" / "seoul_road_width_10gu_official_lines.geojson"
-UNMATCHED_CSV = BASE_DIR / "data" / "seoul_road_width_10gu_official_line_unmatched.csv"
+OUTPUT_HTML = DATA_DIR / "seoul_road_width_10gu_official_complete_map.html"
+OUTPUT_GEOJSON = DATA_DIR / "seoul_road_width_10gu_official_complete_lines.geojson"
+UNMATCHED_API_CSV = (
+    DATA_DIR / "seoul_road_width_10gu_official_complete_api_unmatched.csv"
+)
+OFFICIAL_ONLY_CSV = DATA_DIR / "seoul_road_width_10gu_official_only_roads.csv"
 
 SRC_CRS = "EPSG:5179"
 
@@ -36,6 +36,7 @@ SIG_TO_GU = {
     "11680": "강남구",
     "11710": "송파구",
 }
+
 GU_ORDER = [
     "강남구",
     "강서구",
@@ -53,6 +54,7 @@ WIDTH_ORDER = [
     "폭6-8m",
     "폭8-10m",
     "폭10-12m",
+    "폭12-15m",
     "폭15-20m",
     "폭20-25m",
     "폭25-30m",
@@ -67,6 +69,7 @@ WIDTH_COLORS = {
     "폭6-8m": "#63a15f",
     "폭8-10m": "#d6a419",
     "폭10-12m": "#e27b36",
+    "폭12-15m": "#e05d3d",
     "폭15-20m": "#d64545",
     "폭20-25m": "#b83266",
     "폭25-30m": "#7f3c8d",
@@ -81,6 +84,7 @@ WIDTH_WEIGHTS = {
     "폭6-8m": 3,
     "폭8-10m": 4,
     "폭10-12m": 5,
+    "폭12-15m": 5,
     "폭15-20m": 6,
     "폭20-25m": 7,
     "폭25-30m": 8,
@@ -96,6 +100,36 @@ def normalize_name(value: object) -> str:
     return "".join(str(value or "").strip().split())
 
 
+def official_width_bucket(value: float | None) -> str:
+    if value is None or math.isnan(value):
+        return "불가"
+    if value < 6:
+        return "6m미만"
+    if value < 8:
+        return "폭6-8m"
+    if value < 10:
+        return "폭8-10m"
+    if value < 12:
+        return "폭10-12m"
+    if value < 15:
+        return "폭12-15m"
+    if value < 20:
+        return "폭15-20m"
+    if value < 25:
+        return "폭20-25m"
+    if value < 30:
+        return "폭25-30m"
+    if value < 35:
+        return "폭30-35m"
+    if value < 40:
+        return "폭35-40m"
+    if value < 50:
+        return "폭40-50m"
+    if value < 70:
+        return "폭50-70m"
+    return "폭50-70m"
+
+
 def distance_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
     mean_lat = math.radians((lat1 + lat2) / 2)
     dx = (lng2 - lng1) * 111_320 * math.cos(mean_lat)
@@ -106,12 +140,9 @@ def distance_m(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
 def perpendicular_distance_m(
     point: list[float], start: list[float], end: list[float]
 ) -> float:
-    lat0 = point[1]
-    lng0 = point[0]
-    lat1 = start[1]
-    lng1 = start[0]
-    lat2 = end[1]
-    lng2 = end[0]
+    lat0, lng0 = point[1], point[0]
+    lat1, lng1 = start[1], start[0]
+    lat2, lng2 = end[1], end[0]
     mean_lat = math.radians((lat0 + lat1 + lat2) / 3)
 
     def project(lat: float, lng: float) -> tuple[float, float]:
@@ -128,7 +159,7 @@ def perpendicular_distance_m(
 
 
 def simplify_line(
-    coords: list[list[float]], tolerance_m: float = 2.0
+    coords: list[list[float]], tolerance_m: float = 1.2
 ) -> list[list[float]]:
     if len(coords) <= 2:
         return coords
@@ -159,15 +190,13 @@ def geometry_to_lines(geom: LineString | MultiLineString) -> list[list[list[floa
 
 
 def choose_endpoints(lines: list[list[list[float]]]) -> tuple[list[float], list[float]]:
-    endpoints: list[list[float]] = []
+    endpoints = []
     for line in lines:
         if len(line) >= 2:
-            endpoints.append(line[0])
-            endpoints.append(line[-1])
+            endpoints.extend([line[0], line[-1]])
     if len(endpoints) < 2:
         flat = [coord for line in lines for coord in line]
         return flat[0], flat[-1]
-
     best_pair = (endpoints[0], endpoints[-1])
     best_dist = -1.0
     for i, a in enumerate(endpoints):
@@ -189,9 +218,20 @@ def line_length_m(lines: list[list[list[float]]]) -> float:
 
 def load_input() -> pd.DataFrame:
     df = pd.read_csv(INPUT_CSV, encoding="utf-8-sig", dtype=str).fillna("")
-    df["위도"] = pd.to_numeric(df["위도"], errors="coerce")
-    df["경도"] = pd.to_numeric(df["경도"], errors="coerce")
-    df = df.dropna(subset=["위도", "경도"]).copy()
+    seq_col, gu_col, road_col, kind_col, function_col, scale_col, width_col = (
+        df.columns[:7]
+    )
+    df = df.rename(
+        columns={
+            seq_col: "순번",
+            gu_col: "구",
+            road_col: "도로명",
+            kind_col: "도로구분",
+            function_col: "도로기능",
+            scale_col: "도로규모",
+            width_col: "API도로폭",
+        }
+    )
     df["_key"] = df["구"].map(normalize_name) + "|" + df["도로명"].map(normalize_name)
     return df.drop_duplicates("_key", keep="first")
 
@@ -201,59 +241,95 @@ def load_official() -> gpd.GeoDataFrame:
     gdf["구"] = gdf["SIG_CD"].astype(str).map(SIG_TO_GU).fillna("")
     gdf = gdf[gdf["구"] != ""].copy()
     gdf["_key"] = gdf["구"].map(normalize_name) + "|" + gdf["RN"].map(normalize_name)
-    gdf = gdf.set_crs(SRC_CRS, allow_override=True).to_crs("EPSG:4326")
-    return gdf
+    return gdf.set_crs(SRC_CRS, allow_override=True).to_crs("EPSG:4326")
 
 
 def build_features(
     input_df: pd.DataFrame, official: gpd.GeoDataFrame
-) -> tuple[list[dict], pd.DataFrame]:
+) -> tuple[list[dict], pd.DataFrame, pd.DataFrame]:
+    meta_by_key = {row["_key"]: row for _, row in input_df.iterrows()}
     official_keys = set(official["_key"])
-    matched_input = input_df[input_df["_key"].isin(official_keys)].copy()
-    unmatched = input_df[~input_df["_key"].isin(official_keys)].copy()
-    meta_by_key = {row["_key"]: row for _, row in matched_input.iterrows()}
-    official = official[official["_key"].isin(meta_by_key)].copy()
+    api_only = input_df[~input_df["_key"].isin(official_keys)].copy()
+    official_only_keys = sorted(official_keys - set(meta_by_key))
 
     features: list[dict] = []
+    official_only_rows: list[dict] = []
     for key, group in official.groupby("_key", sort=False):
-        meta = meta_by_key[key]
+        official_widths = pd.to_numeric(group["ROAD_BT"], errors="coerce").dropna()
+        official_lengths = pd.to_numeric(group["ROAD_LT"], errors="coerce").dropna()
+        official_avg_width = (
+            float(official_widths.mean()) if not official_widths.empty else None
+        )
+        fallback_width = official_width_bucket(official_avg_width)
+
+        if key in meta_by_key:
+            meta = meta_by_key[key]
+            api_width = str(meta["API도로폭"]).strip() or "불가"
+            if api_width and api_width != "불가":
+                display_width = api_width
+                width_source = "API"
+            else:
+                display_width = fallback_width
+                width_source = "공식폭보완"
+            seq = int(float(meta["순번"]))
+            road_kind = str(meta["도로구분"])
+            road_function = str(meta["도로기능"])
+            road_scale = str(meta["도로규모"])
+        else:
+            first = group.iloc[0]
+            api_width = ""
+            display_width = fallback_width
+            width_source = "공식만"
+            seq = int(first["RDS_MAN_NO"]) if pd.notna(first["RDS_MAN_NO"]) else 0
+            road_kind = "공식도로구간"
+            road_function = ""
+            road_scale = ""
+            official_only_rows.append(
+                {
+                    "구": first["구"],
+                    "도로명": first["RN"],
+                    "표시도로폭": display_width,
+                    "공식도로폭평균m": official_avg_width,
+                    "공식구간수": len(group),
+                }
+            )
+
         raw_lines: list[list[list[float]]] = []
         for geom in group.geometry:
             raw_lines.extend(geometry_to_lines(geom))
-        lines = [
-            simplify_line(line, tolerance_m=2.0) for line in raw_lines if len(line) >= 2
-        ]
+        lines = [simplify_line(line) for line in raw_lines if len(line) >= 2]
         if not lines:
-            unmatched = pd.concat([unmatched, meta.to_frame().T], ignore_index=True)
             continue
-
         start, end = choose_endpoints(lines)
-        road_width = str(meta["도로폭"]).strip() or "불가"
-        official_widths = pd.to_numeric(group["ROAD_BT"], errors="coerce").dropna()
-        official_lengths = pd.to_numeric(group["ROAD_LT"], errors="coerce").dropna()
+        official_min_width = (
+            float(official_widths.min()) if not official_widths.empty else None
+        )
+        official_max_width = (
+            float(official_widths.max()) if not official_widths.empty else None
+        )
         props = {
-            "순번": int(float(meta["순번"])),
-            "구": str(meta["구"]),
-            "도로명": str(meta["도로명"]),
-            "도로구분": str(meta["도로구분"]),
-            "도로기능": str(meta["도로기능"]),
-            "도로규모": str(meta["도로규모"]),
-            "도로폭": road_width,
-            "대표위도": float(meta["위도"]),
-            "대표경도": float(meta["경도"]),
+            "순번": seq,
+            "구": str(group.iloc[0]["구"]),
+            "도로명": str(group.iloc[0]["RN"]),
+            "도로구분": road_kind,
+            "도로기능": road_function,
+            "도로규모": road_scale,
+            "API도로폭": api_width,
+            "표시도로폭": display_width,
+            "폭출처": width_source,
             "시작위도": start[1],
             "시작경도": start[0],
             "끝위도": end[1],
             "끝경도": end[0],
             "공식선형길이m": round(line_length_m(lines), 1),
-            "공식도로폭평균m": round(float(official_widths.mean()), 2)
-            if not official_widths.empty
+            "공식도로폭평균m": round(official_avg_width, 2)
+            if official_avg_width is not None
             else None,
-            "공식도로폭최소m": round(float(official_widths.min()), 2)
-            if not official_widths.empty
+            "공식도로폭최소m": round(official_min_width, 2)
+            if official_min_width is not None
             else None,
-            "공식도로폭최대m": round(float(official_widths.max()), 2)
-            if not official_widths.empty
+            "공식도로폭최대m": round(official_max_width, 2)
+            if official_max_width is not None
             else None,
             "공식도로길이합m": round(float(official_lengths.sum()), 1)
             if not official_lengths.empty
@@ -261,10 +337,9 @@ def build_features(
             "RN_CD": "|".join(
                 sorted({str(v) for v in group["RN_CD"].dropna().unique()})
             ),
-            "RDS_MAN_NO_count": int(group["RDS_MAN_NO"].nunique()),
             "공식구간수": int(len(group)),
-            "색상": WIDTH_COLORS.get(road_width, WIDTH_COLORS["불가"]),
-            "두께": WIDTH_WEIGHTS.get(road_width, WIDTH_WEIGHTS["불가"]),
+            "색상": WIDTH_COLORS.get(display_width, WIDTH_COLORS["불가"]),
+            "두께": WIDTH_WEIGHTS.get(display_width, WIDTH_WEIGHTS["불가"]),
         }
         features.append(
             {
@@ -273,7 +348,13 @@ def build_features(
                 "properties": props,
             }
         )
-    return features, unmatched
+
+    official_only = pd.DataFrame(official_only_rows)
+    if not official_only_keys and official_only.empty:
+        official_only = pd.DataFrame(
+            columns=["구", "도로명", "표시도로폭", "공식도로폭평균m", "공식구간수"]
+        )
+    return features, api_only, official_only
 
 
 def count_by(
@@ -288,6 +369,14 @@ def count_by(
     ]
 
 
+def source_counts(features: list[dict]) -> dict[str, int]:
+    counts: dict[str, int] = {"API": 0, "공식폭보완": 0, "공식만": 0}
+    for feature in features:
+        src = str(feature["properties"].get("폭출처", ""))
+        counts[src] = counts.get(src, 0) + 1
+    return counts
+
+
 def leaflet_rows(features: list[dict]) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     for feature in features:
@@ -300,7 +389,9 @@ def leaflet_rows(features: list[dict]) -> list[dict[str, object]]:
                 "kind": props["도로구분"],
                 "function": props["도로기능"],
                 "scale": props["도로규모"],
-                "width": props["도로폭"],
+                "apiWidth": props["API도로폭"],
+                "width": props["표시도로폭"],
+                "widthSource": props["폭출처"],
                 "officialAvgWidth": props["공식도로폭평균m"],
                 "officialMinWidth": props["공식도로폭최소m"],
                 "officialMaxWidth": props["공식도로폭최대m"],
@@ -320,29 +411,31 @@ def leaflet_rows(features: list[dict]) -> list[dict[str, object]]:
     return rows
 
 
-def build_html(features: list[dict], unmatched_count: int) -> str:
+def build_html(
+    features: list[dict], api_only_count: int, official_only_count: int
+) -> str:
     rows = leaflet_rows(features)
     center_lat = sum((row["start"][0] + row["end"][0]) / 2 for row in rows) / len(rows)
     center_lng = sum((row["start"][1] + row["end"][1]) / 2 for row in rows) / len(rows)
+    counts = source_counts(features)
     data_json = json.dumps(rows, ensure_ascii=False, separators=(",", ":"))
-    gu_json = json.dumps(GU_ORDER, ensure_ascii=False)
-    width_json = json.dumps(WIDTH_ORDER, ensure_ascii=False)
-    colors_json = json.dumps(WIDTH_COLORS, ensure_ascii=False)
     gu_counts_json = json.dumps(
         count_by(features, "구", GU_ORDER), ensure_ascii=False, separators=(",", ":")
     )
     width_counts_json = json.dumps(
-        count_by(features, "도로폭", WIDTH_ORDER),
+        count_by(features, "표시도로폭", WIDTH_ORDER),
         ensure_ascii=False,
         separators=(",", ":"),
     )
+    gu_json = json.dumps(GU_ORDER, ensure_ascii=False)
+    colors_json = json.dumps(WIDTH_COLORS, ensure_ascii=False)
 
     return f"""<!doctype html>
 <html lang="ko">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>서울 10개구 공식 도로구간 도로폭 지도</title>
+  <title>서울 10개구 공식 도로구간 완성 지도</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
@@ -362,7 +455,7 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
       top: 16px;
       left: 16px;
       z-index: 1000;
-      width: 388px;
+      width: 400px;
       max-height: calc(100vh - 32px);
       overflow: auto;
       background: var(--panel);
@@ -398,13 +491,13 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
     .legend-grid {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 8px; font-size: 12px; }}
     .legend-item {{ display: flex; align-items: center; min-width: 0; gap: 6px; }}
     .legend-item span:last-child {{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
-    .leaflet-popup-content {{ font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif; font-size: 12px; margin: 12px; min-width: 252px; }}
+    .leaflet-popup-content {{ font-family: "Malgun Gothic", "Apple SD Gothic Neo", Arial, sans-serif; font-size: 12px; margin: 12px; min-width: 264px; }}
     .popup-title {{ font-size: 14px; font-weight: 800; margin-bottom: 6px; }}
     .popup-table {{ width: 100%; border-collapse: collapse; }}
-    .popup-table th {{ width: 90px; text-align: left; color: #667085; font-weight: 700; padding: 3px 8px 3px 0; vertical-align: top; }}
+    .popup-table th {{ width: 94px; text-align: left; color: #667085; font-weight: 700; padding: 3px 8px 3px 0; vertical-align: top; }}
     .popup-table td {{ padding: 3px 0; vertical-align: top; }}
     @media (max-width: 760px) {{
-      .panel {{ top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 50vh; }}
+      .panel {{ top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; max-height: 52vh; }}
       .panel-header {{ padding: 13px; }}
       .panel-body {{ padding: 12px 13px 13px; }}
       h1 {{ font-size: 17px; }}
@@ -412,16 +505,17 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
   </style>
 </head>
 <body>
-  <div id="map" aria-label="서울 10개구 공식 도로구간 도로폭 지도"></div>
+  <div id="map" aria-label="서울 10개구 공식 도로구간 완성 지도"></div>
   <aside class="panel">
     <div class="panel-header">
       <h1>서울 10개구 공식 도로구간</h1>
-      <p class="note">행정안전부 도로명주소 전자지도 도로구간을 사용했습니다. 마우스를 올리면 강조되고, 클릭하면 시작과 끝이 표시됩니다.</p>
+      <p class="note">도로폭 API를 우선 적용하고, 비는 공식 도로는 행안부 ROAD_BT 폭으로 보완했습니다. 마우스를 올리면 강조되고 클릭하면 시작과 끝이 표시됩니다.</p>
       <div class="meta">
         <div class="metric"><strong id="visibleCount">0</strong><span>표시 도로</span></div>
-        <div class="metric"><strong>{unmatched_count:,}</strong><span>미매칭</span></div>
-        <div class="metric"><strong id="visibleWidth">0</strong><span>도로폭</span></div>
+        <div class="metric"><strong>{counts.get("공식만", 0):,}</strong><span>공식 보완</span></div>
+        <div class="metric"><strong>{api_only_count:,}</strong><span>API만 있음</span></div>
       </div>
+      <p class="note">API 폭: {counts.get("API", 0):,}개 · API 불가→공식폭: {counts.get("공식폭보완", 0):,}개 · 공식만: {official_only_count:,}개</p>
     </div>
     <div class="panel-body">
       <div class="field">
@@ -452,7 +546,6 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
   <script>
     const DATA = {data_json};
     const GU_ORDER = {gu_json};
-    const WIDTH_ORDER = {width_json};
     const WIDTH_COLORS = {colors_json};
     const GU_COUNTS = {gu_counts_json};
     const WIDTH_COUNTS = {width_counts_json};
@@ -472,11 +565,7 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
 
     function escapeHtml(value) {{
       return String(value ?? "").replace(/[&<>"']/g, (char) => ({{
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
       }}[char]));
     }}
     function createCheckbox(containerId, name, value, count, color) {{
@@ -510,14 +599,14 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
       return Number(value).toLocaleString("ko-KR", {{ maximumFractionDigits: 1 }}) + suffix;
     }}
     function popupHtml(row) {{
+      const apiWidth = row.apiWidth || "-";
       return `
         <div class="popup-title">${{escapeHtml(row.road)}}</div>
         <table class="popup-table">
           <tr><th>구</th><td>${{escapeHtml(row.gu)}}</td></tr>
-          <tr><th>API 도로폭</th><td>${{escapeHtml(row.width)}}</td></tr>
+          <tr><th>표시 폭</th><td>${{escapeHtml(row.width)}} <small>(${{escapeHtml(row.widthSource)}})</small></td></tr>
+          <tr><th>API 폭</th><td>${{escapeHtml(apiWidth)}}</td></tr>
           <tr><th>공식 폭</th><td>${{formatMaybe(row.officialAvgWidth, " m")}} 평균 / ${{formatMaybe(row.officialMinWidth, " m")}}~${{formatMaybe(row.officialMaxWidth, " m")}}</td></tr>
-          <tr><th>도로규모</th><td>${{escapeHtml(row.scale)}}</td></tr>
-          <tr><th>도로기능</th><td>${{escapeHtml(row.function)}}</td></tr>
           <tr><th>선형길이</th><td>${{formatMaybe(row.lengthM, " m")}}</td></tr>
           <tr><th>공식구간</th><td>${{row.sectionCount.toLocaleString("ko-KR")}}개</td></tr>
         </table>`;
@@ -530,7 +619,7 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
         if (!selectedGu.has(row.gu)) return false;
         if (!selectedWidth.has(row.width)) return false;
         if (!query) return true;
-        return `${{row.road}} ${{row.gu}} ${{row.width}}`.toLowerCase().includes(query);
+        return `${{row.road}} ${{row.gu}} ${{row.width}} ${{row.widthSource}}`.toLowerCase().includes(query);
       }});
     }}
     function updateSummary(rows) {{
@@ -541,7 +630,6 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
         widthValues.add(row.width);
       }});
       document.getElementById("visibleCount").textContent = rows.length.toLocaleString("ko-KR");
-      document.getElementById("visibleWidth").textContent = widthValues.size.toLocaleString("ko-KR");
       const maxCount = Math.max(1, ...GU_ORDER.map((gu) => guCounts.get(gu) || 0));
       document.getElementById("guSummary").innerHTML = GU_ORDER.map((gu) => {{
         const count = guCounts.get(gu) || 0;
@@ -567,46 +655,30 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
         L.polyline(line, {{
           color: "#111827",
           weight: Math.max(row.weight + 4, 7),
-          opacity: 0.9
+          opacity: 0.9,
+          lineCap: "round",
+          lineJoin: "round"
         }}).addTo(highlightLayer);
         L.polyline(line, {{
           color: row.color,
           weight: Math.max(row.weight + 1, 4),
-          opacity: 1
+          opacity: 1,
+          lineCap: "round",
+          lineJoin: "round"
         }}).addTo(highlightLayer);
       }});
-      L.circleMarker(row.start, {{
-        radius: 7,
-        color: "#ffffff",
-        weight: 2,
-        fillColor: "#111827",
-        fillOpacity: 0.96
-      }})
+      L.circleMarker(row.start, {{ radius: 7, color: "#ffffff", weight: 2, fillColor: "#111827", fillOpacity: 0.96 }})
         .bindTooltip(`시작: ${{row.road}}`, {{ permanent: true, direction: "top", offset: [0, -8] }})
         .addTo(highlightLayer);
-      L.circleMarker(row.end, {{
-        radius: 7,
-        color: "#ffffff",
-        weight: 2,
-        fillColor: "#f43f5e",
-        fillOpacity: 0.96
-      }})
+      L.circleMarker(row.end, {{ radius: 7, color: "#ffffff", weight: 2, fillColor: "#f43f5e", fillOpacity: 0.96 }})
         .bindTooltip(`끝: ${{row.road}}`, {{ permanent: true, direction: "top", offset: [0, -8] }})
         .addTo(highlightLayer);
     }}
     function showHover(row) {{
       hoverLayer.clearLayers();
       row.lines.forEach((line) => {{
-        L.polyline(line, {{
-          color: "#ffffff",
-          weight: Math.max(row.weight + 5, 8),
-          opacity: 0.95
-        }}).addTo(hoverLayer);
-        L.polyline(line, {{
-          color: row.color,
-          weight: Math.max(row.weight + 2, 5),
-          opacity: 1
-        }}).addTo(hoverLayer);
+        L.polyline(line, {{ color: "#ffffff", weight: Math.max(row.weight + 5, 8), opacity: 0.95, lineCap: "round", lineJoin: "round" }}).addTo(hoverLayer);
+        L.polyline(line, {{ color: row.color, weight: Math.max(row.weight + 2, 5), opacity: 1, lineCap: "round", lineJoin: "round" }}).addTo(hoverLayer);
       }});
     }}
     function render() {{
@@ -622,11 +694,14 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
             renderer: canvasRenderer,
             color: row.color,
             weight: Math.max(row.weight, 3),
-            opacity: 0.92
+            opacity: row.widthSource === "공식만" ? 0.72 : 0.93,
+            lineCap: "round",
+            lineJoin: "round",
+            dashArray: row.widthSource === "공식만" ? "6 4" : null
           }});
           polyline
-            .bindTooltip(`[${{row.gu}}] ${{row.road}} | ${{row.width}}`, {{ sticky: true }})
-            .bindPopup(popupHtml(row), {{ maxWidth: 340 }})
+            .bindTooltip(`[${{row.gu}}] ${{row.road}} | ${{row.width}} | ${{row.widthSource}}`, {{ sticky: true }})
+            .bindPopup(popupHtml(row), {{ maxWidth: 360 }})
             .addTo(layer);
           polyline.on("mouseover", () => showHover(row));
           polyline.on("mouseout", () => hoverLayer.clearLayers());
@@ -648,9 +723,7 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
     renderLegend();
     render();
     const initialRoad = DATA.find((row) => row.road === "올림픽대로") || DATA[0];
-    if (initialRoad) {{
-      showEndpoints(initialRoad);
-    }}
+    if (initialRoad) showEndpoints(initialRoad);
   </script>
 </body>
 </html>
@@ -660,31 +733,33 @@ def build_html(features: list[dict], unmatched_count: int) -> str:
 def main() -> int:
     input_df = load_input()
     official = load_official()
-    features, unmatched = build_features(input_df, official)
-    if not features:
-        raise RuntimeError("No official road geometries matched.")
-
+    features, api_only, official_only = build_features(input_df, official)
     OUTPUT_GEOJSON.write_text(
         json.dumps(
             {"type": "FeatureCollection", "features": features}, ensure_ascii=False
         ),
         encoding="utf-8",
     )
-    unmatched.drop(
-        columns=[col for col in ["_key"] if col in unmatched.columns]
-    ).to_csv(UNMATCHED_CSV, index=False, encoding="utf-8-sig")
-    OUTPUT_HTML.write_text(build_html(features, len(unmatched)), encoding="utf-8")
+    api_only.drop(columns=[col for col in ["_key"] if col in api_only.columns]).to_csv(
+        UNMATCHED_API_CSV, index=False, encoding="utf-8-sig"
+    )
+    official_only.to_csv(OFFICIAL_ONLY_CSV, index=False, encoding="utf-8-sig")
+    OUTPUT_HTML.write_text(
+        build_html(features, len(api_only), len(official_only)), encoding="utf-8"
+    )
 
-    print(f"Input roads: {len(input_df)}")
-    print(f"Official 10-gu segments: {len(official)}")
-    print(f"Matched official roads: {len(features)}")
-    print(f"Unmatched roads: {len(unmatched)}")
+    counts = source_counts(features)
+    print(f"API roads: {len(input_df)}")
+    print(f"Official roads: {len(features)}")
+    print(
+        f"API matched or supplemented: {counts.get('API', 0) + counts.get('공식폭보완', 0)}"
+    )
+    print(f"Official-only supplemented roads: {counts.get('공식만', 0)}")
+    print(f"API-only unmatched roads: {len(api_only)}")
     print(f"HTML: {OUTPUT_HTML}")
     print(f"GeoJSON: {OUTPUT_GEOJSON}")
-    print(f"Unmatched CSV: {UNMATCHED_CSV}")
-    print("By district:")
-    for item in count_by(features, "구", GU_ORDER):
-        print(f"  {item['name']}: {item['count']}")
+    print(f"API-only CSV: {UNMATCHED_API_CSV}")
+    print(f"Official-only CSV: {OFFICIAL_ONLY_CSV}")
     return 0
 
 

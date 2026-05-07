@@ -10,7 +10,7 @@ import pandas as pd
 import requests
 
 
-BASE_DIR = Path(__file__).resolve().parents[1]
+BASE_DIR = Path(__file__).resolve().parents[1] / "road_width_10gu"
 INPUT_PATH = BASE_DIR / "data" / "seoul_road_width_viRoutDt_10개구_대표좌표.csv"
 OSM_CACHE_PATH = BASE_DIR / "data" / "osm_seoul_10gu_named_highways.json"
 MATCHED_GEOJSON_PATH = BASE_DIR / "data" / "seoul_road_width_10gu_osm_lines.geojson"

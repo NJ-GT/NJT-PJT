@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 
 
-BASE_DIR = Path(__file__).resolve().parents[1]
+BASE_DIR = Path(__file__).resolve().parents[1] / "road_width_10gu"
 INPUT_PATH = BASE_DIR / "data" / "seoul_road_width_viRoutDt_10개구_대표좌표.csv"
 OUTPUT_PATH = BASE_DIR / "data" / "seoul_road_width_10gu_map.html"
 

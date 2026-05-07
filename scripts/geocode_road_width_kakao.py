@@ -11,7 +11,7 @@ import pandas as pd
 import requests
 
 
-BASE_DIR = Path(__file__).resolve().parents[1]
+BASE_DIR = Path(__file__).resolve().parents[1] / "road_width_10gu"
 PROJECT_DIR = BASE_DIR.parent
 INPUT_PATH = BASE_DIR / "data" / "seoul_road_width_viRoutDt_한글컬럼.csv"
 OUTPUT_PATH = BASE_DIR / "data" / "seoul_road_width_viRoutDt_한글컬럼_대표좌표.csv"

@@ -11,7 +11,7 @@ import pandas as pd
 from shapely.geometry import MultiPolygon, mapping
 
 
-BASE_DIR = Path(__file__).resolve().parents[1]
+BASE_DIR = Path(__file__).resolve().parents[1] / "road_width_10gu"
 DATA_DIR = BASE_DIR / "data"
 INPUT_CSV = next(DATA_DIR.glob("seoul_road_width_viRoutDt_10*.csv"))
 MANAGE_SHP = (
