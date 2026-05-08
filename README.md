@@ -400,7 +400,7 @@ NJT-PJT/
 
 <div align="center">
 
-**🏨🔥 Team 나주곰탕 · 2026 기말 프로젝트**
+**🏨🔥 Team 나주곰탕 · 2026 서울비 빅데이터 활용 경진대회**
 
 *Data-Driven Safety Analysis*
 
