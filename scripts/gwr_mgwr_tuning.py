@@ -1,10 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-GWR/MGWR 튜닝 스크립트
-  1. 변수 상관·VIF 확인 (소방위험도_점수 포함 6변수)
-  2. GWR bandwidth 비교: 54 / 80 / 100 / 120
-  3. MGWR — 변수마다 다른 bandwidth
-  4. 최적 결과 → data/gwr_results.csv 갱신
+GWR / MGWR 튜닝 스크립트 (소방위험도_점수 포함 6변수).
+
+목적:
+    1) 변수 상관·VIF 확인 (다중공선성 점검)
+    2) GWR bandwidth 비교: 54 / 80 / 100 / 120 (bisquare adaptive NN)
+    3) MGWR — 변수마다 다른 bandwidth 자동 탐색
+    4) 최적 GWR 결과를 data/gwr_results.csv 로 저장 (대시보드 갱신)
+
+입력:
+    - data/*0423*.csv (분석 메인 테이블)
+    - data/data_with_fire_targets.csv (화재 타깃)
+
+출력:
+    - data/gwr_results.csv  (최적 GWR 결과)
+    - data/mgwr_results.csv (MGWR 결과, 가능한 경우)
 """
 
 import sys
@@ -12,30 +22,35 @@ import glob
 import warnings
 import time
 
+# 경고 묶기
 warnings.filterwarnings("ignore")
 sys.stdout.reconfigure(encoding="utf-8")
 
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+# GWR/MGWR 라이브러리
 from mgwr.gwr import GWR, MGWR
 from mgwr.sel_bw import Sel_BW
 
 # ─────────────────────────────────────────────
 # 데이터 로드
 # ─────────────────────────────────────────────
+# 0423 메인 테이블 자동 선택
 f = glob.glob("data/*0423*.csv")[0]
 main = pd.read_csv(f, encoding="utf-8-sig")
+# 화재 타깃 + 소방위험도 + 좌표가 들어있는 테이블
 core = pd.read_csv("data/data_with_fire_targets.csv", encoding="utf-8-sig")
 
+# core 의 열 인덱스로 필요한 컬럼만 선택 (4: 위도, 5: 경도, 17: 소방위험도, 45: 반경100m_화재수)
 c = core.columns
-# c[45]=반경100m_화재수 — Y변수를 실제 화재수로 통일
 core_key = core[[c[4], c[5], c[17], c[45]]].copy()
 core_key.columns = ["위도", "경도", "소방위험도_점수", "반경100m_화재수"]
 
+# 위경도 키로 main 과 좌측 조인
 df = pd.merge(main, core_key, on=["위도", "경도"], how="left")
 
-# X변수 6개: 주변건물수를 통제변수로 포함 → 다른 계수들이 건물수 보정 후 효과 추정
+# X 변수 6개: 주변건물수를 통제변수로 포함 → 다른 계수들이 건물수 보정 후 효과로 해석
 RISK_VARS6 = [
     "구조노후도",
     "단속위험도",
@@ -45,12 +60,14 @@ RISK_VARS6 = [
     "소방위험도_점수",
 ]
 
+# 모두 숫자형으로 강제
 for v in RISK_VARS6 + ["반경100m_화재수"]:
     df[v] = pd.to_numeric(df[v], errors="coerce")
 
-# Y = log(화재수+1) — 실제 화재 발생 기록
+# Y = log(화재수+1) — 카운트 데이터 스큐 보정
 df["Y_fire"] = np.log1p(df["반경100m_화재수"].fillna(0))
 
+# 결측 제거 후 회귀 데이터셋
 df_reg = df.dropna(subset=RISK_VARS6 + ["Y_fire", "위도", "경도"]).reset_index(
     drop=True
 )
@@ -63,11 +80,12 @@ print("━" * 60)
 print("STEP 1 │ 변수 상관·VIF (6변수)")
 print("━" * 60)
 
+# 상관행렬 (반올림 3자리)
 corr = df_reg[RISK_VARS6].corr().round(3)
 print("\n  상관행렬:")
 print(corr.to_string(col_space=14))
 
-# VIF
+# VIF: 표준화 후 (X'X)^-1 * N 의 대각 원소
 Xv = StandardScaler().fit_transform(df_reg[RISK_VARS6])
 try:
     from numpy.linalg import inv
@@ -81,7 +99,7 @@ except Exception as e:
     print(f"  VIF 계산 오류: {e}")
 
 # ─────────────────────────────────────────────
-# 변수 선택 결정
+# 변수 선택 결정 — 집중도/주변건물수 상관이 0.7 초과면 집중도 제외
 # ─────────────────────────────────────────────
 corr_val = abs(corr.loc["집중도", "주변건물수"])
 if corr_val > 0.7:
@@ -99,11 +117,12 @@ else:
 print(f"  최종 변수: {FINAL_VARS}")
 
 # ─────────────────────────────────────────────
-# 공통 샘플 (2000개, GWR용)
+# 공통 샘플 (전체 행 사용 — GWR 입력)
 # ─────────────────────────────────────────────
 rng = np.random.RandomState(42)
 idx = np.arange(len(df_reg))
 
+# 좌표 / Y / 표준화 X
 coords = df_reg[["위도", "경도"]].values[idx]
 yr = df_reg["Y_fire"].values[idx].reshape(-1, 1)
 Xr = StandardScaler().fit_transform(df_reg[FINAL_VARS].values[idx])
@@ -118,6 +137,7 @@ print("STEP 2 │ GWR Bandwidth 비교 (bisquare, adaptive NN)")
 print("━" * 60)
 print(f"\n  {'BW':>5}  {'R²':>8}  {'adj.R²':>8}  {'AICc':>10}  시간")
 
+# 4개 bandwidth 후보를 직접 적합해 R²/AICc/시간 비교
 bw_results = {}
 for bw in [54, 80, 100, 120]:
     t0 = time.time()
@@ -130,7 +150,7 @@ for bw in [54, 80, 100, 120]:
     )
 
 # ─────────────────────────────────────────────
-# STEP 3 │ 최적 BW 자동 선택 (AICc 기준)
+# STEP 3 │ 최적 BW 자동 선택 (AICc 기준, 골든서치)
 # ─────────────────────────────────────────────
 print("\n" + "━" * 60)
 print("STEP 3 │ 최적 Bandwidth 자동 선택 (Sel_BW golden section)")
@@ -142,6 +162,7 @@ best_bw = bw_sel.search(search_method="golden_section")
 t1 = time.time()
 print(f"\n  최적 BW = {int(best_bw)}  ({t1 - t0:.1f}s)")
 
+# 최적 BW 로 GWR 적합 + 계수 변동 출력
 gwr_best = GWR(coords, yr, Xr, bw=best_bw, kernel="bisquare", fixed=False).fit()
 aicc_best = getattr(gwr_best, "AIC", None) or getattr(gwr_best, "aicc", None)
 print(f"  R²={gwr_best.R2:.4f}  adj.R²={gwr_best.adj_R2:.4f}  AICc={aicc_best:.2f}")
@@ -159,31 +180,32 @@ print("\n" + "━" * 60)
 print("STEP 4 │ MGWR — 변수별 최적 Bandwidth")
 print("━" * 60)
 
-# MGWR can be very slow; use all rows for final full-coverage run.
+# MGWR 은 매우 느릴 수 있어 전체 행 단위로 한 번만 실행
 m_idx = np.arange(len(idx))
 c_mgwr = coords[m_idx]
-y_mgwr = yr[m_idx]  # log(화재수+1)
+y_mgwr = yr[m_idx]
 X_mgwr = Xr[m_idx]
 
 print(f"\n  MGWR full rows: {len(m_idx):,} (no sampling)")
 
 try:
     t0 = time.time()
-    # mgwr 2.2.x: multi=True는 Sel_BW 생성자에, search()에는 넘기지 않음
+    # mgwr 2.2.x: multi=True 는 Sel_BW 생성자에 줘야 하고, search() 에는 넘기지 않음
     mgwr_sel = Sel_BW(
         c_mgwr, y_mgwr, X_mgwr, multi=True, kernel="bisquare", fixed=False
     )
     mgwr_sel.search(verbose=False)
     t1 = time.time()
 
-    # mgwr_sel.bw is a tuple: (final_bw_array, history, soc, params)
+    # mgwr_sel.bw 는 (final_bw_array, history, soc, params) 형태
     bws_raw = mgwr_sel.bw
-    bws_final = np.array(bws_raw[0]).flatten()  # shape (n_vars,)
+    bws_final = np.array(bws_raw[0]).flatten()  # shape (n_vars+1,)
     print(f"  변수별 최적 BW ({t1 - t0:.1f}s):")
     var_labels = ["Intercept"] + FINAL_VARS
     for v, bw_v in zip(var_labels, bws_final):
         print(f"    {v:<20} BW={int(float(bw_v))}")
 
+    # MGWR 적합 + 요약
     mgwr_res = MGWR(
         c_mgwr, y_mgwr, X_mgwr, mgwr_sel, kernel="bisquare", fixed=False
     ).fit()
@@ -196,6 +218,7 @@ try:
         p = mgwr_res.params[:, i + 1]
         print(f"    {v:<20} mean={p.mean():+.4f}  std={p.std():.4f}")
 
+    # 결과 csv 구성: 좌표 + local_R2 + 변수별 계수/t-value/BW
     mgwr_out = pd.DataFrame(
         {
             "위도": c_mgwr[:, 0],
@@ -206,6 +229,7 @@ try:
         mgwr_out["local_R2"] = mgwr_res.localR2.flatten()
     except Exception:
         mgwr_out["local_R2"] = np.nan
+    # bandwidth 는 변수별로 다르므로 리스트 문자열로 보존
     mgwr_out["bandwidth"] = str([float(v) for v in bws_final])
     for i, v in enumerate(FINAL_VARS):
         mgwr_out[f"coef_{v}"] = mgwr_res.params[:, i + 1]
@@ -228,6 +252,7 @@ print("\n" + "━" * 60)
 print("STEP 5 │ 최적 GWR 결과 저장")
 print("━" * 60)
 
+# 좌표 + local_R2 + bandwidth + 변수별 계수/t-value
 out = pd.DataFrame(
     {
         "위도": coords[:, 0],

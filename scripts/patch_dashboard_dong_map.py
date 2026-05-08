@@ -1,13 +1,33 @@
 # -*- coding: utf-8 -*-
+"""
+dashboard.py 의 dong_focus_map 함수와 관련 안내 문구를 새 버전으로 패치하는 일회성 스크립트.
+
+목적:
+    - 기존 dong_focus_map(점 분포만) → 법정동 경계 폴리곤 + 점 + 라벨 + 위험군 색 채움 버전으로 교체
+    - 같이 깨져 있던 한글 안내 문구(broken) 도 정상 한글 메시지로 치환
+
+전제:
+    - 같은 폴더 상위(parents[1])에 dashboard.py 가 위치한다.
+    - dashboard.py 안에 'def dong_focus_map' 정의와 '\n\nGWR_VARIABLE_COLORS' 마커가 둘 다 존재한다.
+
+처리 흐름:
+    1) dashboard.py 텍스트 로드
+    2) dong_focus_map 함수 시작 ~ 'GWR_VARIABLE_COLORS' 직전까지를 NEW_DONG_FOCUS_MAP 으로 치환
+    3) 깨진 안내 문구(overview, risk) 치환
+    4) 결과 텍스트로 dashboard.py 덮어쓰기
+"""
 from __future__ import annotations
 
 from pathlib import Path
 
 
+# 패치 대상 dashboard.py 경로
 ROOT = Path(__file__).resolve().parents[1]
 TARGET = ROOT / "dashboard.py"
 
 
+# 새로 삽입할 dong_focus_map 함수 본문
+# (NJT-PJT/dashboard.py 안에서 def dong_focus_map ~ 다음 GWR_VARIABLE_COLORS 사이를 통째 치환)
 NEW_DONG_FOCUS_MAP = r"""def dong_focus_map(df: pd.DataFrame, gu: str, clusters: list[str]) -> go.Figure:
     scoped = df[(df["구"] == gu) & (df["cluster_label"].isin(clusters))].dropna(subset=["위도", "경도"]).copy()
     if scoped.empty:
@@ -205,18 +225,26 @@ NEW_DONG_FOCUS_MAP = r"""def dong_focus_map(df: pd.DataFrame, gu: str, clusters:
 
 
 def main() -> None:
+    """dashboard.py 의 함수 정의 + 안내 문구를 패치한다."""
+    # 대상 파일을 UTF-8 텍스트로 로드
     text = TARGET.read_text(encoding="utf-8")
+    # dong_focus_map 함수 시작/종료 위치 탐색
     start = text.find("def dong_focus_map")
     end = text.find("\n\nGWR_VARIABLE_COLORS", start)
     if start == -1 or end == -1:
+        # 두 마커 중 하나라도 없으면 안전하게 중단
         raise RuntimeError("Could not locate dong_focus_map block")
+    # 함수 영역만 통째로 새 버전으로 교체
     text = text[:start] + NEW_DONG_FOCUS_MAP + text[end:]
+    # ── 깨진 한글 안내 문구 치환 ─────────────────────────────────────
+    # (이전 버전에서 cp949 → utf-8 인코딩 깨짐으로 '?' 만 남은 문자열)
     broken = '<div class="soft-note">?? ?? ??? ??? ???? ??? ???, ? ????? ?? ?? ???? ??? ??? ????. ?? ?? ???? ????, ???? ??? ???? ??? ??? ?? ???? ??? ? ????.</div>'
     overview = '<div class="soft-note">0430 최종테이블의 선택 구 평균을 서울 10구 전체 평균과 비교합니다. 100보다 크면 전체 평균보다 높은 지표입니다.</div>'
     risk_old = '<div class="soft-note">0430 파일의 숙소 좌표만 사용해 선택 구 안의 법정동별 분포를 근사 표시합니다. 실제 법정동 경계선은 0430에 없어 포함하지 않았습니다.</div>'
     risk_new = '<div class="soft-note">선택 구의 법정동 경계를 기준으로 구역을 나누고, 각 법정동에서 가장 많이 나타나는 위험군 색으로 채웁니다. 점은 개별 숙박시설 위치이며, 마우스를 올리면 법정동별 위험군 구성과 평균 위험도를 확인할 수 있습니다.</div>'
     text = text.replace(broken, overview)
     text = text.replace(risk_old, risk_new)
+    # 결과 텍스트 저장 (UTF-8)
     TARGET.write_text(text, encoding="utf-8")
 
 

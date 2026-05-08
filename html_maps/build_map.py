@@ -1,45 +1,63 @@
+# -*- coding: utf-8 -*-
 """
-[파일 설명]
-서울 숙박시설을 15m 그리드 기반 밀집도 지도로 시각화하는 HTML을 생성하는 스크립트.
+서울 숙박시설 15m 그리드 밀집도 지도 HTML 생성 스크립트.
 
-주요 역할:
-  Leaflet + Canvas API를 사용하여 서울 전체를 15m 격자로 분할하고,
-  각 셀 안의 숙박시설 개수에 따라 색상을 달리 칠한다.
-  - 파랑(1개) / 초록(2개) / 빨강(3개+) / 빈 셀(회색 격자선)
-  - 줌 레벨 15 이상에서만 개별 건물 위치(흰색 사각형) 표시
-  - Canvas 기반이므로 수만 개의 격자를 빠르게 렌더링
+목적:
+    Leaflet + Canvas API 조합으로 서울 전역을 15m 격자로 분할하고,
+    각 셀에 속한 숙박시설 개수에 따라 채색하여 인터랙티브 HTML로 저장한다.
 
-입력: data/map_data.json  (숙박시설 위치 + 15m 그리드 집계 데이터)
-출력: 숙박밀집도_grid.html  (15m 그리드 밀집도 인터랙티브 지도)
+색상 규칙:
+    - 0개(빈 셀): 연한 회색 격자선만 (셀 픽셀이 너무 작으면 생략)
+    - 1개 시설  : 파랑
+    - 2개 시설  : 초록
+    - 3개+ 시설 : 빨강
+
+상호작용:
+    - 줌 15 이상: 개별 건물(흰색 사각형) 표시 + 마커 숨김
+    - 줌 15 미만: 마커만 표시 (성능 절약)
+    - 좌측/우측 패널에 통계, 레이어 토글, 범례 제공
+
+데이터:
+    입력  : NJT-PJT/data/map_data.json  (places + grid 집계)
+    출력 : NJT-PJT/숙박밀집도_grid.html
 """
 
+# 표준 입출력/JSON/수학/경로 유틸
 import sys
 import json
 import math
 import os
 
-sys.stdout.reconfigure(encoding="utf-8")  # 한글 출력 설정
+# 한글 출력 깨짐 방지 — Windows 콘솔 호환
+sys.stdout.reconfigure(encoding="utf-8")
 
 # ─── 1. 지도 데이터 로드 ────────────────────────────────────────
+# map_data.json에는 두 키가 들어 있다고 가정:
+#   - places: 개별 시설 정보 [{name, addr, lat, lng, floors, side_m, ...}]
+#   - grid  : 15m 셀 집계 [{lat, lng, count}]
 with open(
     "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/map_data.json",
     encoding="utf-8",
 ) as f:
     d = json.load(f)
 
-# places: 개별 숙박시설 위치/정보 목록
-# grid: 15m 셀별 숙박시설 개수 집계 결과 [{lat, lng, count}, ...]
+# Python dict -> JSON 문자열 변환 (HTML 템플릿에 그대로 주입)
+# ensure_ascii=False 로 한글이 escape되지 않도록 유지
 places_json = json.dumps(d["places"], ensure_ascii=False)
 grid_json = json.dumps(d["grid"], ensure_ascii=False)
 
 # ─── 2. 15m 그리드 셀 크기 계산 ────────────────────────────────
-# 위도 1도 = 약 111,320m, 15m를 도(degree) 단위로 변환
+# 위도 1도 ≈ 111,320m -> 15m를 도 단위로 환산
 LAT_STEP = 15 / 111320
-# 경도 1도 = 위도에 따라 달라짐 (서울 위도 37.5° 기준으로 계산)
+# 경도 1도의 미터 길이는 위도에 따라 달라짐 (cos(위도) 만큼 짧아짐)
+# 서울 위도 37.5°를 기준으로 계산
 LNG_STEP = 15 / (111320 * math.cos(37.5 * math.pi / 180))
 
+# HTML 본문을 메모리 효율적으로 누적하기 위한 부분 리스트
 parts = []
 
+# ─── 3-1. HTML 헤더 + 패널/범례 UI ─────────────────────────────
+# Leaflet CSS/JS, 좌측 통계 패널, 우측 레이어 토글, 우하단 범례, 줌 안내 메시지
 parts.append("""<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -103,12 +121,21 @@ html,body{width:100%;height:100%;background:#0e0e1a;font-family:'Segoe UI',sans-
 <div id="zoom-note">줌 15 이상에서 건물 위치가 표시됩니다</div>
 """)
 
+# ─── 3-2. JavaScript 데이터 주입 ──────────────────────────────
+# Python에서 읽은 데이터를 JS 상수로 그대로 주입한다.
+# repr() 은 Python float 의 자릿수를 그대로 보존해 정밀도 손실 없음
 parts.append("<script>\n")
 parts.append("const PLACES   = " + places_json + ";\n")
 parts.append("const GRID_OCC = " + grid_json + ";\n")
 parts.append("const LAT_STEP = " + repr(LAT_STEP) + ";\n")
 parts.append("const LNG_STEP = " + repr(LNG_STEP) + ";\n")
 
+# ─── 3-3. JS 본문 (Leaflet 지도 + Canvas 그리드 + 레이어 토글) ─
+# 핵심 로직:
+#   (a) 다크 테마 베이스맵 + 서울 중심 좌표/줌 13으로 초기화
+#   (b) GRID_OCC 데이터로 (행키,열키) -> count 해시맵 구성
+#   (c) CanvasGrid 사용자정의 레이어가 매번 뷰포트 셀만 그려 성능 확보
+#   (d) 줌 15 이상에서만 건물 사각형/팝업 활성화
 parts.append("""
 // ── 지도 ──────────────────────────────────────────────────────
 const map = L.map('map', {center:[37.5530, 126.9740], zoom:13, zoomControl:true});
@@ -287,9 +314,11 @@ document.getElementById('chk-dot').addEventListener('change', function() {
 """)
 
 # ─── 4. HTML 파일 저장 ───────────────────────────────────────────
-# parts 리스트를 하나의 문자열로 합쳐 저장 (메모리 효율을 위해 리스트로 나눠 구성했음)
+# parts 리스트를 한 번만 join해 최종 HTML 문자열로 만든 뒤 디스크에 기록
+# (큰 문자열을 매번 += 하지 않아 메모리 효율적)
 out = "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/숙박밀집도_grid.html"
 with open(out, "w", encoding="utf-8") as fout:
     fout.write("".join(parts))
 
+# 결과 파일 크기를 KB 단위로 출력 (CLI 확인용)
 print("Done:", os.path.getsize(out) // 1024, "KB")

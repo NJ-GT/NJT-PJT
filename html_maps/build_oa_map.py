@@ -1,26 +1,36 @@
+# -*- coding: utf-8 -*-
 """
-[파일 설명]
-서울 집계구별 숙박시설 밀집도와 화재위험도를 종합 대시보드 지도로 시각화하는 HTML을 생성하는 스크립트.
+서울 집계구 종합 대시보드 지도 HTML 생성 스크립트.
 
-주요 역할:
-  Leaflet 라이브러리로 집계구 경계를 3가지 지표로 색상 표현한다:
-    - 숙박시설 수 (절대량)
-    - 전체 건물 중 숙박 비율(%)
-    - 시설수/ha (공간 밀도)
-  집계구 클릭 시 상세 패널에 화재위험도 점수와 지표 설명이 표시된다.
-  소방서/안전센터 위치도 마커로 함께 표시한다.
+목적:
+    Leaflet 기반으로 집계구 경계를 3가지 지표로 색상 표현하고,
+    클릭 시 우측 정보 박스에 화재위험도 점수와 해석 메시지까지 보여준다.
 
-입력: data/oa_density.json       (집계구별 분석 데이터)
-      data/map_data.json          (개별 숙박시설 위치)
-      data/firestation_data.json  (소방서·안전센터 위치)
-출력: 집계구_숙박밀집도.html       (Leaflet 집계구 대시보드 맵)
+지표:
+    - count  : 숙박시설 수 (절대량)
+    - ratio  : 전체 건물 중 숙박 비율 (%)
+    - per_ha : 시설수 / ha (공간 밀도)
+
+추가 표현:
+    - 숙박이 없는 집계구는 회색 경계로 비교
+    - 개별 숙소 위치 + 소방서/안전센터 마커
+    - 화재위험도 = 노후도 30% + 건폐율 25% + 용적률 25% + 층수 20%
+    - 클릭 시 집계구 성격 해석(주거·업무, 혼재, 숙박특화 …)을 자동 산출
+
+데이터:
+    NJT-PJT/data/oa_density.json       — 집계구 GeoJSON + 속성
+    NJT-PJT/data/map_data.json         — 개별 숙박시설
+    NJT-PJT/data/firestation_data.json — 소방서/안전센터
+출력:
+    NJT-PJT/집계구_숙박밀집도.html
 """
 
 import sys
 import json
 import os
 
-sys.stdout.reconfigure(encoding="utf-8")  # 한글 출력 설정
+# Windows 콘솔 한글 깨짐 방지
+sys.stdout.reconfigure(encoding="utf-8")
 
 # ─── 1. 집계구 데이터 로드 및 분리 ─────────────────────────────
 with open(
@@ -29,12 +39,12 @@ with open(
 ) as f:
     raw = json.load(f)
 
-# 숙박시설이 있는 집계구(filled)와 없는 집계구(empty)로 분리
-# filled: 색상과 클릭 이벤트 적용, empty: 회색 경계선만 표시
+# 숙박시설이 있는 집계구는 색을 채우고 클릭 가능하게,
+# 없는 집계구는 회색 평면 경계로만 표시하기 위해 분리
 filled = [f for f in raw["features"] if f["properties"]["count"] > 0]
 empty = [f for f in raw["features"] if f["properties"]["count"] == 0]
 
-# JavaScript에 직접 삽입할 GeoJSON 문자열로 변환
+# JS에 직접 주입할 수 있도록 GeoJSON 문자열로 직렬화
 filled_json = json.dumps(
     {"type": "FeatureCollection", "features": filled}, ensure_ascii=False
 )
@@ -58,6 +68,7 @@ with open(
 
 print(f"채워진 집계구: {len(filled)}, 빈 집계구: {len(empty)}")
 
+# ─── 4. HTML 본문 (헤더 + 좌측 패널 + 범례 + 정보박스 UI) ───────
 out_html = """<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -217,6 +228,8 @@ html,body{width:100%;height:100%;background:#0e0e1a;font-family:'Segoe UI',sans-
 </div>
 """
 
+# ─── 5. JS 본문 (데이터 주입 + 지도 로직) ─────────────────────
+# 큰 JS 본문 안의 {중괄호}와 충돌을 피하기 위해 + 연산으로 데이터만 주입
 script_part = (
     """
 <script>
@@ -491,9 +504,8 @@ document.getElementById('chk-station').addEventListener('change', function(){
 """
 )
 
-# ─── 4. HTML 파일 저장 ───────────────────────────────────────────
-# out_html: HTML 구조(head, body, 스타일, 패널, 범례 등)
-# script_part: JavaScript 데이터와 지도 로직
+# ─── 6. HTML 파일 저장 ───────────────────────────────────────────
+# out_html(헤더+UI) + script_part(JS+데이터) 를 합쳐 한 파일로 출력
 with open(
     "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/집계구_숙박밀집도.html",
     "w",
@@ -501,5 +513,6 @@ with open(
 ) as f:
     f.write(out_html + script_part)
 
+# 결과 파일 크기 출력
 out = "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/집계구_숙박밀집도.html"
 print(f"Done: {os.path.getsize(out) // 1024} KB")

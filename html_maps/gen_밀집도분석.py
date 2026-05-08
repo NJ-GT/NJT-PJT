@@ -1,21 +1,21 @@
+# -*- coding: utf-8 -*-
 """
-[파일 설명]
-10개 자치구의 입체적 화재 하중 밀집도(VolumeRatio)를 계산하고 바차트로 시각화하는 HTML을 생성하는 스크립트.
+입체적 화재 하중 밀집도(VolumeRatio) 분석 + ECharts HTML 생성 스크립트.
 
-VolumeRatio(입체적 화재 하중 밀집도)란?
-  숙박시설 연면적(바닥면적×층수)의 합을 자치구 전체 면적으로 나눈 값.
-  단층/고층 여부를 반영하여 실질적인 화재 규모 잠재력을 나타낸다.
-  VR = Σ(개별 건물 연면적) / 자치구 면적
+핵심 지표 — VolumeRatio:
+    VR = Σ(개별 건물 연면적[m²]) / 자치구 면적[m²]
+    → 단층/고층 여부에 관계없이 자치구가 보유한 "숙박 부피"를
+      동일 면적 단위로 비교할 수 있게 해주는 밀집도 지표.
 
-주요 역할:
-  1. 숙박시설 CSV의 좌표를 위도/경도로 변환한다.
-  2. 집계구 shapefile로부터 자치구 면적을 계산한다.
-  3. 공간결합으로 각 숙박시설을 해당 자치구에 배정한다.
-  4. 구별 VolumeRatio를 계산하고 ECharts 바차트 HTML로 출력한다.
+처리 흐름:
+    1) 숙박시설 CSV 로드 + EPSG:5181 -> WGS84 좌표 변환
+    2) 집계구 shapefile 로드 + 자치구별 면적 합산
+    3) 시설 포인트와 집계구 폴리곤을 sjoin 으로 결합
+    4) 자치구별 합계/평균 + VolumeRatio 계산
+    5) ECharts 막대 차트 + 순위 테이블이 들어간 HTML 출력
 
-입력: data/통합숙박시설최종안0415.csv  (숙박시설 4,246개)
-      data/bnd_oa_11_2025_2Q/bnd_oa_11_2025_2Q.shp (집계구 경계)
-출력: 밀집도_분석.html                  (VolumeRatio 바차트 + 순위 테이블)
+산출물:
+    NJT-PJT/밀집도_분석.html
 """
 
 import sys
@@ -23,11 +23,13 @@ import json
 import os
 import pandas as pd
 import geopandas as gpd
+# 좌표계 변환기 (EPSG 변환)
 from pyproj import Transformer
 
-sys.stdout.reconfigure(encoding="utf-8")  # 한글 출력 설정
+# Windows 콘솔에서 한글 깨짐 방지
+sys.stdout.reconfigure(encoding="utf-8")
 
-# 분석 대상 10개 자치구 목록 (표시 순서 고정)
+# 분석 대상 10개 자치구 (표시 순서)
 GU = [
     "강남구",
     "송파구",
@@ -41,7 +43,8 @@ GU = [
     "종로구",
 ]
 
-# 집계구 코드 앞 5자리 → 자치구 이름 변환 테이블
+# 집계구 코드 prefix(앞 5자리) -> 자치구명 매핑
+# 11220 -> 강남구 와 같이 조회
 gu_map = {
     "11010": "종로구",
     "11020": "중구",
@@ -73,55 +76,59 @@ gu_map = {
 # ─── 1. 숙박시설 CSV 로드 및 좌표 변환 ──────────────────────────
 print("1. 숙박시설 CSV 로드...")
 df = pd.read_csv("data/통합숙박시설최종안0415.csv", encoding="utf-8-sig")
-cols = df.columns.tolist()  # 열 이름 목록
+# 컬럼 위치를 인덱스로 접근하기 위해 리스트화 (스키마가 안정적이라는 가정)
+cols = df.columns.tolist()
 
-# 한국 좌표계(EPSG:5181) → WGS84 위도/경도(EPSG:4326) 변환
+# 한국 중부원점 좌표(EPSG:5181) -> WGS84(EPSG:4326)
+# always_xy=True : (x, y) = (경도, 위도) 순으로 일관 처리
 tf = Transformer.from_crs("EPSG:5181", "EPSG:4326", always_xy=True)
 xs, ys = tf.transform(df[cols[0]].values, df[cols[1]].values)
-df["lng"] = xs  # 경도
-df["lat"] = ys  # 위도
+df["lng"] = xs
+df["lat"] = ys
 
-df["연면적"] = pd.to_numeric(df[cols[11]], errors="coerce").fillna(
-    0
-)  # 결측값은 0으로 처리
-df["층수"] = pd.to_numeric(df[cols[16]], errors="coerce").fillna(
-    1
-)  # 층수 결측 시 1층으로 처리
-# 바닥면적 = 연면적 ÷ 층수 (층수가 0이 되지 않도록 clip(lower=1) 적용)
+# 연면적/층수 수치 변환 — 결측은 안전 기본값으로 (연면적 0, 층수 1)
+df["연면적"] = pd.to_numeric(df[cols[11]], errors="coerce").fillna(0)
+df["층수"] = pd.to_numeric(df[cols[16]], errors="coerce").fillna(1)
+# 바닥면적 = 연면적 / 층수 (층수 0으로 인한 ZeroDivisionError 방지를 위해 clip)
 df["바닥면적"] = df["연면적"] / df["층수"].clip(lower=1)
 print(f"   {len(df)}개 건물")
 
 # ─── 2. 집계구 경계 및 자치구 면적 로드 ─────────────────────────
 print("2. 집계구 경계/면적 로드...")
 oa = gpd.read_file("data/bnd_oa_11_2025_2Q/bnd_oa_11_2025_2Q.shp").to_crs("EPSG:4326")
-oa_m = oa.to_crs("EPSG:5179")  # 미터 단위 좌표계로 재투영
+# 면적 계산은 미터 단위 EPSG:5179에서 수행 (왜곡 최소)
+oa_m = oa.to_crs("EPSG:5179")
+# 집계구 코드 앞 5자리로 자치구명 부여
 oa["gu_name"] = oa["TOT_OA_CD"].str[:5].map(gu_map).fillna("알수없음")
-oa["area_m2"] = oa_m.geometry.area  # 집계구 면적(m²)
+# 집계구 면적(m²)
+oa["area_m2"] = oa_m.geometry.area
 
-# 집계구 면적을 합산하여 자치구 전체 면적 계산
+# 집계구 면적을 자치구 단위로 합산 — 자치구 전체 면적
 gu_area_m2 = oa.groupby("gu_name")["area_m2"].sum()
 
 # ─── 3. 숙박시설 → 자치구 공간결합 ─────────────────────────────
 print("3. 공간결합 (건물 → 구)...")
+# 시설 좌표를 GeoDataFrame으로 — Point geometry
 gdf = gpd.GeoDataFrame(
     df, geometry=gpd.points_from_xy(df["lng"], df["lat"]), crs="EPSG:4326"
 )
+# 시설이 어떤 집계구 폴리곤 내부에 있는지 좌측 조인 (within 술어)
 joined = gpd.sjoin(
     gdf, oa[["TOT_OA_CD", "gu_name", "geometry"]], how="left", predicate="within"
 )
 
-# 공간결합 후 컬럼명 충돌 처리 (gu_name이 _left/_right 접미사로 분리될 수 있음)
+# sjoin 결과 컬럼명 충돌 방지 — gu_name이 _left/_right로 붙을 수 있음
 gu_col = "gu_name_left" if "gu_name_left" in joined.columns else "gu_name"
 joined["gu_name"] = joined[gu_col].fillna("알수없음")
 
-# 구별 집계 : 시설 수, 연면적 합/평균, 평균 층수
+# 자치구 단위 집계: 시설수, 연면적 합/평균, 평균 층수
 gu_stats = (
     joined.groupby("gu_name")
     .agg(
-        cnt=("연면적", "count"),  # 숙박시설 개수
-        sum_fa=("연면적", "sum"),  # 연면적 합계 (m²)
-        avg_fa=("연면적", "mean"),  # 평균 연면적
-        avg_fl=("층수", "mean"),  # 평균 층수
+        cnt=("연면적", "count"),
+        sum_fa=("연면적", "sum"),
+        avg_fa=("연면적", "mean"),
+        avg_fl=("층수", "mean"),
     )
     .reset_index()
 )
@@ -131,9 +138,10 @@ print("4. VolumeRatio 계산...")
 results = []
 for g in GU:
     row = gu_stats[gu_stats["gu_name"] == g]
-    area = float(gu_area_m2.get(g, 1))  # 구 면적(m²), 없으면 1로 (0 나누기 방지)
+    # 자치구 면적이 없는 경우(예외 케이스) 1로 두어 0 나눗셈 회피
+    area = float(gu_area_m2.get(g, 1))
     if len(row) == 0:
-        # 공간결합 결과 없으면 0으로 처리
+        # 공간결합 결과가 비어 있으면 0으로 채워 표시
         results.append(
             {
                 "gu": g,
@@ -147,15 +155,18 @@ for g in GU:
         )
         continue
     r = row.iloc[0]
-    vr = float(r["sum_fa"]) / area  # VolumeRatio = 연면적 합 / 구 면적
+    # 핵심 지표 — 연면적 합 / 자치구 면적
+    vr = float(r["sum_fa"]) / area
     results.append(
         {
             "gu": g,
             "cnt": int(r["cnt"]),
-            "sum_fa": round(float(r["sum_fa"]) / 1e4, 2),  # m² → 만㎡ 단위로 변환
+            # 보기 좋게 만㎡ 단위로 환산
+            "sum_fa": round(float(r["sum_fa"]) / 1e4, 2),
             "avg_fa": round(float(r["avg_fa"]), 1),
             "avg_fl": round(float(r["avg_fl"]), 1),
-            "area_km2": round(area / 1e6, 2),  # m² → km² 변환
+            # km² 환산
+            "area_km2": round(area / 1e6, 2),
             "vr": round(vr, 6),
         }
     )
@@ -163,7 +174,7 @@ for g in GU:
         f"   {g}: VR={vr:.4f}  Σ연면적={r['sum_fa'] / 1e4:.2f}만㎡  구면적={area / 1e6:.2f}km²"
     )
 
-# VR 높은 순으로 정렬하여 차트에 표시
+# 차트는 VR 큰 순으로 정렬 표시
 results_sorted = sorted(results, key=lambda x: -x["vr"])
 labels = [r["gu"] for r in results_sorted]
 vr_vals = [r["vr"] for r in results_sorted]
@@ -171,38 +182,37 @@ cnt_vals = [r["cnt"] for r in results_sorted]
 fa_vals = [r["sum_fa"] for r in results_sorted]
 area_vals = [r["area_km2"] for r in results_sorted]
 
-# ─── 5. 데이터를 JavaScript 변수로 직렬화 ────────────────────────
-results_json = json.dumps(results, ensure_ascii=False)  # 원래 순서 (테이블용)
-labels_json = json.dumps(labels, ensure_ascii=False)  # VR 정렬 순서 (차트용)
+# ─── 5. JS 변수 직렬화 ────────────────────────────────────────────
+# DATA는 원래 GU 정렬 (테이블용), LABELS/VR는 VR 정렬 (차트용)
+results_json = json.dumps(results, ensure_ascii=False)
+labels_json = json.dumps(labels, ensure_ascii=False)
 vr_json = json.dumps(vr_vals, ensure_ascii=False)
 cnt_json = json.dumps(cnt_vals, ensure_ascii=False)
 fa_json = json.dumps(fa_vals, ensure_ascii=False)
 area_json = json.dumps(area_vals, ensure_ascii=False)
 
 
-# ─── 6. 막대 색상 결정 (최대값 대비 비율에 따라 색상 등급화) ────────
+# ─── 6. 막대 색상 등급화 ──────────────────────────────────────
 def bar_colors(vals):
-    """
-    VolumeRatio 값의 상대적 크기에 따라 막대 색상을 결정한다.
-    최대값의 80% 이상: 빨강 / 50% 이상: 주황 / 30% 이상: 노랑 / 그 외: 파랑
-    """
+    """최댓값 대비 비율로 4단계 색상 부여 (빨강/주황/노랑/파랑)."""
     mx = max(vals) if vals else 1
     colors = []
     for v in vals:
         r = v / mx
         if r >= 0.8:
-            colors.append("#ff3030")  # 매우 높음 (빨강)
+            colors.append("#ff3030")  # 매우 높음
         elif r >= 0.5:
-            colors.append("#ff8c00")  # 높음 (주황)
+            colors.append("#ff8c00")  # 높음
         elif r >= 0.3:
-            colors.append("#fcc419")  # 보통 (노랑)
+            colors.append("#fcc419")  # 보통
         else:
-            colors.append("#4e9af1")  # 낮음 (파랑)
+            colors.append("#4e9af1")  # 낮음
     return colors
 
 
 colors_json = json.dumps(bar_colors(vr_vals), ensure_ascii=False)
 
+# ─── 7. HTML 빌드 (f-string으로 데이터 주입) ─────────────────────
 HTML = f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -324,7 +334,7 @@ chart.setOption({{
 }});
 window.addEventListener('resize',function(){{chart.resize();}});
 
-// 테이블
+// 테이블 — DATA(원래 GU 순서) 기준 렌더
 var maxVR = Math.max.apply(null, VR);
 var tbody = document.getElementById('tbody');
 tbody.innerHTML = DATA.map(function(r,i){{
@@ -349,7 +359,7 @@ tbody.innerHTML = DATA.map(function(r,i){{
 </body>
 </html>"""
 
-# ─── 7. HTML 파일 저장 ───────────────────────────────────────────
+# ─── 8. HTML 파일 저장 ───────────────────────────────────────────
 with open("밀집도_분석.html", "w", encoding="utf-8") as f:
     f.write(HTML)
 print(f"Done: {os.path.getsize('밀집도_분석.html') // 1024} KB")

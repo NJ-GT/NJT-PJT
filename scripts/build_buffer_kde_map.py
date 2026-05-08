@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 """
 [파일 설명]
-버퍼 분석(반경 50m 건물 수) 결과에 커널 밀도 추정(KDE)을 적용하여
+버퍼 분석(반경 50m 건물 수) 결과에 커널 밀도 추정(KDE) 을 적용해
 숙박시설 주변 건물 밀집도를 연속 밀도 곡면으로 시각화하는 스크립트.
 
 [기존 격자 방식과의 차이]
-  - 격자 방식: 공간을 50,000m² 격자로 균등 분할 후 건물 수 집계 (공간 중심)
-  - 버퍼+KDE : 각 숙박시설을 중심으로 반경 50m 버퍼 안 건물 수를 가중치로
-               scipy 가우시안 KDE를 적용 → 연속 밀도 곡면 (시설 중심)
+    - 격자 방식: 공간을 50,000㎡ 격자로 균등 분할 후 건물 수 집계 (공간 중심)
+    - 버퍼+KDE : 각 숙박시설을 중심으로 반경 50m 버퍼 안 건물 수를 가중치로
+                 scipy 가우시안 KDE → 연속 밀도 곡면 (시설 중심)
 
 [처리 흐름]
-  1. XY_GIS_Analysis_Summary.csv 로드 (gis_analysis.py 출력, 버퍼 결과 포함)
-  2. EPSG:5186 → WGS84 좌표 변환
-  3. scipy.stats.gaussian_kde로 가중 KDE 계산 (가중치 = 반경_50m_건물수)
-  4. 서울 전역 200×200 격자에서 KDE 값 평가
-  5. matplotlib으로 KDE 컨투어 이미지 생성 → base64 인코딩
-  6. Folium 지도에 이미지 오버레이 + 개별 포인트 마커 레이어 추가
-  7. HTML 저장
+    1. XY_GIS_Analysis_Summary.csv 로드 (gis_analysis.py 출력, 버퍼 결과 포함)
+    2. EPSG:5186 → WGS84 좌표 변환
+    3. scipy.stats.gaussian_kde 로 가중 KDE 계산 (가중치 = 반경_50m_건물수)
+    4. 서울 전역 200×200 격자에서 KDE 값 평가
+    5. matplotlib 으로 KDE 컨투어 이미지 생성 → base64 인코딩
+    6. Folium 지도에 이미지 오버레이 + HeatMap + 개별 포인트 마커 레이어 추가
+    7. HTML 저장
 
 [입력]  data/XY_GIS_Analysis_Summary.csv  (버퍼 분석 결과)
 [출력]  data/Map_Buffer_KDE.html           (KDE 시각화 지도)
@@ -28,17 +28,21 @@ from io import BytesIO
 
 import numpy as np
 import pandas as pd
+# Matplotlib (PNG 만 생성, GUI 미사용)
 import matplotlib
 
-matplotlib.use("Agg")  # 화면 없이 이미지 생성 (서버/스크립트 환경)
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+# 가우시안 KDE
 from scipy.stats import gaussian_kde
+# 좌표계 변환
 from pyproj import Transformer
+# 인터랙티브 지도
 import folium
 from folium.plugins import HeatMap
 
-# ── 경로 설정 ─────────────────────────────────────────────────────────
+# ── 경로 설정 (스크립트 위치 기준 상대 경로) ─────────────────────────
 BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 INPUT_PATH = os.path.join(BASE, "data", "XY_GIS_Analysis_Summary.csv")
 OUTPUT_PATH = os.path.join(BASE, "data", "Map_Buffer_KDE.html")
@@ -46,7 +50,7 @@ OUTPUT_PATH = os.path.join(BASE, "data", "Map_Buffer_KDE.html")
 # ── 1. 버퍼 분석 결과 로드 ────────────────────────────────────────────
 print("Loading buffer analysis results...")
 df = pd.read_csv(INPUT_PATH, encoding="utf-8-sig")
-# 컬럼명을 직접 지정 (터미널 인코딩 문제 방지)
+# 컬럼명을 직접 지정 (터미널 인코딩 깨짐 방지 + 위치 기반 안정 매핑)
 df.columns = [
     "인덱스",
     "보정_X",
@@ -70,37 +74,36 @@ lons, lats = transformer.transform(df["보정_X"].values, df["보정_Y"].values)
 df["lat"] = lats
 df["lon"] = lons
 
-# 서울 범위 외 이상 좌표 제거
+# 서울 영역 클립 (이상 좌표 제거)
 df = df[
     (df["lat"] > 37.4) & (df["lat"] < 37.7) & (df["lon"] > 126.7) & (df["lon"] < 127.3)
 ]
 print(f"  유효 좌표: {len(df)}개")
 
 # ── 3. 가중 KDE 계산 ──────────────────────────────────────────────────
-# 가중치: 반경 50m 버퍼 안의 건물 수
-# 건물이 많을수록 그 숙박시설 위치의 밀도 기여가 커짐
+# 가중치 = 반경 50m 버퍼 안의 건물 수 (건물 많을수록 밀도 기여 증가)
 print("Computing weighted Kernel Density Estimation...")
 weights = df["반경_50m_건물수"].values.astype(float)
 
-# 가중치가 모두 0인 경우 균등 가중치로 대체
+# 가중치 합이 0 이면 균등 가중치로 폴백
 if weights.sum() == 0:
     weights = np.ones(len(df))
-weights = weights / weights.sum()  # 정규화 (합 = 1)
+weights = weights / weights.sum()  # 합 = 1 정규화
 
-# gaussian_kde: lon/lat 2차원 포인트에 가우시안 커널 적용
+# (경도, 위도) 2차원 표본에 가우시안 KDE 적용
 xy = np.vstack([df["lon"].values, df["lat"].values])
-# bw_method: 대역폭 (클수록 더 매끄럽게, 작을수록 더 날카롭게)
+# bw_method 0.04: 클수록 매끄럽게, 작을수록 날카롭게
 kde = gaussian_kde(xy, weights=weights, bw_method=0.04)
 
 # ── 4. 서울 전역 격자에서 KDE 값 평가 ────────────────────────────────
 print("Evaluating KDE on 200x200 grid...")
-# 데이터 범위보다 약간 넓게 격자 생성
+# 데이터 범위보다 0.02도 여유로 격자 범위 설정
 lat_min = df["lat"].min() - 0.02
 lat_max = df["lat"].max() + 0.02
 lon_min = df["lon"].min() - 0.02
 lon_max = df["lon"].max() + 0.02
 
-# 200×200 격자 (해상도와 속도의 균형)
+# 200×200 격자 (해상도와 속도 균형)
 GRID_N = 200
 grid_lon, grid_lat = np.mgrid[
     lon_min : lon_max : GRID_N * 1j, lat_min : lat_max : GRID_N * 1j
@@ -108,32 +111,32 @@ grid_lon, grid_lat = np.mgrid[
 grid_points = np.vstack([grid_lon.ravel(), grid_lat.ravel()])
 kde_values = kde(grid_points).reshape(GRID_N, GRID_N)
 
-# 시각화를 위해 0~1 정규화
+# 0~1 정규화 (시각화 안정)
 kde_norm = (kde_values - kde_values.min()) / (kde_values.max() - kde_values.min())
 
-# ── 5. KDE 곡면을 투명 PNG로 렌더링 ──────────────────────────────────
+# ── 5. KDE 곡면을 투명 PNG 로 렌더링 ─────────────────────────────────
 print("Rendering KDE surface as transparent PNG...")
 fig, ax = plt.subplots(figsize=(10, 10), dpi=150)
 
-# YlOrRd 컬러맵: 낮은 밀도(노랑) → 높은 밀도(진빨강)
+# YlOrRd 컬러맵: 낮은 밀도(연노랑) → 높은 밀도(진빨강)
 cmap = plt.get_cmap("YlOrRd")
-# 낮은 값(0~10%)은 투명하게 처리하여 배경 지도가 보이도록
+# 낮은 값 영역(0~10%)은 알파=0 으로 투명, 10~20%는 점진 페이드인
 cmap_alpha = cmap(np.linspace(0, 1, 256))
 cmap_alpha[:25, 3] = 0  # 하위 10% 완전 투명
 cmap_alpha[25:50, 3] = np.linspace(0, 0.4, 25)  # 10~20% 점진 투명
 custom_cmap = mcolors.LinearSegmentedColormap.from_list("YlOrRd_alpha", cmap_alpha)
 
-# 컨투어 채우기 (20개 등고선 단계)
+# 컨투어 채우기 (20단계)
 ax.contourf(grid_lon, grid_lat, kde_norm, levels=20, cmap=custom_cmap, alpha=0.85)
 ax.set_xlim(lon_min, lon_max)
 ax.set_ylim(lat_min, lat_max)
 ax.axis("off")
 
-# 배경 투명하게
+# 배경 투명
 fig.patch.set_alpha(0)
 ax.patch.set_alpha(0)
 
-# PNG를 메모리에 저장 후 base64 인코딩 (HTML에 내장)
+# PNG 메모리 저장 → base64 인코딩 (HTML 인라인 삽입)
 buf = BytesIO()
 fig.savefig(
     buf, format="png", bbox_inches="tight", pad_inches=0, transparent=True, dpi=150
@@ -151,7 +154,7 @@ m = folium.Map(
     location=[center_lat, center_lon], zoom_start=12, tiles="CartoDB positron"
 )
 
-# ── 레이어 1: KDE 연속 밀도 곡면 (이미지 오버레이) ─────────────────
+# 레이어 1: KDE 연속 밀도 곡면 (PNG 오버레이)
 fg_kde = folium.FeatureGroup(name="🌡️ KDE 건물 밀집도 곡면", show=True)
 folium.raster_layers.ImageOverlay(
     image=f"data:image/png;base64,{img_b64}",
@@ -161,8 +164,7 @@ folium.raster_layers.ImageOverlay(
 ).add_to(fg_kde)
 fg_kde.add_to(m)
 
-# ── 레이어 2: HeatMap (Leaflet.heat KDE - 인터랙티브) ────────────────
-# 버퍼 건물 수를 가중치로 사용한 히트맵 (zoom에 따라 동적으로 반응)
+# 레이어 2: HeatMap (Leaflet 동적 KDE) — zoom 에 따라 동적 반응
 fg_heat = folium.FeatureGroup(name="🔥 HeatMap (동적 KDE)", show=False)
 heat_data = [
     [row["lat"], row["lon"], float(row["반경_50m_건물수"])]
@@ -178,11 +180,11 @@ HeatMap(
 ).add_to(fg_heat)
 fg_heat.add_to(m)
 
-# ── 레이어 3: 개별 숙박시설 마커 (버퍼 결과) ─────────────────────────
+# 레이어 3: 개별 포인트 (CircleMarker) — 기본 숨김
 fg_pts = folium.FeatureGroup(name="📍 숙박시설 개별 포인트 (버퍼 결과)", show=False)
 for _, row in df.iterrows():
     cnt = int(row["반경_50m_건물수"])
-    # 색상: 30개 초과=빨강, 15~30=주황, 15미만=초록
+    # 색상: >30 빨강(위험), 15~30 주황(주의), <15 초록(보통)
     if cnt > 30:
         color = "#c0392b"
     elif cnt >= 15:
@@ -215,7 +217,7 @@ for _, row in df.iterrows():
     ).add_to(fg_pts)
 fg_pts.add_to(m)
 
-# ── 범례 & 레이어 컨트롤 ─────────────────────────────────────────────
+# ── 범례 + 레이어 컨트롤 ─────────────────────────────────────────────
 folium.LayerControl(collapsed=False).add_to(m)
 
 legend_html = f"""

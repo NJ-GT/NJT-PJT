@@ -1,43 +1,72 @@
 # -*- coding: utf-8 -*-
 """
-OLS 개선 버전
-  Step 1: 변수 추가 (소방위험도, 상업비율, 시설군 더미)
-  Step 2: 비선형 항 (건물나이²)
-  Step 3: Moran's I → Spatial Lag Model
+OLS 개선 모델 + Moran's I + Spatial Lag Model 비교 스크립트.
+
+진행 단계:
+    Step 1) 변수 추가 (소방위험도, 상업비율, 시설군 더미)
+    Step 2) 비선형항 추가 (건물나이²)
+    Step 3) Moran's I 검정 → Spatial Lag (WY) 추가 OLS 비교
+
+목적:
+    - Y = log(1 + 반경 500m 내 숙박화재 건수)
+    - 기본 OLS / 개선 OLS / 공간래그 OLS 의 R² 비교 + 잔차 공간 자기상관 진단
+    - 계수 플롯 + 잔차 vs 예측 + R² 비교 막대를 1×3 패널 PNG 로 저장
+
+입력:
+    - data/핵심서울0424.csv (숙박시설)
+    - data/화재출동/화재출동_2021_2024.csv (모든 화재출동, 발화장소 소분류로 숙박시설 화재만 필터)
+
+출력:
+    - data/ols_improved_result.png
 """
 
 import pandas as pd
 import numpy as np
+# OLS 회귀 (포뮬러 인터페이스)
 import statsmodels.formula.api as smf
+# 공간 가중행렬 (KNN 등)
 import libpysal.weights as lw
+# Moran's I 등 ESDA
 import esda
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import sys
 
+# 콘솔 UTF-8
 sys.stdout.reconfigure(encoding="utf-8")
 
+# 시스템에서 맑은고딕 자동 탐색 후 등록 (한글 표시)
 for font in fm.findSystemFonts():
     if "malgun" in font.lower():
         plt.rcParams["font.family"] = fm.FontProperties(fname=font).get_name()
         break
 plt.rcParams["axes.unicode_minus"] = False
 
+# data 디렉터리 베이스
 BASE = "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data"
 
 # ── 데이터 준비 ───────────────────────────────────────────────────────
+# 숙박시설 핵심 테이블
 lodging = pd.read_csv(f"{BASE}/핵심서울0424.csv", encoding="utf-8-sig")
+# 화재출동 원본
 fire_raw = pd.read_csv(
     f"{BASE}/화재출동/화재출동_2021_2024.csv", encoding="utf-8-sig", low_memory=False
 )
 
+# 발화장소가 숙박시설 계열인 화재만 필터
 LODGING_TYPES = ["호텔", "모텔", "여관", "여인숙", "기타 숙박시설", "숙박공유업"]
 m1 = fire_raw["발화장소_소분류"].str.strip().isin(LODGING_TYPES)
 fire = fire_raw[m1 & fire_raw["위도"].notna() & fire_raw["경도"].notna()].copy()
 
 
 def hav(lat1, lon1, lat2, lon2):
-    R = 6371000
+    """두 좌표 셋 사이의 Haversine 거리(m) 행렬을 반환한다.
+
+    lat1/lon1: shape (N1,) 숙박시설
+    lat2/lon2: shape (N2,) 화재
+    반환: shape (N1, N2) 거리 행렬
+    """
+    R = 6371000  # 지구 반지름 (m)
     lat1 = np.radians(lat1)[:, None]
     lon1 = np.radians(lon1)[:, None]
     lat2 = np.radians(lat2)[None, :]
@@ -49,6 +78,7 @@ def hav(lat1, lon1, lat2, lon2):
     return R * 2 * np.arcsin(np.sqrt(a))
 
 
+# 모든 숙박×화재 거리 행렬 → 500m 이하 카운트
 dist = hav(
     lodging["위도"].values,
     lodging["경도"].values,
@@ -56,11 +86,14 @@ dist = hav(
     fire["경도"].values,
 )
 lodging["반경500m_화재수"] = (dist <= 500).sum(axis=1)
+# Y = log(1 + 반경500m 화재수) 로 왜도 보정
 lodging["Y"] = np.log1p(lodging["반경500m_화재수"])
 
 # ── Step 1+2: 변수 구성 ───────────────────────────────────────────────
+# 건물나이 + 비선형항
 lodging["건물나이"] = 2026 - lodging["승인연도"]
 lodging["건물나이2"] = lodging["건물나이"] ** 2  # 비선형항
+# 다른 X 변수 정리/리네임 + 결측 중앙값 대체
 lodging["주변건물수"] = lodging["반경_50m_건물수"]
 lodging["집중도"] = lodging["집중도(%)"]
 lodging["단속위험도"] = lodging["로그_주변대비_상대위험도_고유단속지점_50m"].fillna(
@@ -71,10 +104,12 @@ lodging["도로폭위험도"] = lodging["도로폭_위험도"]
 lodging["소방위험도"] = lodging["소방위험도_점수"]
 lodging["상업비율"] = lodging["상업비율(%)"].fillna(lodging["상업비율(%)"].median())
 
+# 구 / 시설군 → 더미 변수 (drop_first 로 다중공선성 회피)
 df = pd.get_dummies(lodging, columns=["구", "주요_시설군"], drop_first=True, dtype=int)
 gu_cols = [c for c in df.columns if c.startswith("구_")]
 sil_cols = [c for c in df.columns if c.startswith("주요_시설군_")]
 
+# 기본 X / 신규 X / 전체 X 정의
 X_base = [
     "건물나이",
     "주변건물수",
@@ -88,18 +123,22 @@ X_base = [
 X_new = ["건물나이2", "소방위험도", "상업비율"]
 X_all = X_base + X_new + sil_cols + gu_cols
 
+# 결측 제거 후 회귀용 데이터프레임
 df_clean = df[["Y", "위도", "경도"] + X_all].dropna()
 print(f"분석 행수: {len(df_clean)}")
 
 # ── OLS 기본 vs 개선 비교 ─────────────────────────────────────────────
+# 기본 OLS (X_base + 구 더미)
 m_base = smf.ols("Y ~ " + " + ".join(X_base + gu_cols), data=df_clean).fit(
     cov_type="HC3"
 )
+# 개선 OLS (전체 X)
 m_impr = smf.ols("Y ~ " + " + ".join(X_all), data=df_clean).fit(cov_type="HC3")
 
 print(f"\n[기본 OLS]    R²={m_base.rsquared:.3f}  Adj.R²={m_base.rsquared_adj:.3f}")
 print(f"[개선 OLS]    R²={m_impr.rsquared:.3f}  Adj.R²={m_impr.rsquared_adj:.3f}")
 
+# 개선 모델의 핵심 변수 계수/p-value 출력
 print("\n[개선 모델 핵심 계수]")
 key_vars = [
     "건물나이",
@@ -120,10 +159,12 @@ for v in key_vars:
 
 # ── Step 3: Moran's I ─────────────────────────────────────────────────
 print("\n=== Moran's I (공간 자기상관 검정) ===")
+# KNN(k=8) 공간 가중행렬 (행 표준화)
 coords = np.column_stack([df_clean["경도"].values, df_clean["위도"].values])
 W = lw.KNN.from_array(coords, k=8)
-W.transform = "r"
+W.transform = "r"  # row-standardize
 
+# Y 의 Moran's I
 mi = esda.Moran(df_clean["Y"].values, W)
 print(
     f"  Moran's I = {mi.I:.4f}  p = {mi.p_sim:.4f}",
@@ -135,12 +176,13 @@ print("\n=== Spatial Lag Model (SLM) ===")
 y_arr = df_clean["Y"].values.reshape(-1, 1)
 X_arr = df_clean[X_all].values
 
-# WY: 이웃 Y의 가중평균을 X로 직접 추가 (Spatial Lag OLS)
+# WY: 이웃 Y의 가중평균을 X 로 직접 추가 (간단한 Spatial Lag OLS 근사)
 Wfull = W.full()[0]
 wy = Wfull @ df_clean["Y"].values
 df_clean = df_clean.copy()
 df_clean["WY"] = wy
 
+# WY 를 포함한 OLS
 m_slag = smf.ols("Y ~ WY + " + " + ".join(X_all), data=df_clean).fit(cov_type="HC3")
 pseudo_r2 = m_slag.rsquared
 rho = m_slag.params["WY"]
@@ -149,6 +191,7 @@ print(f"  Pseudo R² ≈ {pseudo_r2:.3f}")
 print(f"  Rho (공간래그계수) = {rho:.4f}  (p={rho_p:.4f})")
 
 # ── 시각화 ────────────────────────────────────────────────────────────
+# 계수 플롯에 사용할 변수 (소방거리는 모델 변수와 다른 이름이라 KeyError 발생 가능 — 원본 그대로 보존)
 key_vars_plot = [
     "건물나이",
     "건물나이2",
@@ -159,6 +202,7 @@ key_vars_plot = [
     "소방거리",
     "상업비율",
 ]
+# 계수, 95% CI, p-value, 색상, 투명도(유의성 강조)
 coefs = [m_impr.params[v] for v in key_vars_plot]
 ci_lo = [m_impr.conf_int().loc[v, 0] for v in key_vars_plot]
 ci_hi = [m_impr.conf_int().loc[v, 1] for v in key_vars_plot]
@@ -166,6 +210,7 @@ pvals = [m_impr.pvalues[v] for v in key_vars_plot]
 colors = ["#e74c3c" if c > 0 else "#3498db" for c in coefs]
 alphas = [1.0 if p < 0.05 else 0.3 for p in pvals]
 
+# 1×3 패널: 계수 플롯 / 잔차-예측 / R² 비교
 fig, axes = plt.subplots(1, 3, figsize=(17, 6))
 fig.suptitle(
     f"개선 OLS — Y=log(1+반경500m 숙박화재수)\n"
@@ -175,6 +220,7 @@ fig.suptitle(
     fontweight="bold",
 )
 
+# 패널 1: 계수 플롯 (95% CI 선분 + 유의도 별표)
 ax = axes[0]
 for i, (v, c, lo, hi, p, col, al) in enumerate(
     zip(key_vars_plot, coefs, ci_lo, ci_hi, pvals, colors, alphas)
@@ -189,6 +235,7 @@ ax.set_yticks(range(len(key_vars_plot)))
 ax.set_yticklabels(key_vars_plot, fontsize=9)
 ax.set_title("계수 플롯 (HC3 95% CI)\n빨강=양(+) 파랑=음(−) 투명=n.s.")
 
+# 패널 2: 잔차 vs 예측값 + 잔차 Moran's I
 resid = m_impr.resid
 mi_resid = esda.Moran(resid.values, W)
 axes[1].scatter(m_impr.fittedvalues, resid, alpha=0.15, s=5, color="steelblue")
@@ -199,6 +246,7 @@ axes[1].set_title(
     f"잔차 vs 예측값\n잔차 Moran's I={mi_resid.I:.3f} p={mi_resid.p_sim:.3f}"
 )
 
+# 패널 3: 모델별 R² 비교 막대
 r2_compare = {
     "기본\nOLS": m_base.rsquared,
     "개선\nOLS": m_impr.rsquared,

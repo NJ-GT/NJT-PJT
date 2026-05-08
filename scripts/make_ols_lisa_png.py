@@ -1,14 +1,27 @@
 # -*- coding: utf-8 -*-
 """
-최신 6변수 기준 OLS 결과 + LISA 지도 PNG 생성
-  변수: 구조노후도, 단속위험도, 도로폭위험도, 집중도, 주변건물수, 소방위험도_점수
-  Y  : 위험점수_AHP
+최신 6변수 기준 OLS 결과 + LISA 군집 지도를 PNG 두 장으로 저장한다.
+
+목적:
+    - X = [구조노후도, 단속위험도, 도로폭위험도, 집중도, 주변건물수, 소방위험도_점수]
+    - Y = log(반경100m 화재수 + 1)
+    - OLS(HC3) → 잔차 Moran's I → Spatial Lag 근사 R² 비교
+    - LISA(Moran_Local) 결과를 HH/LL/LH/HL 분류해 지도/구별 핫스팟 비율 막대 출력
+
+입력:
+    - data/*0423*.csv (메인 분석 테이블)
+    - data/data_with_fire_targets.csv (화재 타깃)
+
+출력:
+    - data/ols_6var_result.png  (계수+잔차+R² 비교 1×3 패널)
+    - data/lisa_6var_map.png    (LISA 지도+구별 핫스팟 비율 1×2 패널)
 """
 
 import sys
 import glob
 import warnings
 
+# 경고 묶기 + 콘솔 UTF-8
 warnings.filterwarnings("ignore")
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -20,14 +33,17 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import rc
 
+# 한글 폰트
 rc("font", family="Malgun Gothic")
 plt.rcParams["axes.unicode_minus"] = False
 
 # ── 데이터 로드 ──────────────────────────────────────
+# 0423 메인 + 화재 타깃을 위경도 키로 결합
 f = glob.glob("data/*0423*.csv")[0]
 main = pd.read_csv(f, encoding="utf-8-sig")
 core = pd.read_csv("data/data_with_fire_targets.csv", encoding="utf-8-sig")
 c = core.columns
+# core 의 4/5/17/22/45 번 열만 (위/경도/소방위험도/AHP/반경100m_화재수)
 core_key = core[[c[4], c[5], c[17], c[22], c[45]]].copy()
 core_key.columns = [
     "위도",
@@ -39,6 +55,7 @@ core_key.columns = [
 
 df = pd.merge(main, core_key, on=["위도", "경도"], how="left")
 
+# 회귀 변수
 VARS6 = [
     "구조노후도",
     "단속위험도",
@@ -47,6 +64,7 @@ VARS6 = [
     "주변건물수",
     "소방위험도_점수",
 ]
+# 모두 숫자형 강제 후 결측 제거
 for v in VARS6 + ["위험점수_AHP", "반경100m_화재수"]:
     df[v] = pd.to_numeric(df[v], errors="coerce")
 
@@ -59,14 +77,16 @@ print(f"샘플: {N:,}개")
 # ── OLS ──────────────────────────────────────────────
 from sklearn.preprocessing import StandardScaler
 
+# X 표준화
 X_raw = df[VARS6].values
 Xs = StandardScaler().fit_transform(X_raw)
 
-# Y = log(화재수+1) — 실제 발생 기록 기준 (체인 전체 일관성)
+# Y = log(화재수+1) — 분석 체인 전체 일관성 유지
 Y = np.log1p(df["반경100m_화재수"].fillna(0)).values
 
 from numpy.linalg import lstsq, inv
 
+# 절편 + 표준화 X 로 직접 OLS
 Xb = np.column_stack([np.ones(N), Xs])
 coef, _, _, _ = lstsq(Xb, Y, rcond=None)
 Yhat = Xb @ coef
@@ -75,7 +95,7 @@ ss_res = (resid**2).sum()
 ss_tot = ((Y - Y.mean()) ** 2).sum()
 r2 = 1 - ss_res / ss_tot
 
-# HC3 표준오차
+# HC3 표준오차 — 레버리지(hii) 보정한 이분산 강건 SE
 hat = Xb @ inv(Xb.T @ Xb) @ Xb.T
 hii = np.diag(hat)
 e_sq = (resid / (1 - hii)) ** 2
@@ -86,7 +106,7 @@ tval = coef / se
 ci95_lo = coef - 1.96 * se
 ci95_hi = coef + 1.96 * se
 
-# 계수 (절편 제외)
+# 절편 제외 한 변수별 통계
 coefs = coef[1:]
 lo95 = ci95_lo[1:]
 hi95 = ci95_hi[1:]
@@ -94,6 +114,7 @@ tvals = tval[1:]
 
 
 def sig_star(t):
+    """t 값 기준 유의도 별표 (정규분포 근사)."""
     a = abs(t)
     if a > 3.29:
         return "***"
@@ -108,10 +129,12 @@ def sig_star(t):
 from libpysal.weights import KNN
 from esda.moran import Moran, Moran_Local
 
+# KNN(k=8) 행 표준화 가중행렬
 coords = df[["위도", "경도"]].values
 W = KNN.from_array(coords, k=8)
 W.transform = "r"
 
+# 잔차의 공간 자기상관
 mi_resid = Moran(resid, W)
 print(f"잔차 Moran's I = {mi_resid.I:.4f}  p={mi_resid.p_sim:.4f}")
 
@@ -119,15 +142,17 @@ print(f"잔차 Moran's I = {mi_resid.I:.4f}  p={mi_resid.p_sim:.4f}")
 mi_y = Moran(Y, W)
 print(f"Y(화재수) Moran's I = {mi_y.I:.4f}  p={mi_y.p_sim:.4f}")
 
+# LISA (지역 단위 Moran's I) — q 값으로 사분면 분류
 lisa = Moran_Local(Y, W, seed=42)
 sig = lisa.p_sim < 0.05
 cats = np.full(N, "Not Sig", dtype=object)
-cats[(lisa.q == 1) & sig] = "HH"
-cats[(lisa.q == 3) & sig] = "LL"
-cats[(lisa.q == 2) & sig] = "LH"
-cats[(lisa.q == 4) & sig] = "HL"
+cats[(lisa.q == 1) & sig] = "HH"  # 고-고 (핫스팟)
+cats[(lisa.q == 3) & sig] = "LL"  # 저-저 (콜드스팟)
+cats[(lisa.q == 2) & sig] = "LH"  # 저-고 (이상치)
+cats[(lisa.q == 4) & sig] = "HL"  # 고-저 (이상치)
 
 # ── Spatial Lag R² (근사) ────────────────────────────
+# WY 를 X 에 추가해 OLS 적합 → 간이 SLM R²
 lag_Y = W.sparse.dot(Y)
 Xb2 = np.column_stack([np.ones(N), Xs, lag_Y])
 coef2, _, _, _ = lstsq(Xb2, Y, rcond=None)
@@ -147,7 +172,7 @@ fig.suptitle(
     fontweight="bold",
 )
 
-# 패널1: 계수 플롯
+# 패널1: 계수 플롯 (95% CI 에러바 + 유의도 별표)
 ax = axes[0]
 colors = ["#E53E3E" if c > 0 else "#3182CE" for c in coefs]
 y_pos = np.arange(len(VARS6))
@@ -175,7 +200,7 @@ ax.axvline(0, color="black", linestyle="--", linewidth=0.8)
 ax.set_title("계수 플롯 (95% CI, HC3)", fontsize=11)
 ax.set_xlabel("계수값 (표준화)")
 
-# 패널2: 잔차 vs 예측값
+# 패널2: 잔차 vs 예측값 (잔차 Moran's I 표기)
 ax2 = axes[1]
 ax2.scatter(Yhat, resid, alpha=0.15, s=8, color="#4A90D9")
 ax2.axhline(0, color="red", linewidth=1.2)
@@ -183,7 +208,7 @@ ax2.set_xlabel("예측값")
 ax2.set_ylabel("잔차")
 ax2.set_title(f"잔차 Moran's I={mi_resid.I:.3f}  p<0.001", fontsize=11)
 
-# 패널3: 모델 비교 바
+# 패널3: 모델 R² 비교 (OLS vs SLM 근사)
 ax3 = axes[2]
 models = ["OLS", "SLM\n(근사)"]
 r2s = [r2, r2_slm]
@@ -214,6 +239,7 @@ df["lisa_cat"] = cats
 df["lat"] = df["위도"]
 df["lon"] = df["경도"]
 
+# LISA 카테고리 색/순서/라벨
 cat_color = {
     "HH": "#D63031",
     "LL": "#0984E3",
@@ -239,7 +265,7 @@ fig2.suptitle(
     fontweight="bold",
 )
 
-# 패널1: 지도
+# 패널1: LISA 지도 (카테고리별 산점)
 ax_m = axes2[0]
 for cat in cat_order[::-1]:
     sub = df[df["lisa_cat"] == cat]
@@ -258,13 +284,14 @@ ax_m.set_title("LISA 군집 지도", fontsize=12)
 ax_m.set_facecolor("#F0F4F8")
 ax_m.legend(loc="lower left", fontsize=9, framealpha=0.9)
 
-# 패널2: 구별 HH 비율
+# 패널2: 구별 HH(핫스팟) 비율 가로 막대
 gu_hh = df[df["lisa_cat"] == "HH"].groupby("구").size()
 gu_total = df.groupby("구").size()
 gu_ratio = (gu_hh / gu_total * 100).dropna().sort_values(ascending=True)
 
 bar_vals = gu_ratio.values
 bar_labs = gu_ratio.index.tolist()
+# 30% / 15% 임계 색
 bar_cols = [
     "#E53E3E" if v >= 30 else "#FC8181" if v >= 15 else "#FEB2B2" for v in bar_vals
 ]

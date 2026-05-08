@@ -1,24 +1,36 @@
+# -*- coding: utf-8 -*-
 """
-[파일 설명]
-서울 집계구별 숙박시설 밀집도와 화재위험도를 Deck.gl 기반 3D 지도로 시각화하는 HTML을 생성하는 스크립트.
+서울 집계구 3D 시각화 HTML 생성 스크립트 (Deck.gl 기반).
 
-주요 역할:
-  Deck.gl의 GeoJsonLayer와 ColumnLayer를 사용하여 집계구를 3D 건물처럼 돌출시킨다.
-  - 높이 기준: 평균 층수 / 숙박시설 수 / 화재위험도 중 선택 가능
-  - 색상 기준: 노후도 / 화재위험도 / 숙박밀집도 중 선택 가능
-  - 소방서는 큰 빨간 원기둥, 안전센터는 작은 주황 원기둥으로 표시
-  - 마우스 호버 시 상세 정보 팝업
+목적:
+    - 숙박시설이 있는 집계구는 GeoJsonLayer + extruded=true 로 3D 압출
+    - 숙박이 없는 집계구는 평면 레이어로 바닥에 깔아 비교
+    - 소방서/안전센터를 ColumnLayer 원기둥(빨강/주황)으로 표시
+    - 사용자가 패널 버튼으로 높이/색상 기준을 즉시 전환
 
-입력: data/oa_density.json       (집계구별 분석 데이터)
-      data/firestation_data.json  (소방서·안전센터 위치)
-출력: 숙박시설_3D.html            (Deck.gl 기반 3D 인터랙티브 맵)
+높이 기준:
+    floors -> 평균 층수 × 3.5m × 8 (시각화 배율)
+    count  -> 숙박시설 수 × 20m
+    fire   -> 화재위험점수 × 8m
+
+색상 기준:
+    age   -> 평균 건축연령
+    fire  -> 화재위험점수
+    count -> 숙박시설 수
+
+데이터:
+    NJT-PJT/data/oa_density.json       — 집계구 GeoJSON + 속성
+    NJT-PJT/data/firestation_data.json — 소방서/안전센터 위치
+출력:
+    NJT-PJT/숙박시설_3D.html
 """
 
 import sys
 import json
 import os
 
-sys.stdout.reconfigure(encoding="utf-8")  # 한글 출력 설정
+# Windows 콘솔 한글 깨짐 방지
+sys.stdout.reconfigure(encoding="utf-8")
 
 # ─── 1. 집계구 데이터 로드 및 분리 ─────────────────────────────
 with open(
@@ -27,11 +39,11 @@ with open(
 ) as f:
     raw = json.load(f)
 
-# 숙박시설 있는 집계구(3D 돌출 표현)와 없는 집계구(바닥 평면 표현)로 분리
+# 숙박시설이 있는 집계구(3D 압출 대상) vs 없는 집계구(바닥 평면) 분리
 filled = [f for f in raw["features"] if f["properties"]["count"] > 0]
 empty = [f for f in raw["features"] if f["properties"]["count"] == 0]
 
-# JavaScript에 삽입할 GeoJSON 문자열로 변환
+# 분리된 두 컬렉션을 각각 JSON 문자열로 직렬화 — JS에 직접 주입
 filled_json = json.dumps(
     {"type": "FeatureCollection", "features": filled}, ensure_ascii=False
 )
@@ -46,8 +58,12 @@ with open(
 ) as f:
     stations_json = json.dumps(json.load(f), ensure_ascii=False)
 
+# 데이터 분포 콘솔 출력
 print(f"채워진 집계구: {len(filled)}, 빈 집계구: {len(empty)}")
 
+# ─── 3. HTML 본문 생성 ──────────────────────────────────────────
+# 큰 JS 코드 블록 사이사이에 Python 변수를 + 연산으로 끼워넣는 방식.
+# (f-string은 JS의 {중괄호}들과 충돌하므로 + 연결을 선호)
 html = (
     """<!DOCTYPE html>
 <html lang="ko">
@@ -411,8 +427,9 @@ refresh();
 """
 )
 
-# ─── 3. HTML 파일 저장 ───────────────────────────────────────────
+# ─── 4. HTML 파일 저장 ───────────────────────────────────────────
 out = "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/숙박시설_3D.html"
 with open(out, "w", encoding="utf-8") as f:
     f.write(html)
+# 결과 파일 크기 출력 (CLI 확인용)
 print(f"Done: {os.path.getsize(out) // 1024} KB")

@@ -1,4 +1,23 @@
 # -*- coding: utf-8 -*-
+"""
+마포구 연남동·서교동 두 동의 위험 특성을 한 장의 종합 비교 PNG 로 정리한다.
+
+목적:
+    - 위험군 구성 / 평균위험점수 / 위험점수 분포(box+strip) / 변수 평균 히트맵 / 차이 막대 5패널
+
+입력:
+    - NJT-PJT/0430/최종테이블0429.csv
+
+출력:
+    - NJT-PJT/0430/마포구_연남동_서교동_위험특성비교.png
+
+처리 흐름:
+    1) 한글 폰트 등록 + seaborn 테마
+    2) 마포구·대상 동 필터 + 숫자형 강제
+    3) 위험군 카운트, 평균 위험점수, 변수 평균, MinMax 정규화
+    4) 3행 4열 그리드: 타이틀/위험군 막대/평균 막대/박스플롯/히트맵/차이 막대
+    5) 결론 캡션 추가 후 PNG 저장
+"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -11,9 +30,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+# 변수 간 비교용 정규화 (히트맵의 상대 수준 표현)
 from sklearn.preprocessing import MinMaxScaler
 
 
+# 경로 상수
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "0430" / "최종테이블0429.csv"
 OUT_PATH = ROOT / "0430" / "마포구_연남동_서교동_위험특성비교.png"
@@ -22,6 +43,7 @@ TARGET_DONGS = ["연남동", "서교동"]
 RISK_ORDER = ["저위험군", "중위험군", "고위험군"]
 RISK_COLORS = {"저위험군": "#60A5FA", "중위험군": "#FBBF24", "고위험군": "#EF4444"}
 MAIN_COLORS = {"연남동": "#2563EB", "서교동": "#F97316"}
+# 비교 대상 변수
 FEATURES = [
     "구조노후도",
     "단속위험도",
@@ -31,6 +53,7 @@ FEATURES = [
     "집중도",
     "주변건물수",
 ]
+# 화면 라벨용 줄바꿈 매핑
 FEATURE_LABELS = {
     "구조노후도": "구조\n노후도",
     "단속위험도": "단속\n위험도",
@@ -43,6 +66,7 @@ FEATURE_LABELS = {
 
 
 def set_korean_font() -> str:
+    """한글 폰트 자동 등록."""
     candidates = [
         r"C:\Windows\Fonts\malgun.ttf",
         r"C:\Windows\Fonts\NanumGothic.ttf",
@@ -58,41 +82,50 @@ def set_korean_font() -> str:
 
 
 def main() -> None:
+    """전체 시각화 흐름."""
+    # 폰트/테마
     font_name = set_korean_font()
     sns.set_theme(style="whitegrid", rc={"font.family": font_name})
     plt.rcParams["font.family"] = font_name
     plt.rcParams["axes.unicode_minus"] = False
 
+    # 데이터 로딩 + 마포구·연남/서교 필터
     df = pd.read_csv(DATA_PATH, encoding="utf-8-sig")
     df.columns = df.columns.str.strip()
     subset = df[df["구"].eq("마포구") & df["동"].isin(TARGET_DONGS)].copy()
 
+    # 분석 변수 숫자형 강제
     numeric_cols = ["최종위험점수_new", *FEATURES, "승인연도", "연면적", "총층수"]
     for col in numeric_cols:
         subset[col] = pd.to_numeric(subset[col], errors="coerce")
 
+    # 동별 위험점수 요약 (count/mean/median/max)
     score_summary = (
         subset.groupby("동")["최종위험점수_new"]
         .agg(["count", "mean", "median", "max"])
         .reindex(TARGET_DONGS)
     )
+    # 위험군 카운트 (동×위험군 표)
     risk_counts = pd.crosstab(subset["동"], subset["cluster_label"]).reindex(
         index=TARGET_DONGS, columns=RISK_ORDER, fill_value=0
     )
+    # 변수별 평균 (동×변수)
     mean_features = subset.groupby("동")[FEATURES].mean().reindex(TARGET_DONGS)
 
+    # 두 동 사이의 상대 차이를 시각화하기 위해 변수별 MinMax 정규화 (행 = 변수)
     scaler = MinMaxScaler()
     scaled = pd.DataFrame(
         scaler.fit_transform(mean_features.T), index=FEATURES, columns=TARGET_DONGS
     )
-    # Scaling across the two dongs makes relative differences explicit for the heatmap.
 
+    # ── 캔버스 (3행 4열) ──────────────────────────────────────────────
     fig = plt.figure(figsize=(17.2, 10.4), dpi=180)
     fig.patch.set_facecolor("#f6f8fb")
     gs = fig.add_gridspec(
         3, 4, height_ratios=[0.52, 1.18, 1.36], hspace=0.48, wspace=0.38
     )
 
+    # 1행 전체: 타이틀 + 핵심 수치 박스
     ax_title = fig.add_subplot(gs[0, :])
     ax_title.axis("off")
     ax_title.text(
@@ -113,6 +146,7 @@ def main() -> None:
         va="top",
     )
 
+    # 우측 핵심 수치 박스
     key_text = (
         f"연남동 평균위험도 {score_summary.loc['연남동', 'mean']:.2f}점, "
         f"고위험군 {int(risk_counts.loc['연남동', '고위험군'])}개\n"
@@ -133,6 +167,7 @@ def main() -> None:
         ),
     )
 
+    # 2행 좌: 위험군 구성 누적 막대
     ax_counts = fig.add_subplot(gs[1, 0])
     bottom = np.zeros(len(TARGET_DONGS))
     x = np.arange(len(TARGET_DONGS))
@@ -147,6 +182,7 @@ def main() -> None:
             linewidth=1.2,
             label=risk,
         )
+        # 18 초과 구간만 카운트 라벨 (가독성)
         for xi, val, bot in zip(x, vals, bottom):
             if val > 18:
                 ax_counts.text(
@@ -167,6 +203,7 @@ def main() -> None:
     ax_counts.set_facecolor("#ffffff")
     ax_counts.grid(axis="y", alpha=0.25)
 
+    # 2행 중1: 평균 최종위험점수 막대
     ax_score = fig.add_subplot(gs[1, 1])
     bars = ax_score.bar(
         TARGET_DONGS,
@@ -175,6 +212,7 @@ def main() -> None:
         edgecolor="white",
         linewidth=1.2,
     )
+    # 막대 위 평균값 라벨
     for bar, dong in zip(bars, TARGET_DONGS):
         ax_score.text(
             bar.get_x() + bar.get_width() / 2,
@@ -191,6 +229,7 @@ def main() -> None:
     ax_score.set_facecolor("#ffffff")
     ax_score.grid(axis="y", alpha=0.25)
 
+    # 2행 우(넓게): 박스+strip 분포
     ax_box = fig.add_subplot(gs[1, 2:])
     sns.boxplot(
         data=subset,
@@ -222,6 +261,7 @@ def main() -> None:
     ax_box.set_facecolor("#ffffff")
     ax_box.grid(axis="y", alpha=0.25)
 
+    # 3행 좌(넓게): 변수 평균 히트맵 (annot=원본 평균값, 색상=상대수준)
     ax_heat = fig.add_subplot(gs[2, 0:2])
     heat = scaled.rename(index=FEATURE_LABELS)
     sns.heatmap(
@@ -238,6 +278,7 @@ def main() -> None:
     ax_heat.set_xlabel("")
     ax_heat.set_ylabel("")
 
+    # 3행 우(넓게): 연남동 - 서교동 평균 차이 막대 (양수=연남↑, 음수=서교↑)
     ax_delta = fig.add_subplot(gs[2, 2:])
     delta = (mean_features.loc["연남동"] - mean_features.loc["서교동"]).sort_values()
     colors = ["#F97316" if v < 0 else "#2563EB" for v in delta]
@@ -248,6 +289,7 @@ def main() -> None:
         edgecolor="white",
     )
     ax_delta.axvline(0, color="#344054", linewidth=1.1)
+    # 막대 끝 차이값 라벨
     for y, (idx, val) in enumerate(delta.items()):
         ax_delta.text(
             val + (0.015 if val >= 0 else -0.015),
@@ -264,6 +306,7 @@ def main() -> None:
     ax_delta.set_facecolor("#ffffff")
     ax_delta.grid(axis="x", alpha=0.25)
 
+    # 결론 캡션
     fig.text(
         0.018,
         0.018,

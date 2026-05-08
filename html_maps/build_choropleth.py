@@ -1,46 +1,59 @@
+# -*- coding: utf-8 -*-
 """
-[파일 설명]
-서울 법정동별 숙박시설 밀집도를 단계구분도(choropleth)로 시각화하는 HTML을 생성하는 스크립트.
+서울 법정동 단계구분도(Choropleth) 인터랙티브 HTML 생성 스크립트.
 
-주요 역할:
-  Leaflet 라이브러리로 법정동 경계를 색상으로 채워 밀집도를 표현한다.
-  사용자가 드롭다운으로 4가지 지표를 전환할 수 있다:
-    - 시설수/ha (공간 밀집)
-    - 숙박시설 수 (절대량)
-    - 연면적/ha (규모 밀집)
-    - 숙박 건물 비율(%)
-  법정동 클릭 시 상세 정보 패널이 표시된다.
+목적:
+    Leaflet으로 법정동 경계를 그리고, 4가지 밀집도 지표 중 하나를
+    드롭다운으로 전환하면서 색칠해 시각화한다.
 
-입력: data/dong_density.json  (법정동별 숙박 밀집도 GeoJSON)
-      data/map_data.json       (개별 숙박시설 위치)
-출력: 법정동_숙박밀집도.html    (Leaflet 단계구분도 인터랙티브 맵)
+지원 지표:
+    - per_ha : 시설수 / ha (공간 밀집)
+    - count  : 숙박시설 수 (절대량)
+    - fa_ha  : 숙박 연면적 / ha (규모 밀집)
+    - ratio  : 전체 건물 중 숙박 비율(%)
+
+상호작용:
+    - 동 클릭 시 우측 상단 패널에 동의 상세 정보 표시
+    - 좌측 상단 드롭다운으로 지표 전환
+    - 우측 하단 범례는 지표에 맞춰 자동 갱신
+    - 체크박스로 개별 숙소 포인트 on/off, 줌 레벨에 따라 반경 자동 조정
+
+데이터:
+    NJT-PJT/data/dong_density.json — 동 경계 + 밀집도 속성 (GeoJSON)
+    NJT-PJT/data/map_data.json     — 개별 시설 위치 정보
+출력:
+    NJT-PJT/법정동_숙박밀집도.html
 """
 
 import sys
 import json
 import os
 
-sys.stdout.reconfigure(encoding="utf-8")  # 한글 출력 설정
+# Windows 콘솔에서 한글 출력 깨짐 방지
+sys.stdout.reconfigure(encoding="utf-8")
 
 # ─── 1. 법정동 GeoJSON 로드 ─────────────────────────────────────
-# dong_density.json : 법정동 경계 + 밀집도 속성(count, per_ha, fa_ha, ratio)
+# 파일 내용을 그대로 JS 변수에 주입할 것이므로 파싱하지 않고 문자열로 둔다
 with open(
     "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/dong_density.json",
     encoding="utf-8",
 ) as f:
-    geojson_str = f.read()  # 문자열 그대로 저장 (JavaScript에 직접 삽입)
+    geojson_str = f.read()
 
 # ─── 2. 개별 숙박시설 위치 로드 ─────────────────────────────────
+# 이쪽은 places 키만 추출하면 되므로 JSON 파싱 후 다시 직렬화
 with open(
     "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/data/map_data.json",
     encoding="utf-8",
 ) as f:
     map_data = json.load(f)
-places_json = json.dumps(
-    map_data["places"], ensure_ascii=False
-)  # JavaScript에 삽입할 JSON 문자열
+# ensure_ascii=False — 한글 그대로 유지 (HTML 내 한국어 표기 위해)
+places_json = json.dumps(map_data["places"], ensure_ascii=False)
 
+# HTML 본문을 메모리 효율적으로 누적
 parts = []
+
+# ─── 3-1. HTML 헤더 + 좌상단 패널 + 범례 + 정보박스 UI ─────────
 parts.append("""<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -152,9 +165,19 @@ html,body{width:100%;height:100%;background:#0e0e1a;font-family:'Segoe UI',sans-
 </style>
 """)
 
+# ─── 3-2. JavaScript 데이터 주입 ───────────────────────────────
+# Python 측 변수를 JS 상수로 그대로 삽입한다.
 parts.append("<script>\n")
 parts.append("const GEOJSON = " + geojson_str + ";\n")
 parts.append("const PLACES  = " + places_json + ";\n")
+
+# ─── 3-3. JS 본문 ──────────────────────────────────────────────
+# 핵심 로직 요약:
+#   - METRICS: 4개 지표별 (단위, 구간(breaks), 범례 라벨, 색 팔레트)
+#   - getColor: 값에 맞는 색상 산출
+#   - buildLayer: 현재 지표 기준으로 GeoJSON 레이어 (재)생성 — 마우스/클릭 핸들러 부착
+#   - buildLegend: 지표 변경 시 범례 갱신
+#   - 줌 변동 시 마커 반경 자동 조정
 parts.append("""
 const map = L.map('map', {center:[37.5530,126.9740], zoom:12, zoomControl:true});
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
@@ -307,8 +330,9 @@ map.on('overlayadd', function() {
 </html>
 """)
 
-# ─── 3. HTML 파일 저장 ───────────────────────────────────────────
+# ─── 4. HTML 파일 저장 ───────────────────────────────────────────
 out = "c:/Users/USER/Documents/GitHub/기말공모전/NJT-PJT/법정동_숙박밀집도.html"
 with open(out, "w", encoding="utf-8") as f:
     f.write("".join(parts))
+# 결과 파일 크기를 KB 단위로 출력
 print("Done:", os.path.getsize(out) // 1024, "KB")
